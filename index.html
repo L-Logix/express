@@ -1887,22 +1887,27 @@ async function loadAdmin() {
 
 // ================= HOMEPAGE =================
 async function loadHomepage() {
-    // Load hero data
-    const heroData = await apiGet({ action: 'getHero' });
-    if (heroData.success && heroData.hero) {
-        document.getElementById('heroMain').textContent = heroData.hero.headline || 'Reliable. Sovereign. Global.';
-        document.getElementById('heroSub').textContent = heroData.hero.subheader || 'Express Airways - Professional Flight Services Worldwide';
-        if (heroData.hero.image) {
-            document.querySelector('.hero').style.backgroundImage = `url(${heroData.hero.image})`;
-            document.querySelector('.hero').style.backgroundSize = 'cover';
-            document.querySelector('.hero').style.backgroundPosition = 'center';
+    try {
+        // Load hero data
+        const heroData = await apiGet({ action: 'getHero' });
+        if (heroData.success && heroData.hero) {
+            document.getElementById('heroMain').textContent = heroData.hero.headline || 'Reliable. Sovereign. Global.';
+            document.getElementById('heroSub').textContent = heroData.hero.subheader || 'Express Airways - Professional Flight Services Worldwide';
+            if (heroData.hero.image) {
+                document.querySelector('.hero').style.backgroundImage = `url(${heroData.hero.image})`;
+                document.querySelector('.hero').style.backgroundSize = 'cover';
+                document.querySelector('.hero').style.backgroundPosition = 'center';
+            }
         }
+    } catch (error) {
+        console.log('Hero data loading failed, using defaults');
     }
 
-    // Load sections
-    const data = await apiGet({ action: 'getSections' });
-    
-    if (data.success && data.sections) {
+    try {
+        // Load sections
+        const data = await apiGet({ action: 'getSections' });
+        
+        if (data.success && data.sections && data.sections.length > 0) {
         const container = document.getElementById('sectionsContainer');
         container.innerHTML = '';
 
