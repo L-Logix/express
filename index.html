@@ -1832,25 +1832,39 @@ async function completeBooking() {
         return;
     }
 
-    const bookingRef = generateBookingReference();
-    const timestamp = getTimestamp();
+    const bookingBtn = document.getElementById('bookingBtn');
+    bookingBtn.classList.add('loading');
+    bookingBtn.disabled = true;
 
     const bookingData = {
-        action: 'createBooking',
-        userId: currentUser.id,
-        bookingRef,
-        timestamp,
-        flightData: bookingSession.flightData,
-        passengers: bookingSession.passengers,
+        action: 'booking',
+        email: currentUser.email,
+        origin: bookingSession.flightData.origin,
+        destination: bookingSession.flightData.destination,
+        departDate: bookingSession.flightData.departDate,
+        serviceType: bookingSession.flightData.serviceType,
+        flightTime: bookingSession.flightData.flightTime,
+        passengers: bookingSession.flightData.passengers,
+        totalPrice: bookingSession.flightData.totalForPassengers,
+        paymentMethod: bookingSession.paymentMethod,
+        selectedSeat: bookingSession.selectedSeat,
         ancillaries: bookingSession.selectedAncillaries,
-        seat: bookingSession.selectedSeat,
-        paymentMethod: bookingSession.paymentMethod
+        promoCode: bookingSession.promoCode,
+        paxName: bookingSession.passengers[0]?.firstName + ' ' + bookingSession.passengers[0]?.lastName || 'Passenger',
+        paxDOB: bookingSession.passengers[0]?.dob || '',
+        paxGender: bookingSession.passengers[0]?.gender || '',
+        paxPassport: bookingSession.passengers[0]?.passport || '',
+        paxPhone: bookingSession.passengers[0]?.phone || '',
+        paxCabin: bookingSession.flightData.cabin
     };
 
     const result = await apiPost(bookingData);
 
+    bookingBtn.classList.remove('loading');
+    bookingBtn.disabled = false;
+
     if (result.success) {
-        showNotification('Booking Confirmed', `Reference: ${bookingRef}`, 'success');
+        showNotification('Booking Confirmed', `Reference: ${result.bookingRef} | Miles Earned: ${result.milesEarned}`, 'success');
         document.getElementById('ancillariesForm').style.display = 'none';
         
         // Reset form
@@ -1860,9 +1874,12 @@ async function completeBooking() {
             selectedAncillaries: [],
             selectedSeat: null,
             paymentMethod: 'credit',
-            currency: 'USD'
+            currency: 'USD',
+            promoCode: null
         };
         document.getElementById('bookingForm').reset();
+        document.getElementById('promoCode').value = '';
+        document.getElementById('promoStatus').innerHTML = '';
         
         goToDashboard();
     } else {
