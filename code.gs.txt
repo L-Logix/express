@@ -1,6 +1,76 @@
 // ✈️ EXPRESS AIRWAYS - PROFESSIONAL BACKEND WITH REAL DATA PERSISTENCE 🚀
 const SHEET_URL = "https://docs.google.com/spreadsheets/d/1J39EDm_hZWFtQ-fFg2WZQul9sIP6zca7ooWOrXUhdao/edit";
 
+// � ADVERTISED COMPANIES (Aircraft Manufacturers)
+const APPROVED_AIRCRAFT_MANUFACTURERS = [
+  "Boeing", "Airbus", "Bombardier", "Embraer", "ATR", "Cessna", "Britten-Norman", "De Havilland"
+];
+
+// ✨ MILEAGE TIERS
+const MILEAGE_TIERS = {
+  "basic": { minMiles: 0, maxMiles: 24999, multiplier: 1.0, benefits: ["Base pricing"] },
+  "silver": { minMiles: 25000, maxMiles: 49999, multiplier: 1.1, benefits: ["10% bonus miles", "Priority support"] },
+  "titanium": { minMiles: 50000, maxMiles: 99999, multiplier: 1.25, benefits: ["25% bonus miles", "Free seat upgrades", "Priority boarding"] },
+  "gold": { minMiles: 100000, maxMiles: 999999, multiplier: 1.5, benefits: ["50% bonus miles", "Complimentary upgrades", "Exclusive lounge access", "Priority everything"] }
+};
+
+// 🎟️ PROMO CODE DATABASE (IN-MEMORY CACHE)
+let PROMO_CODES_CACHE = {};
+
+function loadPromoCodes() {
+  try {
+    const promoSheet = getSheet("PromoCodes");
+    if (promoSheet) {
+      const data = promoSheet.getDataRange().getValues();
+      for (let i = 1; i < data.length; i++) {
+        const code = data[i][0];
+        if (code) {
+          PROMO_CODES_CACHE[code.toString().toUpperCase()] = {
+            code: code,
+            discountPercent: parseFloat(data[i][1]) || 0,
+            discountDollars: parseFloat(data[i][2]) || 0,
+            maxUses: parseInt(data[i][3]) || 999,
+            usedCount: parseInt(data[i][4]) || 0,
+            expiryDate: data[i][5],
+            active: data[i][6] === "TRUE" || data[i][6] === true
+          };
+        }
+      }
+    }
+  } catch(e) {
+    Logger.log("Error loading promo codes: " + e);
+  }
+}
+
+function validatePromoCode(code) {
+  loadPromoCodes();
+  const promoCode = PROMO_CODES_CACHE[code.toString().toUpperCase()];
+  
+  if (!promoCode) {
+    return { valid: false, message: "Invalid promo code" };
+  }
+  
+  if (!promoCode.active) {
+    return { valid: false, message: "Promo code is inactive" };
+  }
+  
+  if (promoCode.usedCount >= promoCode.maxUses) {
+    return { valid: false, message: "Promo code usage limit exceeded" };
+  }
+  
+  const expiry = new Date(promoCode.expiryDate);
+  if (expiry < new Date()) {
+    return { valid: false, message: "Promo code has expired" };
+  }
+  
+  return { 
+    valid: true, 
+    code: promoCode.code,
+    discountPercent: promoCode.discountPercent,
+    discountDollars: promoCode.discountDollars
+  };
+}
+
 // 🌍 CACHED AIRPORT DATABASE
 let AIRPORT_CACHE = {
   "JFK": {name: "John F. Kennedy", lat: 40.6413, lng: -73.7781, type: "international", city: "New York", country: "USA"},
@@ -55,7 +125,139 @@ function updateSheetCell(sheet, row, col, value) {
   sheet.getRange(row, col).setValue(value);
 }
 
-// 🔄 REAL-TIME AIRPORT DATA
+// 🏭 AIRCRAFT CONFIGURATIONS (Distance-based)
+function getAircraftConfig(distanceMiles) {
+  if (distanceMiles > 5000) {
+    return { model: "Boeing 777", rows: 10, seatsPerRow: 10, manufacturer: "Boeing" };
+  } else if (distanceMiles > 2000) {
+    return { model: "Airbus A350", rows: 9, seatsPerRow: 9, manufacturer: "Airbus" };
+  } else if (distanceMiles > 500) {
+    return { model: "Boeing 737", rows: 8, seatsPerRow: 7, manufacturer: "Boeing" };
+  } else {
+    return { model: "Airbus A220", rows: 6, seatsPerRow: 5, manufacturer: "Airbus" };
+  }
+}
+
+// 🪑 SEAT MANAGEMENT - Generate real aircraft layout
+function generateSeatMap(bookingRef, distanceMiles) {
+  const aircraft = getAircraftConfig(distanceMiles);
+  const seats = [];
+  const takenSeatsSheet = getSheet("SeatAssignments");
+  const takenSeats = takenSeatsSheet.getDataRange().getValues();
+  const takenSeatSet = new Set();
+  
+  // Load already taken seats from sheet
+  for (let i = 1; i < takenSeats.length; i++) {
+    if (takenSeats[i][0]) {
+      takenSeatSet.add(takenSeats[i][1]); // seat column
+    }
+  }
+  
+  // Generate seat map based on aircraft config
+  for (let row = 1; row <= aircraft.rows; row++) {
+    for (let col = 1; col <= aircraft.seatsPerRow; col++) {
+      const seatLetter = String.fromCharCode(64 + col);
+      const seatNumber = row + seatLetter;
+      seats.push({
+        seat: seatNumber,
+        taken: takenSeatSet.has(seatNumber),
+        aircraft: aircraft.model,
+        row: row,
+        column: col
+      });
+    }
+  }
+  
+  return { seats, aircraft };
+}
+
+// 📐 HAVERSINE DISTANCE
+function haversineDistance(lat1, lng1, lat2, lng2) {
+  const R = 3959;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLng/2) * Math.sin(dLng/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+}
+
+// ✈️ CALCULATE FLIGHT TIME
+function calculateFlightTime(origin, destination) {
+  const orig = validateAirportCode(origin) || AIRPORT_CACHE[origin];
+  const dest = validateAirportCode(destination) || AIRPORT_CACHE[destination];
+  if (!orig || !dest) return 0;
+
+  const distance = haversineDistance(orig.lat, orig.lng, dest.lat, dest.lng);
+  const cruiseTime = distance / 500;
+  return cruiseTime + 0.25;
+}
+
+// 🏅 LOYALTY TIER CALCULATION
+function calculateLoyaltyTier(miles) {
+  if (miles >= 100000) return { tier: "gold", multiplier: 1.5, display: "Gold" };
+  if (miles >= 50000) return { tier: "titanium", multiplier: 1.25, display: "Titanium" };
+  if (miles >= 25000) return { tier: "silver", multiplier: 1.1, display: "Silver" };
+  return { tier: "basic", multiplier: 1.0, display: "Basic" };
+}
+
+// 💰 DYNAMIC FARE CALCULATION WITH PROMO
+function calculateBaseFare(origin, destination, serviceType, departDate, promoCode = null) {
+  try {
+    const orig = validateAirportCode(origin) || AIRPORT_CACHE[origin];
+    const dest = validateAirportCode(destination) || AIRPORT_CACHE[destination];
+
+    if (!orig || !dest) return 150;
+
+    const distance = haversineDistance(orig.lat, orig.lng, dest.lat, dest.lng);
+
+    let fare = 100 + (distance * 0.10);
+
+    if (serviceType === "EA") fare *= 1.25;
+    else if (serviceType === "EX") fare *= 0.95;
+    else if (serviceType === "EC") fare *= 1.75;
+
+    const dept = new Date(departDate);
+    const dayOfWeek = dept.getDay();
+    if (dayOfWeek === 5 || dayOfWeek === 6 || dayOfWeek === 0) {
+      fare *= 1.15;
+    }
+
+    fare *= 1.08;
+    
+    // Apply promo code
+    if (promoCode) {
+      const promoValidation = validatePromoCode(promoCode);
+      if (promoValidation.valid) {
+        if (promoValidation.discountPercent > 0) {
+          fare *= (1 - promoValidation.discountPercent / 100);
+        }
+        if (promoValidation.discountDollars > 0) {
+          fare -= promoValidation.discountDollars;
+        }
+      }
+    }
+
+    return Math.round(Math.max(fare, 50)); // Minimum fare of $50
+  } catch(e) {
+    return 150;
+  }
+}
+
+// 📊 SURGE PRICING
+function applySurgePricing(departDate, baseFare) {
+  const today = new Date();
+  const depart = new Date(departDate);
+  const daysUntil = Math.ceil((depart - today) / (1000 * 60 * 60 * 24));
+
+  if (daysUntil <= 3 && daysUntil > 0) return Math.round(baseFare * 1.35);
+  if (daysUntil <= 7 && daysUntil > 0) return Math.round(baseFare * 1.20);
+  if (daysUntil <= 0) return 0;
+  return baseFare;
+}
+
+// 🔍 REAL-TIME AIRPORT DATA
 function validateAirportCode(code) {
   if (AIRPORT_CACHE[code]) {
     return AIRPORT_CACHE[code];
@@ -249,12 +451,82 @@ function checkBookingLimits(email, departDate) {
   const bookings = sheetToArray(bookingsSheet);
 
   const todayBookings = bookings.filter(b => {
-    const bookDate = new Date(b.DepartDate).toDateString();
+    const bookDate = new Date(b.DepartDate || "").toDateString();
     const checkDate = new Date(departDate).toDateString();
     return b.Email === email && bookDate === checkDate && b.Status === "CONFIRMED";
   });
 
   return todayBookings.length < 2; // Max 2 bookings per day
+}
+
+// 📋 ISSUE REPORTING
+function reportIssue(email, subject, description, severity = "normal") {
+  try {
+    const issueSheet = getSheet("Issues");
+    const issueId = "ISS-" + Math.random().toString(36).substr(2, 9).toUpperCase();
+    issueSheet.appendRow([
+      issueId, email, subject, description, severity, "OPEN", new Date(), new Date()
+    ]);
+    return { success: true, issueId: issueId };
+  } catch(e) {
+    throw new Error("Failed to report issue: " + e);
+  }
+}
+
+// 📊 STATUS TRACKING
+function getSystemStatus() {
+  try {
+    const statusSheet = getSheet("SystemStatus");
+    if (!statusSheet) {
+      return {
+        bookingEngine: "OPERATIONAL",
+        payment: "OPERATIONAL",
+        seats: "OPERATIONAL",
+        notifications: "OPERATIONAL",
+        timestamp: new Date()
+      };
+    }
+    const data = statusSheet.getDataRange().getValues();
+    const status = {};
+    for (let i = 1; i < data.length; i++) {
+      status[data[i][0]] = data[i][1];
+    }
+    return status;
+  } catch(e) {
+    return { error: "Unable to fetch system status" };
+  }
+}
+
+// 📧 EMAIL NOTIFICATIONS (uses Google Apps Script native email)
+function sendBookingConfirmation(email, bookingRef, origin, destination, departDate) {
+  try {
+    const subject = "Booking Confirmation - Express Airways - Ref: " + bookingRef;
+    const message = `
+Dear Valued Customer,
+
+Your flight booking has been confirmed!
+
+Booking Reference: ${bookingRef}
+Route: ${origin} → ${destination}
+Departure Date: ${departDate}
+
+Next Steps:
+1. Check your dashboard for seats and ancillaries
+2. Select your preferred seat
+3. Complete payment if not already done
+
+For assistance, visit our support portal or reply to this email.
+
+Best regards,
+Express Airways Team
+    `;
+    
+    MailApp.sendEmail(email, subject, message);
+    return { success: true };
+  } catch(e) {
+    Logger.log("Email send error: " + e);
+    return { success: false, error: e.toString() };
+  }
 }
 
 function doGet(e) {
@@ -410,6 +682,106 @@ function doGet(e) {
     }
 
     // GET HOMEPAGE
+    if (action === "getHomepage" || !action) {
+      const response = { sections: [], config: {}, success: true };
+
+      const sectionSheet = getSheet("Sections");
+      if (sectionSheet) {
+        response.sections = sheetToArray(sectionSheet);
+      }
+
+      const configSheet = getSheet("Config");
+      if (configSheet) {
+        const configData = configSheet.getDataRange().getValues();
+        configData.forEach(row => {
+          if (row[0]) response.config[row[0].toString().trim()] = row[1];
+        });
+      }
+
+      return ContentService.createTextOutput(JSON.stringify(response)).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // GET SYSTEM STATUS
+    if (action === "getSystemStatus") {
+      const status = getSystemStatus();
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        status: status
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // GET HERO DATA
+    if (action === "getHero") {
+      const heroSheet = getSheet("Hero");
+      if (heroSheet) {
+        const data = sheetToArray(heroSheet)[0] || {};
+        return ContentService.createTextOutput(JSON.stringify({
+          success: true,
+          hero: {
+            headline: data.Headline || "Reliable. Sovereign. Global.",
+            subheader: data.Subheader || "Express Airways",
+            image: data.Image || ""
+          }
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+    }
+
+    // GET SECTIONS
+    if (action === "getSections") {
+      const sectionSheet = getSheet("Sections");
+      if (sectionSheet) {
+        const sections = sheetToArray(sectionSheet);
+        return ContentService.createTextOutput(JSON.stringify({
+          success: true,
+          sections: sections
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+    }
+
+    // GET NOTICES
+    if (action === "getNotices") {
+      const noticeSheet = getSheet("Notices");
+      if (noticeSheet) {
+        const notices = sheetToArray(noticeSheet);
+        return ContentService.createTextOutput(JSON.stringify({
+          success: true,
+          notices: notices
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        notices: []
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // GET USER
+    if (action === "getUser") {
+      const uSheet = getSheet("Users");
+      const users = sheetToArray(uSheet);
+      for (let u of users) {
+        if (u.Email === params.email || u.UserID === params.userId) {
+          const tierData = calculateLoyaltyTier(u.Miles || 0);
+          return ContentService.createTextOutput(JSON.stringify({
+            success: true,
+            user: {
+              id: u.UserID,
+              name: u.FullName,
+              email: u.Email,
+              role: u.Role || "basic",
+              miles: u.Miles || 0,
+              status: u.Status || 1,
+              loyaltyTier: tierData.display
+            }
+          })).setMimeType(ContentService.MimeType.JSON);
+        }
+      }
+      return ContentService.createTextOutput(JSON.stringify({
+        success: false,
+        error: "User not found"
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // GET HOMEPAGE (fallback for homepage data)
     const response = { sections: [], config: {}, success: true };
 
     const sectionSheet = getSheet("Sections");
@@ -462,8 +834,13 @@ function doPost(e) {
           response = {
             success: true,
             user: {
-              name: u.FullName, email: u.Email, role: u.Role,
-              miles: u.Miles || 0, status: u.Status || 1, loyaltyTier: tierData.tier
+              id: u.UserID || u.Email,
+              name: u.FullName, 
+              email: u.Email, 
+              role: tierData.tier,
+              miles: u.Miles || 0, 
+              status: u.Status || 1, 
+              loyaltyTier: tierData.display
             }
           };
           break;
@@ -479,10 +856,40 @@ function doPost(e) {
       for (let u of existing) {
         if (u.Email === data.email) throw new Error("Email already registered.");
       }
-      sheet.appendRow([timestamp, data.fullName, data.email, data.password, "Customer", 0, 1, new Date()]);
+      const userId = Utilities.getUuid();
+      sheet.appendRow([userId, timestamp, data.fullName, data.email, data.password, "basic", 0, 1, new Date()]);
       response = {
         success: true,
-        user: { name: data.fullName, email: data.email, role: "Customer", miles: 0, loyaltyTier: "Bronze" }
+        user: { 
+          id: userId,
+          name: data.fullName, 
+          email: data.email, 
+          role: "basic", 
+          miles: 0, 
+          loyaltyTier: "Basic" 
+        }
+      };
+    }
+
+    // VALIDATE PROMO CODE
+    else if (action === "validatePromo") {
+      const promoValidation = validatePromoCode(data.code);
+      response = { 
+        success: promoValidation.valid, 
+        discount: promoValidation.discountPercent || 0,
+        discountDollars: promoValidation.discountDollars || 0,
+        message: promoValidation.message 
+      };
+    }
+
+    // GET SEAT MAP
+    else if (action === "getSeatMap") {
+      const distance = data.distanceMiles || 1000;
+      const seatMapData = generateSeatMap(data.bookingRef || "", distance);
+      response = { 
+        success: true, 
+        seats: seatMapData.seats,
+        aircraft: seatMapData.aircraft
       };
     }
 
@@ -493,56 +900,88 @@ function doPost(e) {
       }
 
       const bSheet = getSheet("Bookings");
-      const bookingRef = timestamp;
+      const bookingRef = "EA" + Math.random().toString(36).substr(2, 9).toUpperCase();
 
       const orig = validateAirportCode(data.origin) || AIRPORT_CACHE[data.origin];
       const dest = validateAirportCode(data.destination) || AIRPORT_CACHE[data.destination];
       const distance = haversineDistance(orig.lat, orig.lng, dest.lat, dest.lng);
-      const milesEarned = Math.round(distance);
-
-      bSheet.appendRow([
-        bookingRef, data.email, "CONFIRMED", data.origin, data.destination,
-        data.departDate, data.flightTime, data.serviceType, 1, data.totalPrice,
-        data.paymentMethod, data.paxName, data.paxDOB, data.paxGender,
-        data.paxPassport, data.paxPhone, data.paxCabin, new Date()
-      ]);
-
-      // UPDATE USER MILES
+      
+      // Calculate base fare with promo
+      let fare = calculateBaseFare(data.origin, data.destination, data.serviceType || "EA", data.departDate, data.promoCode);
+      fare = applySurgePricing(data.departDate, fare);
+      fare *= data.passengers || 1;
+      
+      // Get user's loyalty tier for miles multiplier
       const uSheet = getSheet("Users");
       const users = sheetToArray(uSheet);
+      let userTier = calculateLoyaltyTier(0);
       let userRowNum = -1;
+      
       for (let i = 0; i < users.length; i++) {
         if (users[i].Email === data.email) {
+          userTier = calculateLoyaltyTier(users[i].Miles || 0);
           userRowNum = i + 2;
           break;
         }
       }
+      
+      const milesEarned = Math.round(distance * userTier.multiplier);
 
+      // Record booking
+      bSheet.appendRow([
+        bookingRef, data.email, "CONFIRMED", data.origin, data.destination,
+        data.departDate, calculateFlightTime(data.origin, data.destination), 
+        data.serviceType || "EA", data.passengers || 1, Math.round(fare),
+        data.paymentMethod || "credit", data.paxName || "", data.paxDOB || "", 
+        data.paxGender || "", data.paxPassport || "", data.paxPhone || "", 
+        data.paxCabin || "Economy", new Date()
+      ]);
+
+      // Update user miles and tier
       if (userRowNum > 0) {
         let milesDeduction = 0;
         if (data.paymentMethod === "miles") {
-          milesDeduction = Math.floor(data.totalPrice / 0.01);
+          milesDeduction = Math.floor(Math.min(fare / 0.015, users[userRowNum - 2].Miles || 0));
         }
         const currentMiles = users[userRowNum - 2].Miles || 0;
         const newMiles = currentMiles - milesDeduction + milesEarned;
-        updateSheetCell(uSheet, userRowNum, 5, newMiles);
+        updateSheetCell(uSheet, userRowNum, 6, newMiles); // Update miles
+        
+        // Auto-update tier
+        const newTier = calculateLoyaltyTier(newMiles);
+        updateSheetCell(uSheet, userRowNum, 7, newTier.tier);
       }
 
-      // Store seat
+      // Store seat assignment
       if (data.selectedSeat) {
-        const sSheet = getSheet("Seats");
-        sSheet.appendRow([bookingRef, data.selectedSeat, "TAKEN", data.paxName, new Date()]);
+        const seatSheet = getSheet("SeatAssignments");
+        seatSheet.appendRow([bookingRef, data.selectedSeat, data.paxName, data.email, new Date()]);
       }
 
       // Store ancillaries
       if (data.ancillaries && data.ancillaries.length > 0) {
         const aSheet = getSheet("AncillaryBookings");
         data.ancillaries.forEach(anc => {
-          aSheet.appendRow([bookingRef, anc.type, anc.price, data.email, new Date()]);
+          aSheet.appendRow([bookingRef, anc.id || anc.type, anc.price || 0, data.email, new Date()]);
         });
       }
+      
+      // Record promo code usage
+      if (data.promoCode) {
+        const promoSheet = getSheet("PromoCodes");
+        const result = findInSheet(promoSheet, "Code", data.promoCode.toUpperCase());
+        if (result.row > 0) {
+          const currentUses = parseInt(promoSheet.getRange(result.row, 5).getValue()) || 0;
+          updateSheetCell(promoSheet, result.row, 5, currentUses + 1);
+        }
+      }
 
-      response = { success: true, bookingRef: bookingRef, milesEarned: milesEarned };
+      response = { 
+        success: true, 
+        bookingRef: bookingRef, 
+        milesEarned: milesEarned,
+        totalFare: Math.round(fare)
+      };
     }
 
     // CANCEL BOOKING
@@ -590,6 +1029,12 @@ function doPost(e) {
       const dSheet = getSheet("DocRequests");
       dSheet.appendRow([timestamp, data.email, data.docTitle, "PENDING", new Date()]);
       response = { success: true, message: "Request submitted." };
+    }
+
+    // REPORT ISSUE
+    else if (action === "reportIssue") {
+      const result = reportIssue(data.email, data.subject, data.description, data.severity || "normal");
+      response = result;
     }
 
     // CONTACT

@@ -1027,14 +1027,12 @@
                 </div>
 
                 <div class="form-group" style="grid-column: 1 / -1;">
-                    <label>Display Prices In</label>
-                    <select id="currencySelect" onchange="updateCurrency()">
-                        <option value="USD">USD ($)</option>
-                        <option value="EUR">EUR (€)</option>
-                        <option value="GBP">GBP (£)</option>
-                        <option value="JPY">JPY (¥)</option>
-                        <option value="AUD">AUD (A$)</option>
-                    </select>
+                    <label>Promo Code (Optional)</label>
+                    <div style="display: grid; grid-template-columns: 1fr auto; gap: 0.5rem;">
+                        <input type="text" id="promoCode" placeholder="Enter promo code" style="text-transform: uppercase;">
+                        <button class="btn-secondary" type="button" onclick="validatePromoCode()" style="padding: 0.85rem 1rem;">Apply</button>
+                    </div>
+                    <div id="promoStatus" style="margin-top: 0.5rem; font-size: 0.85rem; color: #666;"></div>
                 </div>
 
                 <div class="button-group">
@@ -1170,12 +1168,16 @@ Welcome, <span id="dashboardUserName"></span>!</h1>
                 <button class="tab" onclick="switchTab('events')">Events</button>
                 <button class="tab" onclick="switchTab('documents')">Documents</button>
                 <button class="tab" onclick="switchTab('account')">Account Settings</button>
+                <button class="tab" onclick="switchTab('status')">Status</button>
+                <button class="tab" onclick="switchTab('issues')">Support</button>
             </div>
 
             <div id="bookings" class="tab-content active"><div id="bookingsList"></div></div>
             <div id="events" class="tab-content"><div id="eventsList"></div></div>
             <div id="documents" class="tab-content"><div id="documentsList"></div></div>
             <div id="account" class="tab-content"><div id="accountContent"></div></div>
+            <div id="status" class="tab-content"><div id="statusContent"></div></div>
+            <div id="issues" class="tab-content"><div id="issuesContent"></div></div>
         </div>
     </div>
 
@@ -1242,7 +1244,8 @@ let bookingSession = {
     selectedAncillaries: [],
     selectedSeat: null,
     paymentMethod: 'credit',
-    currency: 'USD'
+    currency: 'USD',
+    promoCode: null
 };
 
 // ================= UTILITY: HAVERSINE FORMULA =================
@@ -1381,6 +1384,12 @@ async function signup() {
     if (!agreedToTerms) {
         showNotification('Validation Error', 'You must agree to Terms of Service and Privacy Policy', 'warning');
         return;
+    }
+
+    const signupBtn = document.querySelector('#signupModal .btn-primary');
+    signupBtn.classList.add('loading');
+    signupBtn.disabled = true;
+
     try {
         const data = await apiPost({
             action: "signup",
@@ -1392,30 +1401,24 @@ async function signup() {
             localStorage.setItem("user", JSON.stringify(currentUser));
             updateNav();
             closeModal("signupModal");
+
             document.getElementById("signupName").value = '';
             document.getElementById("signupEmail").value = '';
             document.getElementById("signupPassword").value = '';
             document.getElementById("agreeTerms").checked = false;
+
             showNotification('Success', 'Account created successfully', 'success');
         } else {
-            const errorMsg = data && data.message ? data.message : 'Could not create account. Please try again.';
-            showNotification('Signup Failed', errorMsg, 'error');
+            showNotification('Signup Failed', data.message || 'Could not create account', 'error');
         }
     } catch (error) {
         console.error('Signup error:', error);
         showNotification('Connection Error', 'Unable to connect to server. Please try again.', 'error');
     } finally {
         signupBtn.classList.remove('loading');
-        signupBtn.disabled = false
-        document.getElementById("signupEmail").value = '';
-        document.getElementById("signupPassword").value = '';
-        document.getElementById("agreeTerms").checked = false;
-        showNotification('Success', 'Account created successfully', 'success');
-    } else {
-        showNotification('Signup Failed', data.message || 'Could not create account', 'error');
+        signupBtn.disabled = false;
     }
 }
-
 function logout() {
     localStorage.removeItem("user");
     currentUser = null;
@@ -1478,6 +1481,32 @@ function handleTripType() {
         tripType === 'round' ? 'block' : 'none';
     document.getElementById('multiCityBox').style.display = 
         tripType === 'multi' ? 'block' : 'none';
+}
+
+// ================= PROMO CODE VALIDATION =================
+async function validatePromoCode() {
+    const code = document.getElementById('promoCode').value.trim().toUpperCase();
+    if (!code) {
+        document.getElementById('promoStatus').innerHTML = '<span style="color: #999;">Enter a promo code</span>';
+        return;
+    }
+
+    const data = await apiPost({ action: "validatePromo", code });
+    const statusEl = document.getElementById('promoStatus');
+    
+    if (data.success) {
+        bookingSession.promoCode = code;
+        let discountText = '';
+        if (data.discount > 0) {
+            discountText = `${data.discount}% off`;
+        } else if (data.discountDollars > 0) {
+            discountText = `$${data.discountDollars} off`;
+        }
+        statusEl.innerHTML = `<span style="color: var(--success);">✓ Promo applied: ${discountText}</span>`;
+    } else {
+        bookingSession.promoCode = null;
+        statusEl.innerHTML = `<span style="color: var(--danger);">✗ ${data.message || 'Invalid promo code'}</span>`;
+    }
 }
 
 async function calculateAndBook() {
@@ -1675,32 +1704,80 @@ function proceedToAncillaries() {
     window.scrollTo(0, 0);
 }
 
-function generateSeatMap() {
+async function generateSeatMap() {
     const seatMap = document.getElementById('seatMap');
-    const numSeats = 36;
-    let html = '';
+    seatMap.innerHTML = '<div style="grid-column: 1/-1; padding: 1rem; text-align: center;">Loading seats...</div>';
     
-    for (let i = 1; i <= numSeats; i++) {
-        const seatNum = String.fromCharCode(64 + Math.ceil(i / 6)) + (((i-1) % 6) + 1);
-        const isBooked = Math.random() > 0.7;
-        html += `
-            <button type="button" style="padding: 0.75rem; border: 2px solid var(--border); border-radius: 6px; cursor: ${isBooked ? 'not-allowed' : 'pointer'}; background: ${isBooked ? '#eee' : 'white'}; font-weight: 600; transition: all 0.3s;" 
-                    ${isBooked ? 'disabled' : `onclick="selectSeat('${seatNum}', this)"`}
-                    class="seat-btn" data-seat="${seatNum}">
-                ${seatNum}
-            </button>
-        `;
+    const distance = bookingSession.flightData ? bookingSession.flightData.distance : 1000;
+    const data = await apiPost({ 
+        action: "getSeatMap", 
+        distanceMiles: distance,
+        bookingRef: ""
+    });
+
+    if (data.success && data.seats) {
+        let html = '';
+        const seats = data.seats;
+        const aircraft = data.aircraft || { model: "Aircraft", rows: 8, seatsPerRow: 7 };
+        
+        // Display aircraft info
+        const aircraftInfo = document.createElement('div');
+        aircraftInfo.style.gridColumn = '1/-1';
+        aircraftInfo.style.padding = '1rem';
+        aircraftInfo.style.background = 'rgba(74, 144, 226, 0.05)';
+        aircraftInfo.style.borderRadius = '8px';
+        aircraftInfo.style.marginBottom = '1rem';
+        aircraftInfo.innerHTML = `<strong>Aircraft:</strong> ${aircraft.model} | <strong>Layout:</strong> ${aircraft.rows} rows x ${aircraft.seatsPerRow} seats`;
+        
+        // Generate seat buttons
+        seats.forEach(seat => {
+            const isAvailable = !seat.taken;
+            html += `
+                <button type="button" style="padding: 0.75rem; border: 2px solid ${isAvailable ? 'var(--border)' : '#ddd'}; border-radius: 6px; cursor: ${isAvailable ? 'pointer' : 'not-allowed'}; background: ${isAvailable ? 'white' : '#f0f0f0'}; font-weight: 600; transition: all 0.3s; color: ${isAvailable ? 'var(--primary)' : '#999'};" 
+                        ${isAvailable ? `onclick="selectSeat('${seat.seat}', this)"` : 'disabled'}
+                        class="seat-btn" data-seat="${seat.seat}">
+                    ${seat.seat}
+                </button>
+            `;
+        });
+        
+        seatMap.innerHTML = '';
+        seatMap.appendChild(aircraftInfo);
+        const seatsContainer = document.createElement('div');
+        seatsContainer.style.gridColumn = '1/-1';
+        seatsContainer.style.display = 'grid';
+        seatsContainer.style.gridTemplateColumns = `repeat(${aircraft.seatsPerRow}, 1fr)`;
+        seatsContainer.style.gap = '0.5rem';
+        seatsContainer.innerHTML = html;
+        seatMap.appendChild(seatsContainer);
+    } else {
+        // Fallback to simple grid
+        let html = '';
+        for (let i = 1; i <= 36; i++) {
+            const row = Math.ceil(i / 6);
+            const col = (i - 1) % 6 + 1;
+            const seatNum = row + String.fromCharCode(64 + col);
+            html += `
+                <button type="button" style="padding: 0.75rem; border: 2px solid var(--border); border-radius: 6px; cursor: pointer; background: white; font-weight: 600; transition: all 0.3s;" 
+                        onclick="selectSeat('${seatNum}', this)"
+                        class="seat-btn" data-seat="${seatNum}">
+                    ${seatNum}
+                </button>
+            `;
+        }
+        seatMap.innerHTML = html;
     }
-    
-    seatMap.innerHTML = html;
 }
 
 function selectSeat(seatNum, el) {
-    document.querySelectorAll('.seat-btn:not(:disabled)').forEach(s => {
-        s.style.background = 'white';
-        s.style.borderColor = 'var(--border)';
+    document.querySelectorAll('.seat-btn').forEach(s => {
+        if (!s.disabled) {
+            s.style.background = 'white';
+            s.style.color = '';
+            s.style.borderColor = 'var(--border)';
+        }
     });
-    
+
     bookingSession.selectedSeat = seatNum;
     el.style.background = 'var(--secondary)';
     el.style.color = 'white';
@@ -1713,8 +1790,8 @@ function updateSummary() {
     bookingSession.selectedAncillaries = selectedAncillaries;
 
     const baseFare = bookingSession.flightData.totalForPassengers;
-    const ancillariesCost = selectedAncillaries.reduce((sum, a) => sum + a.price, 0);
-    const subtotal = baseFare + ancillariesCost;
+    const ancillariesCost = selectedAncillaries.reduce((sum, a) => sum + (a.price * bookingSession.flightData.passengers), 0);
+        const subtotal = baseFare + ancillariesCost;
 
     let milesDeduction = 0;
     if (bookingSession.paymentMethod === 'miles') {
@@ -1857,6 +1934,107 @@ function switchTab(tabName) {
     
     event.target.classList.add('active');
     document.getElementById(tabName).classList.add('active');
+    
+    // Load specific content when tab is clicked
+    if (tabName === 'status') {
+        loadSystemStatus();
+    } else if (tabName === 'issues') {
+        loadIssuesForm();
+    }
+}
+
+// ================= SYSTEM STATUS =================
+async function loadSystemStatus() {
+    const statusContent = document.getElementById('statusContent');
+    statusContent.innerHTML = '<div style="text-align: center; padding: 2rem;">Loading system status...</div>';
+    
+    const data = await apiGet({ action: 'getSystemStatus' });
+    
+    if (data.success && data.status) {
+        let html = '<div class="card"><h3>System Status</h3><div style="display: grid; gap: 1rem;">';
+        
+        Object.entries(data.status).forEach(([service, status]) => {
+            const statusColor = status === 'OPERATIONAL' ? 'var(--success)' : status === 'MAINTENANCE' ? 'var(--warning)' : 'var(--danger)';
+            const statusEmoji = status === 'OPERATIONAL' ? '✓' : '⚠';
+            html += `<div style="display: flex; justify-content: space-between; padding: 1rem; background: rgba(74, 144, 226, 0.05); border-radius: 8px;">
+                <strong>${service}:</strong>
+                <span style="color: ${statusColor}; font-weight: 600;">${statusEmoji} ${status}</span>
+            </div>`;
+        });
+        
+        html += '</div></div>';
+        statusContent.innerHTML = html;
+    } else {
+        statusContent.innerHTML = '<div class="card"><p>Unable to load system status. Services are operating normally.</p></div>';
+    }
+}
+
+// ================= ISSUE REPORTING =================
+function loadIssuesForm() {
+    const issuesContent = document.getElementById('issuesContent');
+    issuesContent.innerHTML = `
+        <div class="card">
+            <h3>Report an Issue</h3>
+            <form style="display: grid; gap: 1rem;">
+                <div class="form-group">
+                    <label>Subject</label>
+                    <input type="text" id="issueSubject" placeholder="Brief description of the issue" required>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="issueDescription" placeholder="Detailed description..." style="min-height: 120px; padding: 0.85rem; border: 2px solid rgba(255, 255, 255, 0.3); border-radius: 8px; font-family: inherit; resize: vertical;" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Severity</label>
+                    <select id="issueSeverity">
+                        <option value="low">Low - Minor inconvenience</option>
+                        <option value="normal" selected>Normal - Affects functionality</option>
+                        <option value="high">High - Significant problem</option>
+                        <option value="critical">Critical - System down</option>
+                    </select>
+                </div>
+                <button type="button" class="btn-primary" onclick="submitIssueReport()">Submit Report</button>
+            </form>
+        </div>
+    `;
+}
+
+async function submitIssueReport() {
+    if (!currentUser) {
+        showNotification('Login Required', 'Please log in to report issues', 'warning');
+        return;
+    }
+    
+    const subject = document.getElementById('issueSubject').value.trim();
+    const description = document.getElementById('issueDescription').value.trim();
+    const severity = document.getElementById('issueSeverity').value;
+    
+    if (!subject || !description) {
+        showNotification('Validation Error', 'Please complete all fields', 'warning');
+        return;
+    }
+    
+    const btn = event.target;
+    btn.classList.add('loading');
+    btn.disabled = true;
+    
+    const data = await apiPost({
+        action: 'reportIssue',
+        email: currentUser.email,
+        subject,
+        description,
+        severity
+    });
+    
+    btn.classList.remove('loading');
+    btn.disabled = false;
+    
+    if (data.success) {
+        showNotification('Issue Submitted', `Report ID: ${data.issueId}. Our team will contact you shortly.`, 'success');
+        loadIssuesForm();
+    } else {
+        showNotification('Error', data.message || 'Failed to submit report', 'error');
+    }
 }
 
 function viewETicket(bookingRef) {
@@ -1929,45 +2107,42 @@ async function loadHomepage() {
     } else {
         // Default sections if API fails
         document.getElementById('sectionsContainer').innerHTML = `
-            <div class="section-card">
-                <div class="section-content">
-                    <h3>Global Network</h3>
-                    <p>Connecting major cities worldwide with reliable, on-time service</p>
-                    <button class="btn-secondary" onclick="handleSectionClick('#')">Learn More</button>
-                </div>
-                <div class="section-image">
-                    <img src="https://via.placeholder.com/500x300?text=Global+Network" alt="Global Network">
-                </div>
-            </div>
-            <div class="section-card">
-                <div class="section-content">
-                    <h3>Premium Services</h3>
-                    <p>Experience world-class comfort and hospitality</p>
-                    <button class="btn-secondary" onclick="handleSectionClick('#')">Learn More</button>
-                </div>
-                <div class="section-image">
-                    <img src="https://via.placeholder.com/500x300?text=Premium+Services" alt="Premium Services">
-                </div>
-            </div>
-            <div class="section-card">
-                <div class="section-content">
-                    <h3>Customer Support</h3>
-                    <p>24/7 dedicated assistance for all your travel needs</p>
-                    <button class="btn-secondary" onclick="handleSectionClick('#')">Learn More</button>
-                </div>
-                <div class="section-image">
-                    <img src="https://via.placeholder.com/500x300?text=Customer+Support" alt="Customer Support">
-                </div>
-            </div>
-        `;
-                <div class="section-image">
-                    <img src="https://via.placeholder.com/500x300?text=Customer+Support" alt="Customer Support">
-                </div>
-            </div>
-        `;
+    <div class="section-card">
+        <div class="section-content">
+            <h3>Global Network</h3>
+            <p>Connecting major cities worldwide with reliable, on-time service</p>
+            <button class="btn-secondary" onclick="handleSectionClick('#')">Learn More</button>
+        </div>
+        <div class="section-image">
+            <img src="https://via.placeholder.com/500x300?text=Global+Network" alt="Global Network">
+        </div>
+    </div>
+
+    <div class="section-card">
+        <div class="section-content">
+            <h3>Premium Services</h3>
+            <p>Experience world-class comfort and hospitality</p>
+            <button class="btn-secondary" onclick="handleSectionClick('#')">Learn More</button>
+        </div>
+        <div class="section-image">
+            <img src="https://via.placeholder.com/500x300?text=Premium+Services" alt="Premium Services">
+        </div>
+    </div>
+
+    <div class="section-card">
+        <div class="section-content">
+            <h3>Customer Support</h3>
+            <p>24/7 dedicated assistance for all your travel needs</p>
+            <button class="btn-secondary" onclick="handleSectionClick('#')">Learn More</button>
+        </div>
+        <div class="section-image">
+            <img src="https://via.placeholder.com/500x300?text=Customer+Support" alt="Customer Support">
+        </div>
+    </div>
+`;
     }
 }
-
+}
 function handleSectionClick(link) {
     if (link && link !== '#') {
         window.open(link, '_blank');
@@ -1980,24 +2155,16 @@ function handleSectionClick(link) {
 let updateInterval;
 
 function startLiveUpdates() {
-    // Update every 30 seconds
     updateInterval = setInterval(async () => {
         if (document.getElementById('mainPage').style.display !== 'none') {
             await loadHomepage();
-        }
-        
-        // Update notices if on main page
-        if (document.getElementById('mainPage').style.display !== 'none') {
             await loadNotices();
         }
-            await loadNotices();
-        }
-        
-        // Update user data if logged in
+
         if (currentUser) {
             await updateUserData();
         }
-    }, 30000); // 30 seconds
+    }, 30000);
 }
 
 function stopLiveUpdates() {
@@ -2019,43 +2186,27 @@ async function updateUserData() {
 
 async function loadNotices() {
     const data = await apiGet({ action: 'getNotices' });
+
     if (data.success && data.notices && data.notices.length > 0) {
-        const notice = data.notices[0]; // Show first notice
+        const notice = data.notices[0];
         const banner = document.getElementById('noticeBanner');
-    loadNotices();
-    startLiveUpdates();
+
         banner.innerHTML = `
-            <h4>${notice.title || 'Important Notice'}</h4>
-            <p>${notice.message || 'Stay updated with the latest information.'}</p>
-            <button class="notice-close" onclick="this.parentElement.style.display='none'">&times;</button>
-        `;
+    <h4>${notice.title || 'Important Notice'}</h4>
+    <p>${notice.message || 'Stay updated with the latest information.'}</p>
+    <button class="notice-close" onclick="this.parentElement.style.display='none'">&times;</button>
+`;
+
         banner.style.display = 'flex';
+
         if (notice.important) {
             banner.classList.add('important');
         }
-    }laceholder.com/500x300?text=Customer+Support" alt="Customer Support">
-                </div>
-            </div>
-        `;
     }
 }
 
-function handleSectionClick(link) {
-    if (link && link !== '#') {
-        window.open(link, '_blank');
-    } else {
-        showNotification('Coming Soon', 'This section is under development', 'info');
-    }
-}
 
-// ================= TRIP TYPE HANDLING =================
-function handleTripType() {
-    const val = document.getElementById('tripType').value;
-    document.getElementById('returnDateGroup').style.display =
-        val === 'round' ? 'block' : 'none';
-    document.getElementById('multiCityBox').style.display =
-        val === 'multi' ? 'block' : 'none';
-}
+
 
 // ================= INITIALIZATION =================
 window.addEventListener('load', () => {
@@ -2100,5 +2251,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 </script>
+
 </body>
 </html>
