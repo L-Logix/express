@@ -12,18 +12,18 @@
         }
 
         :root {
-            --primary: #2c3e50;
-            --secondary: #3498db;
-            --accent: #5dade2;
-            --light-grey: #ecf0f1;
-            --dark-grey: #34495e;
-            --border: #bdc3c7;
-            --success: #27ae60;
-            --danger: #e74c3c;
-            --warning: #f39c12;
-            --glass-bg: rgba(236, 240, 241, 0.95);
-            --glass-border: rgba(236, 240, 241, 0.5);
-            --modal-bg: rgba(44, 62, 80, 0.95);
+            --primary: #1e293b;
+            --secondary: #2563eb;
+            --accent: #1d4ed8;
+            --light-grey: #f0f4f8;
+            --dark-grey: #475569;
+            --border: #cbd5e1;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --glass-bg: rgba(255, 255, 255, 0.9);
+            --glass-border: rgba(203, 213, 225, 0.8);
+            --modal-bg: rgba(15, 23, 42, 0.95);
             --modal-border: rgba(255, 255, 255, 0.2);
         }
 
@@ -31,7 +31,7 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             color: var(--dark-grey);
             line-height: 1.6;
-            background: linear-gradient(135deg, #f5f7fa 0%, #e8f0f7 100%);
+            background: var(--light-grey);
             min-height: 100vh;
         }
 
@@ -204,7 +204,7 @@
             position: relative;
             overflow: hidden;
             animation: fadeIn 0.8s ease-out;
-            background: linear-gradient(135deg, #2c3e50 0%, #34495e 50%, #3498db 100%);
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 55%, #2563eb 100%);
             color: white;
             padding: 4rem 2rem;
             justify-content: center;
@@ -368,15 +368,15 @@
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
             color: white;
             flex: 1;
-            box-shadow: 0 4px 15px rgba(74, 144, 226, 0.3);
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.35);
         }
 
         .btn-primary:hover:not(.loading) {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(74, 144, 226, 0.4);
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.45);
         }
 
         .btn-primary.loading {
@@ -916,7 +916,7 @@
                 <input type="password" id="loginPassword" placeholder="••••••••">
             </div>
             <div class="button-group">
-                <button class="btn-primary" id="loginBtn" onclick="login()">Sign In</button>
+                <button class="btn-primary" id="loginSubmitBtn" onclick="login()">Sign In</button>
                 <button class="btn-secondary" onclick="closeModal('loginModal')">Cancel</button>
             </div>
         </div>
@@ -948,7 +948,7 @@
                 </label>
             </div>
             <div class="button-group">
-                <button class="btn-primary" id="signupBtn" onclick="signup()">Create Account</button>
+                <button class="btn-primary" id="signupSubmitBtn" onclick="signup()">Create Account</button>
                 <button class="btn-secondary" onclick="closeModal('signupModal')">Cancel</button>
             </div>
         </div>
@@ -980,11 +980,16 @@
 
                 <div class="form-group">
                     <label>Airline</label>
-                    <select id="serviceType">
+                    <select id="serviceType" onchange="handleServiceType()">
                         <option value="EA">Express Airways (International)</option>
                         <option value="EX">Explore Airways (Domestic)</option>
                         <option value="EC">Express Charter</option>
                     </select>
+                </div>
+
+                <div class="form-group" id="charterTimeGroup" style="display: none;">
+                    <label>Charter Departure Time</label>
+                    <input type="time" id="charterDepartTime">
                 </div>
 
                 <div class="form-group">
@@ -1036,7 +1041,7 @@
                 </div>
 
                 <div class="button-group">
-                    <button class="btn-primary" onclick="calculateAndBook()">🔍 Search Flights (Real-Time)</button>
+                    <button class="btn-primary" onclick="calculateAndBook()">Search Flights (Real-Time)</button>
                 </div>
             </div>
 
@@ -1060,6 +1065,10 @@
                         <div style="background: rgba(74, 144, 226, 0.05); padding: 1rem; border-radius: 8px; border-left: 4px solid var(--secondary);">
                             <div style="font-size: 0.85rem; color: #999; margin-bottom: 0.5rem;">Total for <span id="detailPassengers">1</span> Passenger(s)</div>
                             <div style="font-size: 1.5rem; font-weight: 600; color: var(--primary);" id="detailTotal">$0</div>
+                        </div>
+                        <div style="background: rgba(74, 144, 226, 0.05); padding: 1rem; border-radius: 8px; border-left: 4px solid var(--secondary);">
+                            <div style="font-size: 0.85rem; color: #999; margin-bottom: 0.5rem;">Estimated Arrival</div>
+                            <div style="font-size: 1.2rem; font-weight: 600; color: var(--primary);" id="detailArrival">N/A</div>
                         </div>
                     </div>
                     <button class="btn-primary" onclick="proceedToPassengers()" style="margin-top: 1rem;">Continue to Passenger Details</button>
@@ -1093,6 +1102,7 @@
                         <label style="display: flex; align-items: center;">
                             <input type="radio" name="paymentMethod" value="miles">
                             <span style="margin-left: 0.5rem;">Pay with Frequent Flyer Miles</span>
+                        </label>
                     </div>
 
                     <div id="milesPaymentInfo" style="display: none; margin-top: 1rem; background: rgba(74, 144, 226, 0.1); padding: 1rem; border-radius: 8px; border: 1px solid rgba(74, 144, 226, 0.3);">
@@ -1160,16 +1170,15 @@
     <!-- DASHBOARD PAGE -->
     <div id="dashboardPage" style="display: none;">
         <div class="dashboard">
-            <h1>👋 Welcome, <span id="dashboardUserName"></span>!</h1>
-Welcome, <span id="dashboardUserName"></span>!</h1>
+            <h1>Welcome, <span id="dashboardUserName"></span>!</h1>
 
             <div class="tabs">
-                <button class="tab active" onclick="switchTab('bookings')">My Bookings</button>
-                <button class="tab" onclick="switchTab('events')">Events</button>
-                <button class="tab" onclick="switchTab('documents')">Documents</button>
-                <button class="tab" onclick="switchTab('account')">Account Settings</button>
-                <button class="tab" onclick="switchTab('status')">Status</button>
-                <button class="tab" onclick="switchTab('issues')">Support</button>
+                <button class="tab active" onclick="switchTab('bookings', this)">My Bookings</button>
+                <button class="tab" onclick="switchTab('events', this)">Events</button>
+                <button class="tab" onclick="switchTab('documents', this)">Documents</button>
+                <button class="tab" onclick="switchTab('account', this)">Account Settings</button>
+                <button class="tab" onclick="switchTab('status', this)">Status</button>
+                <button class="tab" onclick="switchTab('issues', this)">Support</button>
             </div>
 
             <div id="bookings" class="tab-content active"><div id="bookingsList"></div></div>
@@ -1193,14 +1202,14 @@ Welcome, <span id="dashboardUserName"></span>!</h1>
     <div id="eticketPage" style="display: none;">
         <div style="max-width: 900px; margin: 2rem auto; padding: 0 1rem;">
             <button class="btn-secondary" onclick="backFromETicket()" style="margin-bottom: 1rem;">Back</button>
-            <button class="btn-primary" onclick="printETicket()" style="margin-bottom: 1rem; float: right;">Print E-Ticke
+            <button class="btn-primary" onclick="printETicket()" style="margin-bottom: 1rem; float: right;">Print E-Ticket</button>
             <div class="eticket" id="eticketContent"></div>
         </div>
     </div>
 
     <script>
 // ================= CONSTANTS =================
-const SHEET_API = "https://script.google.com/macros/s/AKfycbwa6kLuhaN1PdGuzOwEYnc6ZMFuJD3VR3R-T-qsPiTbB-4fnNxMJOGtitmxbkmQEWK3nQ/exec";
+const SHEET_API = "https://script.google.com/macros/s/AKfycbwOpzPgTj94-tQAEjIJ3Q3l54zCLGC7Ag2XDlNUPwvb8M1v8p6qhuVDVigGYz8G-bGWhQ/exec";
 const IATA_CODES = {
     'JFK': { city: 'New York', lat: 40.6413, lng: -73.7781 },
     'LAX': { city: 'Los Angeles', lat: 33.9425, lng: -118.4081 },
@@ -1288,10 +1297,19 @@ async function apiGet(params = {}) {
 
 async function apiPost(body = {}) {
     try {
+        const formBody = new URLSearchParams();
+        Object.entries(body).forEach(([key, value]) => {
+            if (value === undefined || value === null) return;
+            if (typeof value === 'object') {
+                formBody.append(key, JSON.stringify(value));
+            } else {
+                formBody.append(key, String(value));
+            }
+        });
+
         const res = await fetch(SHEET_API, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(body)
+            body: formBody.toString()
         });
         return await res.json();
     } catch (e) {
@@ -1358,7 +1376,7 @@ async function login() {
             document.getElementById("loginPassword").value = '';
             showNotification('Success', 'Logged in successfully', 'success');
         } else {
-            const errorMsg = data && data.message ? data.message : 'Invalid credentials. Please check your email and password.';
+            const errorMsg = (data && (data.message || data.error)) ? (data.message || data.error) : 'Invalid credentials. Please check your email and password.';
             showNotification('Login Failed', errorMsg, 'error');
         }
     } catch (error) {
@@ -1409,7 +1427,7 @@ async function signup() {
 
             showNotification('Success', 'Account created successfully', 'success');
         } else {
-            showNotification('Signup Failed', data.message || 'Could not create account', 'error');
+            showNotification('Signup Failed', data?.message || data?.error || 'Could not create account', 'error');
         }
     } catch (error) {
         console.error('Signup error:', error);
@@ -1483,6 +1501,12 @@ function handleTripType() {
         tripType === 'multi' ? 'block' : 'none';
 }
 
+function handleServiceType() {
+    const serviceType = document.getElementById('serviceType').value;
+    const charterGroup = document.getElementById('charterTimeGroup');
+    charterGroup.style.display = serviceType === 'EC' ? 'block' : 'none';
+}
+
 // ================= PROMO CODE VALIDATION =================
 async function validatePromoCode() {
     const code = document.getElementById('promoCode').value.trim().toUpperCase();
@@ -1502,10 +1526,10 @@ async function validatePromoCode() {
         } else if (data.discountDollars > 0) {
             discountText = `$${data.discountDollars} off`;
         }
-        statusEl.innerHTML = `<span style="color: var(--success);">✓ Promo applied: ${discountText}</span>`;
+        statusEl.innerHTML = `<span style="color: var(--success);">Promo applied: ${discountText}</span>`;
     } else {
         bookingSession.promoCode = null;
-        statusEl.innerHTML = `<span style="color: var(--danger);">✗ ${data.message || 'Invalid promo code'}</span>`;
+        statusEl.innerHTML = `<span style="color: var(--danger);">${data.message || 'Invalid promo code'}</span>`;
     }
 }
 
@@ -1516,20 +1540,16 @@ async function calculateAndBook() {
         return;
     }
 
-    const origin = document.getElementById('origin').value.toUpperCase();
-    const destination = document.getElementById('destination').value.toUpperCase();
+    const origin = document.getElementById('origin').value.toUpperCase().trim();
+    const destination = document.getElementById('destination').value.toUpperCase().trim();
     const departDate = document.getElementById('departDate').value;
     const passengers = parseInt(document.getElementById('passengers').value) || 1;
     const cabin = document.getElementById('cabin').value;
     const serviceType = document.getElementById('serviceType').value;
+    const charterDepartTime = document.getElementById('charterDepartTime').value;
 
     if (!origin || !destination || !departDate) {
         showNotification('Validation Error', 'Please complete all required fields', 'warning');
-        return;
-    }
-
-    if (!IATA_CODES[origin] || !IATA_CODES[destination]) {
-        showNotification('Invalid Airport', 'Please enter valid IATA codes', 'warning');
         return;
     }
 
@@ -1537,23 +1557,32 @@ async function calculateAndBook() {
     searchBtn.classList.add('loading');
     searchBtn.disabled = true;
 
-    // Calculate flight details
-    const orig = IATA_CODES[origin];
-    const dest = IATA_CODES[destination];
-    
-    const distance = calculateDistance(orig.lat, orig.lng, dest.lat, dest.lng);
-    const flightTime = distance / CRUISE_SPEED;
-    
-    // Calculate fare
-    let baseFare = BASE_FARE + (distance / 100) * 5;
-    baseFare = baseFare * CABIN_MULTIPLIERS[cabin];
-    
-    // Dynamic pricing based on demand
-    const demand = Math.random() * 0.3 + 1.0;
-    const surgeFare = baseFare * demand;
+    const flightResp = await apiGet({
+        action: 'getFlightTime',
+        origin,
+        destination,
+        serviceType,
+        departDate,
+        departTime: charterDepartTime,
+        cabin
+    });
+
+    if (!flightResp || !flightResp.success) {
+        searchBtn.classList.remove('loading');
+        searchBtn.disabled = false;
+        showNotification('Search Failed', flightResp?.error || 'Unable to fetch route details', 'error');
+        return;
+    }
+
+    const distance = parseFloat(flightResp.distanceMiles) || 0;
+    const flightTime = parseFloat(flightResp.flightTime) || 0;
+    const baseFare = (parseFloat(flightResp.baseFare) || BASE_FARE) * CABIN_MULTIPLIERS[cabin];
+    const surgeFare = (parseFloat(flightResp.surgeFare) || baseFare) * CABIN_MULTIPLIERS[cabin];
 
     bookingSession.flightData = {
-        origin, destination, departDate,
+        origin,
+        destination,
+        departDate,
         distance: Math.round(distance),
         flightTime: flightTime.toFixed(2),
         baseFare: parseFloat(baseFare.toFixed(2)),
@@ -1561,6 +1590,7 @@ async function calculateAndBook() {
         passengers,
         cabin,
         serviceType,
+        departTime: charterDepartTime,
         totalForPassengers: parseFloat((surgeFare * passengers).toFixed(2))
     };
 
@@ -1570,6 +1600,7 @@ async function calculateAndBook() {
     document.getElementById('detailBase').textContent = '$' + bookingSession.flightData.baseFare.toFixed(2);
     document.getElementById('detailPassengers').textContent = passengers;
     document.getElementById('detailTotal').textContent = '$' + bookingSession.flightData.totalForPassengers.toFixed(2);
+    document.getElementById('detailArrival').textContent = flightResp.arrivalTime || 'N/A';
 
     document.getElementById('flightDetails').style.display = 'block';
     showNotification('Search Complete', 'Flight details calculated', 'success');
@@ -1843,6 +1874,7 @@ async function completeBooking() {
         destination: bookingSession.flightData.destination,
         departDate: bookingSession.flightData.departDate,
         serviceType: bookingSession.flightData.serviceType,
+        departTime: bookingSession.flightData.departTime || '',
         flightTime: bookingSession.flightData.flightTime,
         passengers: bookingSession.flightData.passengers,
         totalPrice: bookingSession.flightData.totalForPassengers,
@@ -1855,7 +1887,8 @@ async function completeBooking() {
         paxGender: bookingSession.passengers[0]?.gender || '',
         paxPassport: bookingSession.passengers[0]?.passport || '',
         paxPhone: bookingSession.passengers[0]?.phone || '',
-        paxCabin: bookingSession.flightData.cabin
+        paxCabin: bookingSession.flightData.cabin,
+        passengerDetails: bookingSession.passengers
     };
 
     const result = await apiPost(bookingData);
@@ -1877,7 +1910,17 @@ async function completeBooking() {
             currency: 'USD',
             promoCode: null
         };
-        document.getElementById('bookingForm').reset();
+        document.querySelectorAll('.booking-form input').forEach(el => {
+            if (el.type === 'number') return;
+            if (el.type === 'checkbox') el.checked = false;
+            else el.value = '';
+        });
+        document.getElementById('tripType').value = 'oneway';
+        document.getElementById('serviceType').value = 'EA';
+        document.getElementById('passengers').value = '1';
+        document.getElementById('cabin').value = 'Economy';
+        handleTripType();
+        handleServiceType();
         document.getElementById('promoCode').value = '';
         document.getElementById('promoStatus').innerHTML = '';
         
@@ -1919,6 +1962,34 @@ async function loadDashboard() {
         document.getElementById('bookingsList').innerHTML = html || '<p>No bookings found</p>';
     }
 
+    const eventsResp = await apiGet({ action: 'getEvents' });
+    if (eventsResp.success) {
+        const eventsHtml = (eventsResp.events || []).map(evt => `
+            <div class="card">
+                <div class="card-header"><h3>${evt.title || 'Event'}</h3></div>
+                <p><strong>Date:</strong> ${evt.date || 'TBD'}</p>
+                <p>${evt.description || ''}</p>
+                ${evt.link ? `<button class="btn-secondary" onclick="handleSectionClick('${evt.link}')">Open Event</button>` : ''}
+            </div>
+        `).join('');
+        document.getElementById('eventsList').innerHTML = eventsHtml || '<p>No upcoming events.</p>';
+    }
+
+    const docsResp = await apiGet({ action: 'getDocuments' });
+    if (docsResp.success) {
+        const docsHtml = (docsResp.documents || []).map(doc => `
+            <div class="card" style="position: relative;">
+                ${doc.confidential ? '<div style="position:absolute;top:12px;right:12px;background:#1e293b;color:white;padding:0.2rem 0.5rem;border-radius:4px;font-size:0.75rem;">LOCKED</div>' : ''}
+                <div class="card-header"><h3>${doc.title || 'Document'}</h3></div>
+                <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+                    ${doc.link ? `<button class="btn-secondary" onclick="handleSectionClick('${doc.link}')">View</button>` : ''}
+                    ${doc.confidential ? `<button class="btn-primary" onclick="requestDocumentAccess('${(doc.title || '').replace(/'/g, "\\'")}')">Request Access</button>` : ''}
+                </div>
+            </div>
+        `).join('');
+        document.getElementById('documentsList').innerHTML = docsHtml || '<p>No documents available.</p>';
+    }
+
     // Load account info
     let accountHtml = `
         <div class="card">
@@ -1929,7 +2000,13 @@ async function loadDashboard() {
                 <div><strong>Miles Balance:</strong> ${(currentUser.miles || 0).toLocaleString()}</div>
                 <div><strong>Account Status:</strong> ${getStatusText(currentUser.status)}</div>
             </div>
-            <button class="btn-primary" onclick="editProfile()" style="margin-top: 1rem;">Edit Profile</button>
+            <div style="display:grid;gap:0.75rem;margin-top:1rem;">
+                <input id="editName" type="text" value="${currentUser.name || ''}" placeholder="Full name">
+                <input id="editPassword" type="password" placeholder="New password">
+                <input id="editPhone" type="text" placeholder="Phone number">
+                <button class="btn-primary" onclick="editProfile()">Save Account Updates</button>
+                <button class="btn-secondary" onclick="submitTravelAgentRequest()">Request Travel Agent Role</button>
+            </div>
         </div>
     `;
     document.getElementById('accountContent').innerHTML = accountHtml;
@@ -1945,11 +2022,11 @@ function getStatusText(status) {
     return statuses[status] || 'Unknown';
 }
 
-function switchTab(tabName) {
+function switchTab(tabName, clickedEl) {
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
     
-    event.target.classList.add('active');
+    if (clickedEl) clickedEl.classList.add('active');
     document.getElementById(tabName).classList.add('active');
     
     // Load specific content when tab is clicked
@@ -1972,10 +2049,9 @@ async function loadSystemStatus() {
         
         Object.entries(data.status).forEach(([service, status]) => {
             const statusColor = status === 'OPERATIONAL' ? 'var(--success)' : status === 'MAINTENANCE' ? 'var(--warning)' : 'var(--danger)';
-            const statusEmoji = status === 'OPERATIONAL' ? '✓' : '⚠';
             html += `<div style="display: flex; justify-content: space-between; padding: 1rem; background: rgba(74, 144, 226, 0.05); border-radius: 8px;">
                 <strong>${service}:</strong>
-                <span style="color: ${statusColor}; font-weight: 600;">${statusEmoji} ${status}</span>
+                <span style="color: ${statusColor}; font-weight: 600;">${status}</span>
             </div>`;
         });
         
@@ -2031,7 +2107,7 @@ async function submitIssueReport() {
         return;
     }
     
-    const btn = event.target;
+    const btn = document.querySelector('#issuesContent .btn-primary');
     btn.classList.add('loading');
     btn.disabled = true;
     
@@ -2055,22 +2131,113 @@ async function submitIssueReport() {
 }
 
 function viewETicket(bookingRef) {
-    showNotification('E-Ticket', 'Electronic ticket generated for ' + bookingRef, 'info');
-    // Implementation for full e-ticket display
+    apiGet({ action: 'getETicket', bookingRef }).then(data => {
+        if (!data.success || !data.booking) {
+            showNotification('E-Ticket', data.message || 'Unable to load ticket', 'error');
+            return;
+        }
+        const b = data.booking;
+        document.getElementById('mainPage').style.display = 'none';
+        document.getElementById('dashboardPage').style.display = 'none';
+        document.getElementById('adminPage').style.display = 'none';
+        document.getElementById('eticketPage').style.display = 'block';
+        document.getElementById('eticketContent').innerHTML = `
+            <div class="eticket-header">
+                <h2>Express Airways E-Ticket</h2>
+                <p>Booking Reference: ${b.BookingRef || bookingRef}</p>
+            </div>
+            <div class="eticket-section"><h4>Itinerary</h4><p>${b.Origin || ''} to ${b.Destination || ''} on ${b.DepartDate || ''}</p></div>
+            <div class="eticket-section"><h4>Passenger</h4><p>${b.PaxName || ''} | ${b.PaxGender || ''} | DOB ${b.PaxDOB || ''}</p></div>
+            <div class="eticket-section"><h4>Booking Details</h4><p>Cabin: ${b.PaxCabin || ''}, Service: ${b.ServiceType || ''}, Seat: ${b.SelectedSeat || 'Assigned at check-in'}</p></div>
+            <div class="eticket-section"><h4>Payment and Terms</h4><p>Method: ${b.PaymentMethod || ''}, Total: $${b.TotalPrice || ''}. By using this ticket, traveler accepts terms, privacy, and cancellation policies.</p></div>
+            <div class="eticket-section"><h4>Notice</h4><p>This is an electronically generated transportation document and may be verified against the booking system in real time.</p></div>
+        `;
+    });
+}
+
+function backFromETicket() {
+    document.getElementById('eticketPage').style.display = 'none';
+    if (document.getElementById('dashboardPage').style.display === 'block') {
+        loadDashboard();
+    } else {
+        document.getElementById('mainPage').style.display = 'block';
+    }
+}
+
+function printETicket() {
+    window.print();
 }
 
 function changeBooking(bookingRef) {
-    showNotification('Change Booking', 'Modify your booking ' + bookingRef, 'info');
+    const newDate = prompt('Enter new departure date (YYYY-MM-DD):');
+    if (!newDate) return;
+    apiPost({ action: 'changeBooking', bookingRef, email: currentUser.email, departDate: newDate })
+        .then(resp => {
+            if (resp.success) {
+                showNotification('Booking Updated', 'Changes saved for ' + bookingRef, 'success');
+                loadDashboard();
+            } else {
+                showNotification('Update Failed', resp.message || 'Unable to update booking', 'error');
+            }
+        });
 }
 
 function cancelBooking(bookingRef) {
     if (confirm('Are you sure you want to cancel this booking? This action cannot be undone.')) {
-        showNotification('Cancellation Requested', 'Your booking has been cancelled', 'success');
+        apiPost({ action: 'cancel', bookingRef, email: currentUser.email })
+            .then(resp => {
+                if (resp.success) {
+                    showNotification('Cancellation Requested', 'Your booking has been cancelled', 'success');
+                    loadDashboard();
+                } else {
+                    showNotification('Cancellation Failed', resp.message || 'Unable to cancel booking', 'error');
+                }
+            });
     }
 }
 
 function editProfile() {
-    showNotification('Edit Profile', 'Profile editing functionality coming soon', 'info');
+    const fullName = document.getElementById('editName')?.value?.trim();
+    const newPassword = document.getElementById('editPassword')?.value?.trim();
+    const phone = document.getElementById('editPhone')?.value?.trim();
+    apiPost({
+        action: 'updateAccount',
+        email: currentUser.email,
+        fullName,
+        newPassword,
+        phone
+    }).then(resp => {
+        if (resp.success) {
+            if (fullName) currentUser.name = fullName;
+            localStorage.setItem('user', JSON.stringify(currentUser));
+            updateNav();
+            showNotification('Account Updated', 'Your account settings have been saved', 'success');
+            loadDashboard();
+        } else {
+            showNotification('Update Failed', resp.message || 'Unable to save account settings', 'error');
+        }
+    });
+}
+
+function requestDocumentAccess(docTitle) {
+    apiPost({ action: 'requestDoc', email: currentUser.email, docTitle }).then(resp => {
+        if (resp.success) {
+            showNotification('Request Submitted', `Access request sent for ${docTitle}`, 'success');
+        } else {
+            showNotification('Request Failed', resp.message || 'Unable to submit request', 'error');
+        }
+    });
+}
+
+function submitTravelAgentRequest() {
+    apiPost({ action: 'travelAgent', email: currentUser.email }).then(resp => {
+        if (resp.success) {
+            showNotification('Submitted', 'Travel agent role request has been processed', 'success');
+            loadDashboard();
+        } else {
+            showNotification('Request Failed', resp.message || 'Unable to process request', 'error');
+        }
+    });
 }
 
 // ================= ADMIN =================
@@ -2083,40 +2250,39 @@ async function loadAdmin() {
 // ================= HOMEPAGE =================
 async function loadHomepage() {
     try {
-        // Load hero data
-        const heroData = await apiGet({ action: 'getHero' });
-        if (heroData.success && heroData.hero) {
-            document.getElementById('heroMain').textContent = heroData.hero.headline || 'Reliable. Sovereign. Global.';
-            document.getElementById('heroSub').textContent = heroData.hero.subheader || 'Express Airways - Professional Flight Services Worldwide';
-            if (heroData.hero.image) {
-                document.querySelector('.hero').style.backgroundImage = `url(${heroData.hero.image})`;
+        const data = await apiGet({ action: 'getLiveState' });
+        if (data && data.success && data.hero) {
+            document.getElementById('heroMain').textContent = data.hero.headline || 'Reliable. Sovereign. Global.';
+            document.getElementById('heroSub').textContent = data.hero.subheader || 'Express Airways - Professional Flight Services Worldwide';
+            if (data.hero.image) {
+                document.querySelector('.hero').style.backgroundImage = `url(${data.hero.image})`;
                 document.querySelector('.hero').style.backgroundSize = 'cover';
                 document.querySelector('.hero').style.backgroundPosition = 'center';
+            } else {
+                document.querySelector('.hero').style.backgroundImage = '';
             }
         }
-    } catch (error) {
-        console.log('Hero data loading failed, using defaults');
-    }
 
-    try {
-        // Load sections
-        const data = await apiGet({ action: 'getSections' });
-        
         if (data.success && data.sections && data.sections.length > 0) {
         const container = document.getElementById('sectionsContainer');
         container.innerHTML = '';
 
         data.sections.forEach((sec, idx) => {
+            const title = sec.title || sec.Title || ('Section ' + (idx + 1));
+            const description = sec.description || sec.Description || 'Professional services and solutions';
+            const link = sec.link || sec.Link || '#';
+            const image = sec.image || sec.Image || 'https://via.placeholder.com/500x300';
+            const buttonText = sec.buttonText || sec.ButtonText || 'Learn More';
             const div = document.createElement("div");
             div.className = "section-card";
             div.innerHTML = `
                 <div class="section-content">
-                    <h3>${sec.title || 'Section ' + (idx + 1)}</h3>
-                    <p>${sec.description || 'Professional services and solutions'}</p>
-                    <button class="btn-secondary" onclick="handleSectionClick('${sec.link || '#'}')">${sec.buttonText || 'Learn More'}</button>
+                    <h3>${title}</h3>
+                    <p>${description}</p>
+                    <button class="btn-secondary" onclick="handleSectionClick('${link}')">${buttonText}</button>
                 </div>
                 <div class="section-image">
-                    <img src="${sec.image || 'https://via.placeholder.com/500x300'}" alt="${sec.title}" onerror="this.src='https://via.placeholder.com/500x300'">
+                    <img src="${image}" alt="${title}" onerror="this.src='https://via.placeholder.com/500x300'">
                 </div>
             `;
             container.appendChild(div);
@@ -2158,7 +2324,9 @@ async function loadHomepage() {
     </div>
 `;
     }
-}
+    } catch (error) {
+        console.log('Sections loading failed, using defaults');
+    }
 }
 function handleSectionClick(link) {
     if (link && link !== '#') {
@@ -2187,6 +2355,34 @@ function startLiveUpdates() {
 function stopLiveUpdates() {
     if (updateInterval) {
         clearInterval(updateInterval);
+    }
+}
+
+function persistBookingDraft() {
+    const fields = ['tripType', 'serviceType', 'origin', 'destination', 'departDate', 'returnDate', 'numFlights', 'passengers', 'cabin', 'promoCode', 'charterDepartTime'];
+    const draft = {};
+    fields.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) draft[id] = el.value;
+    });
+    localStorage.setItem('bookingDraft', JSON.stringify(draft));
+}
+
+function restoreBookingDraft() {
+    const raw = localStorage.getItem('bookingDraft');
+    if (!raw) return;
+    try {
+        const draft = JSON.parse(raw);
+        Object.keys(draft).forEach(id => {
+            const el = document.getElementById(id);
+            if (el && draft[id] !== undefined && draft[id] !== null && draft[id] !== '') {
+                el.value = draft[id];
+            }
+        });
+        handleTripType();
+        handleServiceType();
+    } catch (_) {
+        localStorage.removeItem('bookingDraft');
     }
 }
 
@@ -2239,6 +2435,8 @@ window.addEventListener('load', () => {
     
     updateNav();
     loadHomepage();
+    loadNotices();
+    startLiveUpdates();
 
     // Set default dates
     const today = new Date();
@@ -2249,6 +2447,15 @@ window.addEventListener('load', () => {
     document.getElementById("returnDate").min = minDate;
     document.getElementById("departDate").valueAsDate = today;
     document.getElementById("returnDate").valueAsDate = returnDate;
+    handleServiceType();
+    restoreBookingDraft();
+
+    ['tripType', 'serviceType', 'origin', 'destination', 'departDate', 'returnDate', 'numFlights', 'passengers', 'cabin', 'promoCode', 'charterDepartTime']
+        .forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('input', persistBookingDraft);
+            if (el) el.addEventListener('change', persistBookingDraft);
+        });
 
     // Modal close on background click
     document.querySelectorAll('.modal').forEach(modal => {

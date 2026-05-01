@@ -1,20 +1,26 @@
-// ✈️ EXPRESS AIRWAYS - PROFESSIONAL BACKEND WITH REAL DATA PERSISTENCE 🚀
+// EXPRESS AIRWAYS - BACKEND WITH SHEETS DATA PERSISTENCE
 const SHEET_URL = "https://docs.google.com/spreadsheets/d/1J39EDm_hZWFtQ-fFg2WZQul9sIP6zca7ooWOrXUhdao/edit";
 
-// � ADVERTISED COMPANIES (Aircraft Manufacturers)
+// APPROVED COMPANIES (Aircraft Manufacturers)
 const APPROVED_AIRCRAFT_MANUFACTURERS = [
-  "Boeing", "Airbus", "Bombardier", "Embraer", "ATR", "Cessna", "Britten-Norman", "De Havilland"
+  "Boeing",
+  "Canadair"
 ];
 
-// ✨ MILEAGE TIERS
+// MILEAGE TIERS
 const MILEAGE_TIERS = {
   "basic": { minMiles: 0, maxMiles: 24999, multiplier: 1.0, benefits: ["Base pricing"] },
   "silver": { minMiles: 25000, maxMiles: 49999, multiplier: 1.1, benefits: ["10% bonus miles", "Priority support"] },
   "titanium": { minMiles: 50000, maxMiles: 99999, multiplier: 1.25, benefits: ["25% bonus miles", "Free seat upgrades", "Priority boarding"] },
   "gold": { minMiles: 100000, maxMiles: 999999, multiplier: 1.5, benefits: ["50% bonus miles", "Complimentary upgrades", "Exclusive lounge access", "Priority everything"] }
 };
+const CABIN_MULTIPLIERS = {
+  Economy: 1.0,
+  Business: 2.5,
+  FirstClass: 5.0
+};
 
-// 🎟️ PROMO CODE DATABASE (IN-MEMORY CACHE)
+// PROMO CODE DATABASE (IN-MEMORY CACHE)
 let PROMO_CODES_CACHE = {};
 
 function loadPromoCodes() {
@@ -71,7 +77,7 @@ function validatePromoCode(code) {
   };
 }
 
-// 🌍 CACHED AIRPORT DATABASE
+// CACHED AIRPORT DATABASE
 let AIRPORT_CACHE = {
   "JFK": {name: "John F. Kennedy", lat: 40.6413, lng: -73.7781, type: "international", city: "New York", country: "USA"},
   "LAX": {name: "Los Angeles International", lat: 33.9425, lng: -118.4081, type: "international", city: "Los Angeles", country: "USA"},
@@ -89,7 +95,7 @@ let AIRPORT_CACHE = {
   "ATL": {name: "Atlanta", lat: 33.6407, lng: -84.4277, type: "domestic", city: "Atlanta", country: "USA"},
 };
 
-// ✅ DATABASE HELPERS
+// DATABASE HELPERS
 function getSheet(sheetName) {
   const ss = SpreadsheetApp.openByUrl(SHEET_URL);
   return ss.getSheetByName(sheetName);
@@ -99,12 +105,48 @@ function sheetToArray(sheet) {
   if (!sheet) return [];
   const data = sheet.getDataRange().getValues();
   if (data.length === 0) return [];
-  const headers = data[0];
+  const headers = data[0].map(h =>
+    (h || "")
+      .toString()
+      .replace(/^\uFEFF/, "")
+      .trim()
+  );
   return data.slice(1).map(row => {
     let obj = {};
-    headers.forEach((h, i) => { if (h) obj[h.toString()] = row[i]; });
+    headers.forEach((h, i) => {
+      if (h) obj[h] = row[i];
+    });
     return obj;
   });
+}
+
+function normalizeText(v) {
+  return (v || "").toString().replace(/^\uFEFF/, "").trim();
+}
+
+function parseJsonField(value, fallback) {
+  if (value === undefined || value === null || value === "") return fallback;
+  if (typeof value === "object") return value;
+  try {
+    return JSON.parse(value);
+  } catch (e) {
+    return fallback;
+  }
+}
+
+function parseFormEncodedBody(raw) {
+  const obj = {};
+  if (!raw) return obj;
+  raw.split("&").forEach(pair => {
+    if (!pair) return;
+    const idx = pair.indexOf("=");
+    const k = idx >= 0 ? pair.substring(0, idx) : pair;
+    const v = idx >= 0 ? pair.substring(idx + 1) : "";
+    const key = decodeURIComponent((k || "").replace(/\+/g, " "));
+    const value = decodeURIComponent((v || "").replace(/\+/g, " "));
+    if (key) obj[key] = value;
+  });
+  return obj;
 }
 
 function findInSheet(sheet, key, value) {
@@ -125,20 +167,45 @@ function updateSheetCell(sheet, row, col, value) {
   sheet.getRange(row, col).setValue(value);
 }
 
-// 🏭 AIRCRAFT CONFIGURATIONS (Distance-based)
+function getHeaderIndexMap(sheet) {
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const map = {};
+  headers.forEach((h, idx) => {
+    if (h) map[h.toString().trim()] = idx + 1;
+  });
+  return map;
+}
+
+function updateSheetByHeader(sheet, row, field, value) {
+  const map = getHeaderIndexMap(sheet);
+  if (!map[field]) return false;
+  sheet.getRange(row, map[field]).setValue(value);
+  return true;
+}
+
+function buildRowByHeaders(sheet, dataObj) {
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  return headers.map(h => {
+    const key = h ? h.toString().trim() : "";
+    if (!key) return "";
+    return dataObj[key] !== undefined ? dataObj[key] : "";
+  });
+}
+
+// AIRCRAFT CONFIGURATIONS (Distance-based)
 function getAircraftConfig(distanceMiles) {
   if (distanceMiles > 5000) {
     return { model: "Boeing 777", rows: 10, seatsPerRow: 10, manufacturer: "Boeing" };
   } else if (distanceMiles > 2000) {
-    return { model: "Airbus A350", rows: 9, seatsPerRow: 9, manufacturer: "Airbus" };
+    return { model: "Boeing 787", rows: 9, seatsPerRow: 9, manufacturer: "Boeing" };
   } else if (distanceMiles > 500) {
     return { model: "Boeing 737", rows: 8, seatsPerRow: 7, manufacturer: "Boeing" };
   } else {
-    return { model: "Airbus A220", rows: 6, seatsPerRow: 5, manufacturer: "Airbus" };
+    return { model: "Canadair CRJ900", rows: 6, seatsPerRow: 5, manufacturer: "Canadair" };
   }
 }
 
-// 🪑 SEAT MANAGEMENT - Generate real aircraft layout
+// SEAT MANAGEMENT - Generate real aircraft layout
 function generateSeatMap(bookingRef, distanceMiles) {
   const aircraft = getAircraftConfig(distanceMiles);
   const seats = [];
@@ -171,7 +238,7 @@ function generateSeatMap(bookingRef, distanceMiles) {
   return { seats, aircraft };
 }
 
-// 📐 HAVERSINE DISTANCE
+// HAVERSINE DISTANCE
 function haversineDistance(lat1, lng1, lat2, lng2) {
   const R = 3959;
   const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -183,7 +250,7 @@ function haversineDistance(lat1, lng1, lat2, lng2) {
   return R * c;
 }
 
-// ✈️ CALCULATE FLIGHT TIME
+// CALCULATE FLIGHT TIME
 function calculateFlightTime(origin, destination) {
   const orig = validateAirportCode(origin) || AIRPORT_CACHE[origin];
   const dest = validateAirportCode(destination) || AIRPORT_CACHE[destination];
@@ -194,7 +261,7 @@ function calculateFlightTime(origin, destination) {
   return cruiseTime + 0.25;
 }
 
-// 🏅 LOYALTY TIER CALCULATION
+// LOYALTY TIER CALCULATION
 function calculateLoyaltyTier(miles) {
   if (miles >= 100000) return { tier: "gold", multiplier: 1.5, display: "Gold" };
   if (miles >= 50000) return { tier: "titanium", multiplier: 1.25, display: "Titanium" };
@@ -202,7 +269,7 @@ function calculateLoyaltyTier(miles) {
   return { tier: "basic", multiplier: 1.0, display: "Basic" };
 }
 
-// 💰 DYNAMIC FARE CALCULATION WITH PROMO
+// DYNAMIC FARE CALCULATION WITH PROMO
 function calculateBaseFare(origin, destination, serviceType, departDate, promoCode = null) {
   try {
     const orig = validateAirportCode(origin) || AIRPORT_CACHE[origin];
@@ -245,7 +312,7 @@ function calculateBaseFare(origin, destination, serviceType, departDate, promoCo
   }
 }
 
-// 📊 SURGE PRICING
+// SURGE PRICING
 function applySurgePricing(departDate, baseFare) {
   const today = new Date();
   const depart = new Date(departDate);
@@ -257,7 +324,7 @@ function applySurgePricing(departDate, baseFare) {
   return baseFare;
 }
 
-// 🔍 REAL-TIME AIRPORT DATA
+// REAL-TIME AIRPORT DATA
 function validateAirportCode(code) {
   if (AIRPORT_CACHE[code]) {
     return AIRPORT_CACHE[code];
@@ -372,80 +439,7 @@ function getFlightStatusRealTime(origin, destination) {
   return {operatingAirlines: "Data unavailable", frequency: 0};
 }
 
-// 📐 HAVERSINE DISTANCE
-function haversineDistance(lat1, lng1, lat2, lng2) {
-  const R = 3959;
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLng = (lng2 - lng1) * Math.PI / 180;
-  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-            Math.sin(dLng/2) * Math.sin(dLng/2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  return R * c;
-}
-
-// ✈️ CALCULATE FLIGHT TIME
-function calculateFlightTime(origin, destination) {
-  const orig = validateAirportCode(origin) || AIRPORT_CACHE[origin];
-  const dest = validateAirportCode(destination) || AIRPORT_CACHE[destination];
-  if (!orig || !dest) return 0;
-
-  const distance = haversineDistance(orig.lat, orig.lng, dest.lat, dest.lng);
-  const cruiseTime = distance / 500;
-  return cruiseTime + 0.25;
-}
-
-// 💰 DYNAMIC FARE CALCULATION
-function calculateBaseFare(origin, destination, serviceType, departDate) {
-  try {
-    const orig = validateAirportCode(origin) || AIRPORT_CACHE[origin];
-    const dest = validateAirportCode(destination) || AIRPORT_CACHE[destination];
-
-    if (!orig || !dest) return 150;
-
-    const distance = haversineDistance(orig.lat, orig.lng, dest.lat, dest.lng);
-
-    let fare = 100 + (distance * 0.10);
-
-    if (serviceType === "EA") fare *= 1.25;
-    else if (serviceType === "EX") fare *= 0.95;
-    else if (serviceType === "EC") fare *= 1.75;
-
-    const dept = new Date(departDate);
-    const dayOfWeek = dept.getDay();
-    if (dayOfWeek === 5 || dayOfWeek === 6 || dayOfWeek === 0) {
-      fare *= 1.15;
-    }
-
-    fare *= 1.08;
-
-    return Math.round(fare);
-  } catch(e) {
-    return 150;
-  }
-}
-
-// 📊 SURGE PRICING
-function applySurgePricing(departDate, baseFare) {
-  const today = new Date();
-  const depart = new Date(departDate);
-  const daysUntil = Math.ceil((depart - today) / (1000 * 60 * 60 * 24));
-
-  if (daysUntil <= 3 && daysUntil > 0) return Math.round(baseFare * 1.35);
-  if (daysUntil <= 7 && daysUntil > 0) return Math.round(baseFare * 1.20);
-  if (daysUntil <= 0) return 0;
-  return baseFare;
-}
-
-// 🏅 LOYALTY TIER CALCULATION
-function calculateLoyaltyTier(miles) {
-  if (miles >= 100000) return {tier: "Platinum", multiplier: 1.5};
-  if (miles >= 50000) return {tier: "Gold", multiplier: 1.25};
-  if (miles >= 25000) return {tier: "Silver", multiplier: 1.1};
-  return {tier: "Bronze", multiplier: 1.0};
-}
-
-// 🔑 BOOKING LIMITS Check
+// BOOKING LIMITS Check
 function checkBookingLimits(email, departDate) {
   const bookingsSheet = getSheet("Bookings");
   const bookings = sheetToArray(bookingsSheet);
@@ -459,7 +453,72 @@ function checkBookingLimits(email, departDate) {
   return todayBookings.length < 2; // Max 2 bookings per day
 }
 
-// 📋 ISSUE REPORTING
+function getStatusValue(v) {
+  const n = parseInt(v, 10);
+  return Number.isFinite(n) ? n : 1;
+}
+
+function getUserRecordByEmail(email) {
+  const users = sheetToArray(getSheet("Users"));
+  return users.find(u => (u.Email || "").toString().toLowerCase() === (email || "").toString().toLowerCase()) || null;
+}
+
+function readHeroConfig() {
+  const hero = {
+    headline: "Reliable. Sovereign. Global.",
+    subheader: "Express Airways",
+    image: ""
+  };
+  const configSheet = getSheet("Config");
+  if (configSheet) {
+    const rows = configSheet.getDataRange().getValues();
+    const headers = (rows[0] || []).map(v => (v || "").toString().trim());
+    const keyIndex = headers.indexOf("Key");
+    const valueIndex = headers.indexOf("Value");
+    if (keyIndex >= 0 && valueIndex >= 0) {
+      for (let i = 1; i < rows.length; i++) {
+        const key = (rows[i][keyIndex] || "").toString().trim();
+        const value = rows[i][valueIndex];
+        if (!key) continue;
+        if (key === "Hero_Image") hero.image = value || hero.image;
+        if (key === "Main_Headline") hero.headline = value || hero.headline;
+        if (key === "Sub_Header") hero.subheader = value || hero.subheader;
+      }
+      return hero;
+    }
+  }
+
+  const heroSheet = getSheet("Hero");
+  if (!heroSheet) return hero;
+
+  const rows = heroSheet.getDataRange().getValues();
+  if (rows.length <= 1) return hero;
+  const headers = rows[0].map(v => (v || "").toString().trim());
+
+  if (headers.includes("Headline") || headers.includes("Subheader") || headers.includes("Image")) {
+    const first = sheetToArray(heroSheet)[0] || {};
+    hero.headline = first.Headline || hero.headline;
+    hero.subheader = first.Subheader || hero.subheader;
+    hero.image = first.Image || hero.image;
+    return hero;
+  }
+
+  const keyIndex = headers.indexOf("Key");
+  const valueIndex = headers.indexOf("Value");
+  if (keyIndex >= 0 && valueIndex >= 0) {
+    for (let i = 1; i < rows.length; i++) {
+      const key = (rows[i][keyIndex] || "").toString().trim();
+      const value = rows[i][valueIndex];
+      if (!key) continue;
+      if (key === "Hero_Image") hero.image = value || hero.image;
+      if (key === "Main_Headline") hero.headline = value || hero.headline;
+      if (key === "Sub_Header") hero.subheader = value || hero.subheader;
+    }
+  }
+  return hero;
+}
+
+// ISSUE REPORTING
 function reportIssue(email, subject, description, severity = "normal") {
   try {
     const issueSheet = getSheet("Issues");
@@ -473,7 +532,7 @@ function reportIssue(email, subject, description, severity = "normal") {
   }
 }
 
-// 📊 STATUS TRACKING
+// STATUS TRACKING
 function getSystemStatus() {
   try {
     const statusSheet = getSheet("SystemStatus");
@@ -497,7 +556,7 @@ function getSystemStatus() {
   }
 }
 
-// 📧 EMAIL NOTIFICATIONS (uses Google Apps Script native email)
+// EMAIL NOTIFICATIONS (uses Google Apps Script native email)
 function sendBookingConfirmation(email, bookingRef, origin, destination, departDate) {
   try {
     const subject = "Booking Confirmation - Express Airways - Ref: " + bookingRef;
@@ -533,6 +592,56 @@ function doGet(e) {
   try {
     const params = e ? e.parameter : {};
     const action = params.action;
+
+    // GET USER BOOKINGS
+    if (action === "getUserBookings") {
+      const bookingsSheet = getSheet("Bookings");
+      const seatSheet = getSheet("SeatAssignments");
+      const email = params.email;
+      const userId = params.userId;
+      let resolvedEmail = email;
+
+      if (!resolvedEmail && userId) {
+        const users = sheetToArray(getSheet("Users"));
+        const matchedUser = users.find(u =>
+          (u.UserID || "").toString() === userId.toString() ||
+          (u.Email || "").toString().toLowerCase() === userId.toString().toLowerCase()
+        );
+        if (matchedUser) resolvedEmail = matchedUser.Email;
+      }
+
+      if (!resolvedEmail) {
+        return ContentService.createTextOutput(JSON.stringify({
+          success: false,
+          message: "email or userId is required"
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+
+      const seatAssignments = seatSheet ? sheetToArray(seatSheet) : [];
+      const seatsByBooking = {};
+      seatAssignments.forEach(row => {
+        if (row.BookingRef) seatsByBooking[row.BookingRef] = row.Seat || "";
+      });
+
+      const normalizedEmail = (resolvedEmail || "").toString().toLowerCase();
+      const rows = sheetToArray(bookingsSheet).filter(r => (r.Email || "").toString().toLowerCase() === normalizedEmail);
+      const data = rows.map(r => ({
+        bookingRef: r.BookingRef,
+        status: r.Status || "CONFIRMED",
+        seat: seatsByBooking[r.BookingRef] || "",
+        flightData: {
+          origin: r.Origin || "",
+          destination: r.Destination || "",
+          departDate: r.DepartDate || "",
+          passengers: parseInt(r.Passengers, 10) || 1
+        }
+      }));
+
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        data: data
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
 
     // VALIDATE AIRPORT
     if (action === "validateAirport") {
@@ -572,20 +681,31 @@ function doGet(e) {
       }
 
       const time = calculateFlightTime(params.origin, params.destination);
-      const baseFare = calculateBaseFare(params.origin, params.destination, params.serviceType || "EA", params.departDate);
-      const surgeFare = applySurgePricing(params.departDate, baseFare);
+      const baseFareRaw = calculateBaseFare(params.origin, params.destination, params.serviceType || "EA", params.departDate);
+      const surgeFareRaw = applySurgePricing(params.departDate, baseFareRaw);
+      const cabinMultiplier = CABIN_MULTIPLIERS[params.cabin] || 1.0;
+      const baseFare = Math.round(baseFareRaw * cabinMultiplier);
+      const surgeFare = Math.round(surgeFareRaw * cabinMultiplier);
       const distance = haversineDistance(origAirport.lat, origAirport.lng, destAirport.lat, destAirport.lng);
       const destWeather = getDestinationWeather(destAirport.lat, destAirport.lng);
       const flightStatus = getFlightStatusRealTime(params.origin, params.destination);
+      const arrivalDate = new Date(params.departDate);
+      if (params.departTime) {
+        const parts = (params.departTime || "00:00").split(":");
+        arrivalDate.setHours(parseInt(parts[0], 10) || 0, parseInt(parts[1], 10) || 0, 0, 0);
+      }
+      arrivalDate.setMinutes(arrivalDate.getMinutes() + Math.round(time * 60));
 
       return ContentService.createTextOutput(JSON.stringify({
         success: true,
         flightTime: time.toFixed(2),
         baseFare: baseFare,
         surgeFare: surgeFare,
+        cabinMultiplier: cabinMultiplier,
         distanceMiles: distance.toFixed(0),
         origin: origAirport,
         destination: destAirport,
+        arrivalTime: Utilities.formatDate(arrivalDate, Session.getScriptTimeZone(), "yyyy-MM-dd HH:mm"),
         weather: destWeather,
         flightStatus: flightStatus
       })).setMimeType(ContentService.MimeType.JSON);
@@ -644,7 +764,8 @@ function doGet(e) {
       const email = params.email;
 
       const bSheet = getSheet("Bookings");
-      const bookings = sheetToArray(bSheet).filter(r => r.Email === email).map(r => ({
+      const normalizedEmail = (email || "").toString().toLowerCase();
+      const bookings = sheetToArray(bSheet).filter(r => (r.Email || "").toString().toLowerCase() === normalizedEmail).map(r => ({
         bookingRef: r.BookingRef, email: r.Email, status: r.Status, origin: r.Origin, destination: r.Destination,
         departDate: r.DepartDate, flightTime: r.FlightTimes, serviceType: r.ServiceType, totalPrice: r.TotalPrice,
         paxName: r.PaxName, paxCabin: r.PaxCabin
@@ -669,7 +790,7 @@ function doGet(e) {
           const tierData = calculateLoyaltyTier(u.Miles || 0);
           user = {
             name: u.FullName, email: u.Email, role: u.Role,
-            miles: u.Miles || 0, status: u.Status || 1, loyaltyTier: tierData.tier
+            miles: u.Miles || 0, status: getStatusValue(u.Status), loyaltyTier: tierData.tier
           };
           break;
         }
@@ -712,18 +833,10 @@ function doGet(e) {
 
     // GET HERO DATA
     if (action === "getHero") {
-      const heroSheet = getSheet("Hero");
-      if (heroSheet) {
-        const data = sheetToArray(heroSheet)[0] || {};
-        return ContentService.createTextOutput(JSON.stringify({
-          success: true,
-          hero: {
-            headline: data.Headline || "Reliable. Sovereign. Global.",
-            subheader: data.Subheader || "Express Airways",
-            image: data.Image || ""
-          }
-        })).setMimeType(ContentService.MimeType.JSON);
-      }
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        hero: readHeroConfig()
+      })).setMimeType(ContentService.MimeType.JSON);
     }
 
     // GET SECTIONS
@@ -754,22 +867,78 @@ function doGet(e) {
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
+    if (action === "getEvents") {
+      const eSheet = getSheet("Events");
+      const events = sheetToArray(eSheet).map(r => ({
+        date: r.Date ? Utilities.formatDate(new Date(r.Date), Session.getScriptTimeZone(), "MMM dd, yyyy") : "",
+        title: r.Title || "",
+        description: r.Description || "",
+        link: r.Link || "",
+        image: r.Image || ""
+      }));
+      return ContentService.createTextOutput(JSON.stringify({ success: true, events })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    if (action === "getDocuments") {
+      const dSheet = getSheet("Documents");
+      const documents = sheetToArray(dSheet).map(r => ({
+        title: r.Title || "",
+        link: r.Link || "",
+        confidential: r.Confidential === true || r.Confidential === "TRUE",
+        image: r.Image || ""
+      }));
+      return ContentService.createTextOutput(JSON.stringify({ success: true, documents })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // GET LIVE STATE (homepage + notices + status in one call)
+    if (action === "getLiveState") {
+      const response = {
+        success: true,
+        hero: {
+          headline: "Reliable. Sovereign. Global.",
+          subheader: "Express Airways - Professional Flight Services Worldwide",
+          image: ""
+        },
+        sections: [],
+        notices: [],
+        status: getSystemStatus(),
+        timestamp: new Date().toISOString()
+      };
+
+      response.hero = readHeroConfig();
+
+      const sectionSheet = getSheet("Sections");
+      if (sectionSheet) {
+        response.sections = sheetToArray(sectionSheet);
+      }
+
+      const noticeSheet = getSheet("Notices");
+      if (noticeSheet) {
+        response.notices = sheetToArray(noticeSheet);
+      }
+
+      return ContentService.createTextOutput(JSON.stringify(response)).setMimeType(ContentService.MimeType.JSON);
+    }
+
     // GET USER
     if (action === "getUser") {
       const uSheet = getSheet("Users");
       const users = sheetToArray(uSheet);
       for (let u of users) {
-        if (u.Email === params.email || u.UserID === params.userId) {
+        const sameEmail = (u.Email || "").toString().toLowerCase() === (params.email || "").toString().toLowerCase();
+        const sameLegacyId = (u.UserID || "").toString() === (params.userId || "").toString();
+        const sameUserIdAsEmail = (u.Email || "").toString().toLowerCase() === (params.userId || "").toString().toLowerCase();
+        if (sameEmail || sameLegacyId || sameUserIdAsEmail) {
           const tierData = calculateLoyaltyTier(u.Miles || 0);
           return ContentService.createTextOutput(JSON.stringify({
             success: true,
             user: {
-              id: u.UserID,
+              id: u.UserID || u.Email,
               name: u.FullName,
               email: u.Email,
               role: u.Role || "basic",
               miles: u.Miles || 0,
-              status: u.Status || 1,
+              status: getStatusValue(u.Status),
               loyaltyTier: tierData.display
             }
           })).setMimeType(ContentService.MimeType.JSON);
@@ -779,6 +948,16 @@ function doGet(e) {
         success: false,
         error: "User not found"
       })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    if (action === "getETicket") {
+      const bookingRef = params.bookingRef;
+      const bookings = sheetToArray(getSheet("Bookings"));
+      const booking = bookings.find(b => (b.BookingRef || "").toString() === (bookingRef || "").toString());
+      if (!booking) {
+        return ContentService.createTextOutput(JSON.stringify({ success: false, message: "Booking not found" })).setMimeType(ContentService.MimeType.JSON);
+      }
+      return ContentService.createTextOutput(JSON.stringify({ success: true, booking })).setMimeType(ContentService.MimeType.JSON);
     }
 
     // GET HOMEPAGE (fallback for homepage data)
@@ -811,13 +990,16 @@ function doPost(e) {
       try {
         data = JSON.parse(e.postData.contents);
       } catch(err) {
-        data = e.parameter;
+        const parsed = parseFormEncodedBody(e.postData.contents);
+        data = Object.keys(parsed).length > 0 ? parsed : e.parameter;
       }
     } else {
       data = e.parameter;
     }
 
     const action = data.action;
+    data.ancillaries = parseJsonField(data.ancillaries, []);
+    data.passengerDetails = parseJsonField(data.passengerDetails, []);
     const timestamp = new Date().getTime();
     let response = { success: false, message: "Unknown request" };
 
@@ -825,9 +1007,18 @@ function doPost(e) {
     if (action === "login") {
       const sheet = getSheet("Users");
       const users = sheetToArray(sheet);
+      const requestedEmail = normalizeText(data.email).toLowerCase();
+      const requestedPassword = normalizeText(data.password);
       for (let u of users) {
-        if (u.Email === data.email && u.Password === data.password) {
-          if (u.Status && u.Status > 1) {
+        const rowEmail = normalizeText(u.Email).toLowerCase();
+        const rowPassword = normalizeText(u.Password);
+        const emailMatch = rowEmail === requestedEmail;
+        if (emailMatch && rowPassword === requestedPassword) {
+          const statusValue = getStatusValue(u.Status);
+          if (statusValue >= 4) {
+            throw new Error("Account suspended. Contact support.");
+          }
+          if (statusValue === 2) {
             throw new Error("Account suspended. Contact support.");
           }
           const tierData = calculateLoyaltyTier(u.Miles || 0);
@@ -839,7 +1030,7 @@ function doPost(e) {
               email: u.Email, 
               role: tierData.tier,
               miles: u.Miles || 0, 
-              status: u.Status || 1, 
+              status: statusValue,
               loyaltyTier: tierData.display
             }
           };
@@ -852,20 +1043,43 @@ function doPost(e) {
     // SIGNUP
     else if (action === "signup") {
       const sheet = getSheet("Users");
+      if (!sheet) throw new Error("Users sheet not found.");
+
+      const fullName = normalizeText(data.fullName);
+      const email = normalizeText(data.email).toLowerCase();
+      const password = normalizeText(data.password);
+
+      if (!fullName || !email || !password) {
+        throw new Error("Missing required signup fields.");
+      }
+
       const existing = sheetToArray(sheet);
       for (let u of existing) {
-        if (u.Email === data.email) throw new Error("Email already registered.");
+        const existingEmail = normalizeText(u.Email).toLowerCase();
+        if (existingEmail === email) throw new Error("Email already registered.");
       }
-      const userId = Utilities.getUuid();
-      sheet.appendRow([userId, timestamp, data.fullName, data.email, data.password, "basic", 0, 1, new Date()]);
+
+      const row = buildRowByHeaders(sheet, {
+        FullName: fullName,
+        Email: email,
+        Password: password,
+        Role: data.role || "User",
+        Miles: 0,
+        Status: 1,
+        JoinDate: new Date(),
+        Timestamp: new Date(),
+        UpdatedAt: new Date()
+      });
+      sheet.appendRow(row);
       response = {
         success: true,
         user: { 
-          id: userId,
-          name: data.fullName, 
-          email: data.email, 
-          role: "basic", 
+          id: email,
+          name: fullName, 
+          email: email, 
+          role: data.role || "User", 
           miles: 0, 
+          status: 1,
           loyaltyTier: "Basic" 
         }
       };
@@ -895,21 +1109,27 @@ function doPost(e) {
 
     // BOOKING
     else if (action === "booking") {
-      if (!checkBookingLimits(data.email, data.departDate)) {
-        throw new Error("Maximum 2 bookings per day allowed.");
+      const account = getUserRecordByEmail(data.email);
+      const accountStatus = getStatusValue(account ? account.Status : 1);
+      if (accountStatus === 2 || accountStatus === 4) {
+        throw new Error("Booking privileges suspended for this account.");
       }
 
       const bSheet = getSheet("Bookings");
-      const bookingRef = "EA" + Math.random().toString(36).substr(2, 9).toUpperCase();
+      const bookingRef = String(Date.now());
 
       const orig = validateAirportCode(data.origin) || AIRPORT_CACHE[data.origin];
       const dest = validateAirportCode(data.destination) || AIRPORT_CACHE[data.destination];
       const distance = haversineDistance(orig.lat, orig.lng, dest.lat, dest.lng);
       
-      // Calculate base fare with promo
+      // Calculate base fare with promo (all fare math server-side)
       let fare = calculateBaseFare(data.origin, data.destination, data.serviceType || "EA", data.departDate, data.promoCode);
       fare = applySurgePricing(data.departDate, fare);
+      const cabinMultiplier = CABIN_MULTIPLIERS[data.paxCabin] || 1.0;
+      fare *= cabinMultiplier;
       fare *= data.passengers || 1;
+      const ancillariesTotal = (data.ancillaries || []).reduce((sum, anc) => sum + ((parseFloat(anc.price) || 0) * (data.passengers || 1)), 0);
+      fare += ancillariesTotal;
       
       // Get user's loyalty tier for miles multiplier
       const uSheet = getSheet("Users");
@@ -927,15 +1147,29 @@ function doPost(e) {
       
       const milesEarned = Math.round(distance * userTier.multiplier);
 
-      // Record booking
-      bSheet.appendRow([
-        bookingRef, data.email, "CONFIRMED", data.origin, data.destination,
-        data.departDate, calculateFlightTime(data.origin, data.destination), 
-        data.serviceType || "EA", data.passengers || 1, Math.round(fare),
-        data.paymentMethod || "credit", data.paxName || "", data.paxDOB || "", 
-        data.paxGender || "", data.paxPassport || "", data.paxPhone || "", 
-        data.paxCabin || "Economy", new Date()
-      ]);
+      const canAutoApprove = checkBookingLimits(data.email, data.departDate);
+      const bookingStatus = canAutoApprove ? "CONFIRMED" : "PENDING_REVIEW";
+      const bookingRow = buildRowByHeaders(bSheet, {
+        BookingRef: bookingRef,
+        Email: data.email,
+        Status: bookingStatus,
+        Origin: data.origin,
+        Destination: data.destination,
+        DepartDate: data.departDate,
+        FlightTimes: calculateFlightTime(data.origin, data.destination),
+        ServiceType: data.serviceType || "EA",
+        Passengers: data.passengers || 1,
+        TotalPrice: Math.round(fare),
+        PaymentMethod: data.paymentMethod || "credit",
+        PaxName: data.paxName || "",
+        PaxDOB: data.paxDOB || "",
+        PaxGender: data.paxGender || "",
+        PaxPassport: data.paxPassport || "",
+        PaxPhone: data.paxPhone || "",
+        PaxCabin: data.paxCabin || "Economy",
+        Timestamp: new Date()
+      });
+      bSheet.appendRow(bookingRow);
 
       // Update user miles and tier
       if (userRowNum > 0) {
@@ -945,11 +1179,11 @@ function doPost(e) {
         }
         const currentMiles = users[userRowNum - 2].Miles || 0;
         const newMiles = currentMiles - milesDeduction + milesEarned;
-        updateSheetCell(uSheet, userRowNum, 6, newMiles); // Update miles
+        updateSheetByHeader(uSheet, userRowNum, "Miles", newMiles);
         
         // Auto-update tier
         const newTier = calculateLoyaltyTier(newMiles);
-        updateSheetCell(uSheet, userRowNum, 7, newTier.tier);
+        updateSheetByHeader(uSheet, userRowNum, "Role", newTier.display);
       }
 
       // Store seat assignment
@@ -976,9 +1210,10 @@ function doPost(e) {
         }
       }
 
-      response = { 
+      response = {
         success: true, 
         bookingRef: bookingRef, 
+        bookingStatus: bookingStatus,
         milesEarned: milesEarned,
         totalFare: Math.round(fare)
       };
@@ -998,14 +1233,32 @@ function doPost(e) {
       }
     }
 
+    else if (action === "changeBooking") {
+      const bSheet = getSheet("Bookings");
+      const result = findInSheet(bSheet, "BookingRef", data.bookingRef);
+      if (result.row < 0) throw new Error("Booking not found");
+      const rowData = result.data;
+      if ((rowData[1] || "").toString() !== (data.email || "").toString()) {
+        throw new Error("Unauthorized");
+      }
+      if (data.departDate) updateSheetByHeader(bSheet, result.row, "DepartDate", data.departDate);
+      if (data.passengers) updateSheetByHeader(bSheet, result.row, "Passengers", parseInt(data.passengers, 10) || 1);
+      if (data.paxPhone) updateSheetByHeader(bSheet, result.row, "PaxPhone", data.paxPhone);
+      response = { success: true, message: "Booking updated" };
+    }
+
     // UPDATE ACCOUNT
     else if (action === "updateAccount") {
       const uSheet = getSheet("Users");
       const result = findInSheet(uSheet, "Email", data.email);
 
       if (result.row > 0) {
-        if (data.fullName) updateSheetCell(uSheet, result.row, 1, data.fullName);
-        if (data.newPassword) updateSheetCell(uSheet, result.row, 3, data.newPassword);
+        if (data.fullName) updateSheetByHeader(uSheet, result.row, "FullName", data.fullName);
+        if (data.newPassword) updateSheetByHeader(uSheet, result.row, "Password", data.newPassword);
+        if (data.role) updateSheetByHeader(uSheet, result.row, "Role", data.role);
+        if (data.status) updateSheetByHeader(uSheet, result.row, "Status", parseInt(data.status, 10) || 1);
+        if (data.phone) updateSheetByHeader(uSheet, result.row, "Phone", data.phone);
+        updateSheetByHeader(uSheet, result.row, "UpdatedAt", new Date());
         response = { success: true, message: "Account updated." };
       }
     }
@@ -1027,7 +1280,13 @@ function doPost(e) {
     // DOCUMENT REQUEST
     else if (action === "requestDoc") {
       const dSheet = getSheet("DocRequests");
-      dSheet.appendRow([timestamp, data.email, data.docTitle, "PENDING", new Date()]);
+      const row = buildRowByHeaders(dSheet, {
+        "User Email": data.email,
+        DocTitle: data.docTitle,
+        Status: "PENDING",
+        Timestamp: new Date()
+      });
+      dSheet.appendRow(row);
       response = { success: true, message: "Request submitted." };
     }
 
@@ -1039,8 +1298,21 @@ function doPost(e) {
 
     // CONTACT
     else if (action === "contact") {
-      const cSheet = getSheet("Contact");
-      cSheet.appendRow([timestamp, data.name, data.email, data.message, new Date()]);
+      const account = getUserRecordByEmail(data.email);
+      const accountStatus = getStatusValue(account ? account.Status : 1);
+      if (accountStatus === 3 || accountStatus === 4) {
+        throw new Error("Contact privileges suspended for this account.");
+      }
+
+      const cSheet = getSheet("Contact") || getSheet("Contacts");
+      const row = buildRowByHeaders(cSheet, {
+        SheetName: data.sheetName || "Website",
+        Name: data.name,
+        Email: data.email,
+        Message: data.message,
+        Timestamp: new Date()
+      });
+      cSheet.appendRow(row);
       response = { success: true, message: "Message sent." };
     }
 
@@ -1049,7 +1321,9 @@ function doPost(e) {
       const uSheet = getSheet("Users");
       const result = findInSheet(uSheet, "Email", data.email);
       if (result.row > 0) {
-        updateSheetCell(uSheet, result.row, 4, "Travel Agent");
+        updateSheetByHeader(uSheet, result.row, "Role", "Travel Agent");
+        if (data.status) updateSheetByHeader(uSheet, result.row, "Status", data.status);
+        updateSheetByHeader(uSheet, result.row, "UpdatedAt", new Date());
         response = { success: true, message: "Travel Agent status approved." };
       }
     }
