@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Express Airways</title>
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --text-primary: #1e293b;
+            --text-secondary: #475569;
+            --accent-blue: #2563eb;
+            --border-color: #cbd5e1;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        nav {
+            background: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        nav .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+        }
+
+        nav .nav-items {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        button, a.btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: var(--accent-blue);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #1d4ed8;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: var(--accent-blue);
+            border: 2px solid var(--accent-blue);
+        }
+
+        .btn-secondary:hover {
+            background: var(--accent-blue);
+            color: white;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #d32f2f;
+        }
+
+        button:disabled, button.loading {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .hero {
+            min-height: 400px;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        .card {
+            background: white;
+            border: 1px solid var(--border-color);
+            padding: 2rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .modal-header h2 {
+            margin: 0;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-secondary);
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .form-group input,
+        .form-group select {
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 0.95rem;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+        }
+
+        .notification {
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            max-width: 400px;
+            padding: 1.5rem;
+            background: white;
+            border-left: 4px solid var(--accent-blue);
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            z-index: 3000;
+            animation: slideInUp 0.3s ease-out;
+        }
+
+        .notification.success {
+            border-left-color: var(--success);
+        }
+
+        .notification.danger {
+            border-left-color: var(--danger);
+        }
+
+        .notification.warning {
+            border-left-color: var(--warning);
+        }
+
+        @keyframes slideInUp {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            border-bottom: 2px solid var(--border-color);
+            margin-bottom: 2rem;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            padding: 1rem 0;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        .tab-btn.active {
+            color: var(--accent-blue);
+            border-bottom-color: var(--accent-blue);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.4rem 1rem;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .status-operational {
+            background: rgba(16,185,129,0.2);
+            color: var(--success);
+        }
+
+        .status-degraded {
+            background: rgba(245,158,11,0.2);
+            color: var(--warning);
+        }
+
+        .status-down {
+            background: rgba(239,68,68,0.2);
+            color: var(--danger);
+        }
+
+        .loader {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid var(--border-color);
+            border-radius: 50%;
+            border-top-color: var(--accent-blue);
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            nav {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            nav .nav-items {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .hero h1 {
+                font-size: 2rem;
+            }
+
+            .container {
+                padding: 0 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- NAVIGATION -->
+    <nav>
+        <div class="logo">Express Airways</div>
+        <div class="nav-items">
+            <div id="userInfo" style="display: none;">
+                <span id="userName"></span> - <span id="userMiles">0</span> miles
+            </div>
+            <button id="loginBtn" class="btn-secondary" onclick="showModal('loginModal')">Login</button>
+            <button id="signupBtn" class="btn-secondary" onclick="showModal('signupModal')">Sign Up</button>
+            <button id="dashboardBtn" class="btn-secondary" style="display: none;" onclick="goToDashboard()">Dashboard</button>
+            <button id="logoutBtn" class="btn-danger" style="display: none;" onclick="logout()">Logout</button>
+        </div>
+    </nav>
+
+    <!-- NOTIFICATIONS -->
+    <div id="notificationsContainer"></div>
+
+    <!-- LOGIN MODAL -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Login</h2>
+                <button class="close-btn" onclick="closeModal('loginModal')">&times;</button>
+            </div>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="loginEmail" placeholder="your@email.com">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="loginPassword" placeholder="••••••••">
+            </div>
+            <button class="btn-primary" style="width: 100%;" onclick="login()">Sign In</button>
+        </div>
+    </div>
+
+    <!-- SIGNUP MODAL -->
+    <div id="signupModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Create Account</h2>
+                <button class="close-btn" onclick="closeModal('signupModal')">&times;</button>
+            </div>
+            <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" id="signupName" placeholder="John Doe">
+            </div>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="signupEmail" placeholder="your@email.com">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="signupPassword" placeholder="••••••••">
+            </div>
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" id="agreeTerms" required>
+                    I agree to Terms of Service
+                </label>
+            </div>
+            <button class="btn-primary" style="width: 100%;" onclick="signup()">Create Account</button>
+        </div>
+    </div>
+
+    <!-- MAIN PAGE -->
+    <div id="mainPage" class="page active">
+        <div class="hero">
+            <div>
+                <h1 id="heroMain">Reliable. Sovereign. Global.</h1>
+                <p id="heroSub">Express Airways - Professional Flight Services</p>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="card">
+                <h2>Search Flights</h2>
+                <div class="grid" style="margin-top: 1.5rem;">
+                    <div class="form-group">
+                        <label>From (IATA)</label>
+                        <input type="text" id="origin" placeholder="JFK" maxlength="3" style="text-transform: uppercase;">
+                    </div>
+                    <div class="form-group">
+                        <label>To (IATA)</label>
+                        <input type="text" id="destination" placeholder="LAX" maxlength="3" style="text-transform: uppercase;">
+                    </div>
+                    <div class="form-group">
+                        <label>Departure Date</label>
+                        <input type="date" id="departDate">
+                    </div>
+                    <div class="form-group">
+                        <label>Passengers</label>
+                        <input type="number" id="passengers" min="1" value="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Cabin Class</label>
+                        <select id="cabin">
+                            <option value="Economy">Economy</option>
+                            <option value="Business">Business</option>
+                            <option value="FirstClass">First Class</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Airline</label>
+                        <select id="serviceType">
+                            <option value="EA">Express Airways</option>
+                            <option value="EX">Explore Airways</option>
+                            <option value="EC">Express Charter</option>
+                        </select>
+                    </div>
+                </div>
+                <button class="btn-primary" style="width: 100%; margin-top: 1rem;" onclick="searchFlights()">Search Flights</button>
+            </div>
+
+            <!-- FLIGHT RESULTS -->
+            <div id="flightResults" class="card" style="display: none;">
+                <h2>Flight Details</h2>
+                <div class="grid">
+                    <div>
+                        <strong>Distance</strong>
+                        <p id="detailDistance">-</p>
+                    </div>
+                    <div>
+                        <strong>Duration</strong>
+                        <p id="detailTime">-</p>
+                    </div>
+                    <div>
+                        <strong>Base Fare</strong>
+                        <p id="detailFare">-</p>
+                    </div>
+                </div>
+                <button class="btn-primary" style="width: 100%; margin-top: 1rem;" onclick="proceedToBooking()">Proceed to Booking</button>
+            </div>
+
+            <!-- SECTIONS -->
+            <div id="sectionsContainer"></div>
+        </div>
+    </div>
+
+    <!-- DASHBOARD PAGE -->
+    <div id="dashboardPage" class="page">
+        <div class="container">
+            <h1>Welcome, <span id="dashboardUserName"></span></h1>
+
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('bookings', this)">My Bookings</button>
+                <button class="tab-btn" onclick="switchTab('account', this)">Account</button>
+                <button class="tab-btn" onclick="switchTab('status', this)">System Status</button>
+                <button class="tab-btn" onclick="switchTab('support', this)">Support</button>
+            </div>
+
+            <div id="bookings" class="tab-content active">
+                <div id="bookingsList"></div>
+            </div>
+
+            <div id="account" class="tab-content">
+                <div id="accountContent"></div>
+            </div>
+
+            <div id="status" class="tab-content">
+                <div id="statusContent"></div>
+            </div>
+
+            <div id="support" class="tab-content">
+                <div class="card">
+                    <h2>Report an Issue</h2>
+                    <div class="form-group">
+                        <label>Category</label>
+                        <select id="issueCategory">
+                            <option value="booking">Booking Issue</option>
+                            <option value="payment">Payment Issue</option>
+                            <option value="seat">Seat Selection</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Subject</label>
+                        <input type="text" id="issueSubject" placeholder="Brief subject">
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea id="issueDescription" rows="4" placeholder="Describe your issue..."></textarea>
+                    </div>
+                    <button class="btn-primary" onclick="submitIssue()">Submit Report</button>
+                </div>
+            </div>
+
+            <button class="btn-secondary" style="margin-top: 2rem;" onclick="backToHome()">Back to Home</button>
+        </div>
+    </div>
+
+    <script>
+const API_URL = "https://script.google.com/macros/s/AKfycbwa6kLuhaN1PdGuzOwEYnc6ZMFuJD3VR3R-T-qsPiTbB-4fnNxMJOGtitmxbkmQEWK3nQ/exec";
+let currentUser = null;
+let bookingSession = {};
+
+// API CALLS
+async function apiCall(action, data = {}) {
+    try {
+        const response = await fetch(API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action, ...data })
+        });
+        return await response.json();
+    } catch(error) {
+        showNotification("Error", error.message, "danger");
+        return { success: false };
+    }
+}
+
+// UI HELPERS
+function showNotification(title, message, type = "info") {
+    const container = document.getElementById("notificationsContainer");
+    const id = "notif-" + Date.now();
+    const div = document.createElement("div");
+    div.id = id;
+    div.className = `notification ${type}`;
+    div.innerHTML = `<strong>${title}</strong><p>${message}</p>`;
+    container.appendChild(div);
+    setTimeout(() => {
+        const el = document.getElementById(id);
+        if (el) el.remove();
+    }, 5000);
+}
+
+function showModal(modalId) {
+    document.getElementById(modalId).classList.add("active");
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).classList.remove("active");
+}
+
+function showPage(pageId) {
+    document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+    document.getElementById(pageId).classList.add("active");
+}
+
+function switchTab(tabName, btn) {
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById(tabName).classList.add("active");
+}
+
+// AUTHENTICATION
+async function login() {
+    const email = document.getElementById("loginEmail").value.trim();
+    const password = document.getElementById("loginPassword").value.trim();
+
+    if (!email || !password) {
+        showNotification("Error", "Please fill in all fields", "warning");
+        return;
+    }
+
+    const result = await apiCall("login", { email, password });
+    
+    if (result.success) {
+        currentUser = result.user;
+        localStorage.setItem("user", JSON.stringify(currentUser));
+        updateNav();
+        closeModal("loginModal");
+        document.getElementById("loginEmail").value = "";
+        document.getElementById("loginPassword").value = "";
+        showNotification("Success", "Logged in successfully", "success");
+    } else {
+        showNotification("Login Failed", result.message || "Invalid credentials", "danger");
+    }
+}
+
+async function signup() {
+    const name = document.getElementById("signupName").value.trim();
+    const email = document.getElementById("signupEmail").value.trim();
+    const password = document.getElementById("signupPassword").value.trim();
+    const accepted = document.getElementById("agreeTerms").checked;
+
+    if (!name || !email || !password || !accepted) {
+        showNotification("Error", "Please fill in all fields", "warning");
+        return;
+    }
+
+    const result = await apiCall("signup", { fullName: name, email, password });
+    
+    if (result.success) {
+        currentUser = result.user;
+        localStorage.setItem("user", JSON.stringify(currentUser));
+        updateNav();
+        closeModal("signupModal");
+        document.getElementById("signupName").value = "";
+        document.getElementById("signupEmail").value = "";
+        document.getElementById("signupPassword").value = "";
+        document.getElementById("agreeTerms").checked = false;
+        showNotification("Success", "Account created", "success");
+    } else {
+        showNotification("Error", result.message || "Could not create account", "danger");
+    }
+}
+
+function logout() {
+    currentUser = null;
+    localStorage.removeItem("user");
+    updateNav();
+    showPage("mainPage");
+    showNotification("Logged Out", "You have been logged out", "info");
+}
+
+function updateNav() {
+    const loggedIn = !!currentUser;
+    document.getElementById("loginBtn").style.display = loggedIn ? "none" : "block";
+    document.getElementById("signupBtn").style.display = loggedIn ? "none" : "block";
+    document.getElementById("dashboardBtn").style.display = loggedIn ? "block" : "none";
+    document.getElementById("logoutBtn").style.display = loggedIn ? "block" : "none";
+
+    if (loggedIn && document.getElementById("userInfo")) {
+        document.getElementById("userInfo").style.display = "block";
+        document.getElementById("userName").textContent = currentUser.name;
+        document.getElementById("userMiles").textContent = (currentUser.miles || 0).toLocaleString();
+    } else if (document.getElementById("userInfo")) {
+        document.getElementById("userInfo").style.display = "none";
+    }
+}
+
+// FLIGHT SEARCH
+async function searchFlights() {
+    const origin = document.getElementById("origin").value.toUpperCase();
+    const destination = document.getElementById("destination").value.toUpperCase();
+    const departDate = document.getElementById("departDate").value;
+
+    if (!origin || !destination || !departDate) {
+        showNotification("Error", "Please fill in all fields", "warning");
+        return;
+    }
+
+    if (!currentUser) {
+        showNotification("Login Required", "Please log in to search flights", "warning");
+        showModal("loginModal");
+        return;
+    }
+
+    bookingSession = { origin, destination, departDate };
+    
+    // For now, show mock results
+    document.getElementById("flightResults").style.display = "block";
+    document.getElementById("detailDistance").textContent = "2800 miles";
+    document.getElementById("detailTime").textContent = "5.5 hours";
+    document.getElementById("detailFare").textContent = "$450";
+
+    showNotification("Success", "Flight search complete", "success");
+}
+
+function proceedToBooking() {
+    if (!bookingSession.origin) {
+        showNotification("Error", "Please search for flights first", "warning");
+        return;
+    }
+    showNotification("Coming Soon", "Booking system coming soon", "info");
+}
+
+// DASHBOARD
+async function goToDashboard() {
+    if (!currentUser) {
+        showNotification("Error", "Please log in first", "warning");
+        return;
+    }
+    showPage("dashboardPage");
+    document.getElementById("dashboardUserName").textContent = currentUser.name;
+    loadBookings();
+    loadAccountInfo();
+}
+
+function backToHome() {
+    showPage("mainPage");
+}
+
+async function loadBookings() {
+    const result = await apiCall("getUserBookings", { userId: currentUser.id });
+    let html = "";
+    
+    if (result.success && result.data) {
+        result.data.forEach(booking => {
+            html += `
+                <div class="card">
+                    <strong>${booking.origin} to ${booking.destination}</strong>
+                    <p>Date: ${booking.departDate} | Price: $${booking.price} | Status: ${booking.status}</p>
+                    <p>Reference: ${booking.bookingRef}</p>
+                </div>
+            `;
+        });
+    } else {
+        html = "<p>No bookings yet</p>";
+    }
+    
+    document.getElementById("bookingsList").innerHTML = html;
+}
+
+async function loadAccountInfo() {
+    let html = `
+        <div class="card">
+            <h2>Account Information</h2>
+            <p><strong>Name:</strong> ${currentUser.name}</p>
+            <p><strong>Email:</strong> ${currentUser.email}</p>
+            <p><strong>Miles:</strong> ${(currentUser.miles || 0).toLocaleString()}</p>
+            <p><strong>Tier:</strong> ${currentUser.tier || "Basic"}</p>
+        </div>
+    `;
+    document.getElementById("accountContent").innerHTML = html;
+}
+
+async function loadSystemStatus() {
+    const result = await apiCall("getSystemStatus");
+    
+    if (result.success && result.status) {
+        let html = `<div class="card"><h2>System Status</h2>`;
+        result.status.services.forEach(service => {
+            const badgeClass = service.status === "operational" ? "operational" : "degraded";
+            html += `
+                <div style="margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid #ddd;">
+                    <div style="display: flex; justify-content: space-between;">
+                        <strong>${service.name}</strong>
+                        <span class="status-badge status-${badgeClass}">${service.status}</span>
+                    </div>
+                    <p style="color: var(--text-secondary); font-size: 0.9rem;">Uptime: ${service.uptime}%</p>
+                </div>
+            `;
+        });
+        html += "</div>";
+        document.getElementById("statusContent").innerHTML = html;
+    }
+}
+
+async function submitIssue() {
+    const category = document.getElementById("issueCategory").value;
+    const subject = document.getElementById("issueSubject").value.trim();
+    const description = document.getElementById("issueDescription").value.trim();
+
+    if (!subject || !description) {
+        showNotification("Error", "Please fill in all fields", "warning");
+        return;
+    }
+
+    if (!currentUser) {
+        showNotification("Error", "Please log in first", "warning");
+        return;
+    }
+
+    const result = await apiCall("submitIssue", { 
+        email: currentUser.email,
+        category, 
+        subject, 
+        description 
+    });
+
+    if (result.success) {
+        document.getElementById("issueCategory").value = "booking";
+        document.getElementById("issueSubject").value = "";
+        document.getElementById("issueDescription").value = "";
+        showNotification("Success", "Issue reported successfully", "success");
+    } else {
+        showNotification("Error", result.message || "Could not submit issue", "danger");
+    }
+}
+
+// LOAD CONTENT
+async function loadSections() {
+    const result = await apiCall("getSections");
+    let html = "";
+    
+    if (result.success && result.sections) {
+        result.sections.forEach(section => {
+            html += `
+                <div class="card">
+                    <h2>${section.title}</h2>
+                    <p>${section.description}</p>
+                </div>
+            `;
+        });
+    }
+    
+    document.getElementById("sectionsContainer").innerHTML = html;
+}
+
+async function loadHero() {
+    const result = await apiCall("getHero");
+    
+    if (result.success && result.hero) {
+        document.getElementById("heroMain").textContent = result.hero.headline || "Reliable. Sovereign. Global.";
+        document.getElementById("heroSub").textContent = result.hero.subheader || "Express Airways";
+    }
+}
+
+// INITIALIZATION
+window.addEventListener("load", () => {
+    const user = localStorage.getItem("user");
+    if (user) {
+        try {
+            currentUser = JSON.parse(user);
+            updateNav();
+        } catch(e) {
+            localStorage.removeItem("user");
+        }
+    }
+
+    loadHero();
+    loadSections();
+
+    // Set default date
+    const today = new Date().toISOString().split("T")[0];
+    document.getElementById("departDate").min = today;
+    document.getElementById("departDate").value = today;
+
+    // Close modals on background click
+    document.querySelectorAll(".modal").forEach(modal => {
+        modal.addEventListener("click", (e) => {
+            if (e.target === modal) {
+                modal.classList.remove("active");
+            }
+        });
+    });
+
+    // Tab switching in status
+    setTimeout(() => {
+        const statusTab = document.querySelector('button[onclick="switchTab(\'status\', this)"]');
+        if (statusTab) {
+            statusTab.addEventListener("click", loadSystemStatus);
+        }
+    }, 100);
+});
+    </script>
+</body>
+</html>

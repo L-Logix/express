@@ -73,7 +73,7 @@ The backend expects these Google Sheets (create if missing):
 ### Immediate (Before Beta)
 1. **Verify Sheet Structure**: Confirm all sheets exist with correct columns
 2. **Test Promo Codes**: 
-   - Create test promo codes in PromoCodes sheet
+   - Create test promo codes in PromoCodes shaeet
    - Verify validation works
 3. **Test Seat Assignment**: 
    - Verify SeatAssignments sheet populates correctly
