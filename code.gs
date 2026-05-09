@@ -51,26 +51,26 @@ function loadPromoCodes() {
 function validatePromoCode(code) {
   loadPromoCodes();
   const promoCode = PROMO_CODES_CACHE[code.toString().toUpperCase()];
-  
+
   if (!promoCode) {
     return { valid: false, message: "Invalid promo code" };
   }
-  
+
   if (!promoCode.active) {
     return { valid: false, message: "Promo code is inactive" };
   }
-  
+
   if (promoCode.usedCount >= promoCode.maxUses) {
     return { valid: false, message: "Promo code usage limit exceeded" };
   }
-  
+
   const expiry = new Date(promoCode.expiryDate);
   if (expiry < new Date()) {
     return { valid: false, message: "Promo code has expired" };
   }
-  
-  return { 
-    valid: true, 
+
+  return {
+    valid: true,
     code: promoCode.code,
     discountPercent: promoCode.discountPercent,
     discountDollars: promoCode.discountDollars
@@ -326,35 +326,44 @@ function applySurgePricing(departDate, baseFare) {
 
 // REAL-TIME AIRPORT DATA
 function validateAirportCode(code) {
-  if (AIRPORT_CACHE[code]) {
-    return AIRPORT_CACHE[code];
+  const normalized = (code || "").toString().trim().toUpperCase();
+  if (!normalized) return null;
+  if (AIRPORT_CACHE[normalized]) {
+    return AIRPORT_CACHE[normalized];
   }
 
   try {
-    const openSkyUrl = `https://opensky-network.org/api/airports/query?icao=${code}`;
+    const openSkyUrl = `https://opensky-network.org/api/airports/query?query=${encodeURIComponent(normalized)}`;
     const response = UrlFetchApp.fetch(openSkyUrl, {muteHttpExceptions: true});
 
     if (response.getResponseCode() === 200) {
       const data = JSON.parse(response.getContentText());
       if (data.result && data.result.length > 0) {
-        const airport = data.result[0];
-        const airportData = {
-          name: airport.name || code,
-          lat: airport.latitude,
-          lng: airport.longitude,
-          type: "international",
-          city: airport.municipality || "Unknown",
-          country: airport.country || "Unknown"
-        };
-        AIRPORT_CACHE[code] = airportData;
-        return airportData;
+        const airport = data.result.find(a =>
+          (a.iata || "").toString().toUpperCase() === normalized ||
+          (a.icao || "").toString().toUpperCase() === normalized
+        ) || data.result[0];
+        if (airport && airport.latitude && airport.longitude) {
+          const airportData = {
+            name: airport.name || normalized,
+            lat: airport.latitude,
+            lng: airport.longitude,
+            type: (airport.country || "").toString().toUpperCase() === "USA" ? "domestic" : "international",
+            city: airport.municipality || "Unknown",
+            country: airport.country || "Unknown",
+            iata: (airport.iata || "").toString().toUpperCase(),
+            icao: (airport.icao || "").toString().toUpperCase()
+          };
+          AIRPORT_CACHE[normalized] = airportData;
+          return airportData;
+        }
       }
     }
   } catch(e) {
-    // Silent fail, use cache
+    // Silent fail, use cache when possible
   }
 
-  return AIRPORT_CACHE[code] || null;
+  return AIRPORT_CACHE[normalized] || null;
 }
 
 function searchAirports(query) {
@@ -625,21 +634,54 @@ function doGet(e) {
 
       const normalizedEmail = (resolvedEmail || "").toString().toLowerCase();
       const rows = sheetToArray(bookingsSheet).filter(r => (r.Email || "").toString().toLowerCase() === normalizedEmail);
-      const data = rows.map(r => ({
-        bookingRef: r.BookingRef,
-        status: r.Status || "CONFIRMED",
-        seat: seatsByBooking[r.BookingRef] || "",
-        flightData: {
-          origin: r.Origin || "",
-          destination: r.Destination || "",
-          departDate: r.DepartDate || "",
-          passengers: parseInt(r.Passengers, 10) || 1
-        }
+      const bookings = rows.map(r => ({
+        BookingRef: r.BookingRef,
+        Status: r.Status || "CONFIRMED",
+        Origin: r.Origin || "",
+        Destination: r.Destination || "",
+        DepartDate: r.DepartDate || "",
+        FlightTimes: r.FlightTimes || "",
+        ServiceType: r.ServiceType || "",
+        Passengers: parseInt(r.Passengers, 10) || 1,
+        TotalPrice: r.TotalPrice || 0,
+        PaymentMethod: r.PaymentMethod || "",
+        PaxName: r.PaxName || "",
+        PaxDOB: r.PaxDOB || "",
+        PaxGender: r.PaxGender || "",
+        PaxPassport: r.PaxPassport || "",
+        PaxPhone: r.PaxPhone || "",
+        PaxCabin: r.PaxCabin || "",
+        Promo: r.Promo || ""
       }));
 
       return ContentService.createTextOutput(JSON.stringify({
         success: true,
-        data: data
+        bookings: bookings
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // CHECK LOGIN STATUS (stateless - requires email)
+    if (action === "checkLogin") {
+      const email = (params.email || "").toString().toLowerCase();
+      if (!email) {
+        return ContentService.createTextOutput(JSON.stringify({ success: true, loggedIn: false })).setMimeType(ContentService.MimeType.JSON);
+      }
+      const user = getUserRecordByEmail(email);
+      if (!user) {
+        return ContentService.createTextOutput(JSON.stringify({ success: true, loggedIn: false })).setMimeType(ContentService.MimeType.JSON);
+      }
+      const tierData = calculateLoyaltyTier(user.Miles || 0);
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        loggedIn: true,
+        user: {
+          FullName: user.FullName,
+          Email: user.Email,
+          Role: user.Role,
+          Miles: user.Miles || 0,
+          Status: getStatusValue(user.Status),
+          loyaltyTier: tierData.display
+        }
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
@@ -680,8 +722,17 @@ function doGet(e) {
         })).setMimeType(ContentService.MimeType.JSON);
       }
 
+      if (params.serviceType === "EX") {
+        if (origAirport.type !== "domestic" || destAirport.type !== "domestic") {
+          return ContentService.createTextOutput(JSON.stringify({
+            success: false,
+            error: "Explore Airways is domestic only. Please select domestic airports."
+          })).setMimeType(ContentService.MimeType.JSON);
+        }
+      }
+
       const time = calculateFlightTime(params.origin, params.destination);
-      const baseFareRaw = calculateBaseFare(params.origin, params.destination, params.serviceType || "EA", params.departDate);
+      const baseFareRaw = calculateBaseFare(params.origin, params.destination, params.serviceType || "EA", params.departDate, params.promoCode);
       const surgeFareRaw = applySurgePricing(params.departDate, baseFareRaw);
       const cabinMultiplier = CABIN_MULTIPLIERS[params.cabin] || 1.0;
       const baseFare = Math.round(baseFareRaw * cabinMultiplier);
@@ -849,6 +900,10 @@ function doGet(e) {
           sections: sections
         })).setMimeType(ContentService.MimeType.JSON);
       }
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        sections: []
+      })).setMimeType(ContentService.MimeType.JSON);
     }
 
     // GET NOTICES
@@ -867,6 +922,7 @@ function doGet(e) {
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
+    // GET EVENTS
     if (action === "getEvents") {
       const eSheet = getSheet("Events");
       const events = sheetToArray(eSheet).map(r => ({
@@ -879,6 +935,7 @@ function doGet(e) {
       return ContentService.createTextOutput(JSON.stringify({ success: true, events })).setMimeType(ContentService.MimeType.JSON);
     }
 
+    // GET DOCUMENTS
     if (action === "getDocuments") {
       const dSheet = getSheet("Documents");
       const documents = sheetToArray(dSheet).map(r => ({
@@ -950,6 +1007,7 @@ function doGet(e) {
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
+    // GET E-TICKET
     if (action === "getETicket") {
       const bookingRef = params.bookingRef;
       const bookings = sheetToArray(getSheet("Bookings"));
@@ -958,6 +1016,62 @@ function doGet(e) {
         return ContentService.createTextOutput(JSON.stringify({ success: false, message: "Booking not found" })).setMimeType(ContentService.MimeType.JSON);
       }
       return ContentService.createTextOutput(JSON.stringify({ success: true, booking })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // GET BOOKING DETAILS
+    if (action === "getBookingDetails") {
+      const bookingRef = params.bookingRef;
+      const bookings = sheetToArray(getSheet("Bookings"));
+      const booking = bookings.find(b => (b.BookingRef || "").toString() === (bookingRef || "").toString());
+      if (!booking) {
+        return ContentService.createTextOutput(JSON.stringify({ success: false, message: "Booking not found" })).setMimeType(ContentService.MimeType.JSON);
+      }
+      return ContentService.createTextOutput(JSON.stringify({ success: true, booking })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // GET SEAT MAP
+    if (action === "getSeatMap") {
+      const distance = parseFloat(params.distanceMiles) || 1000;
+      const seatMapData = generateSeatMap(params.bookingRef || "", distance);
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        seats: seatMapData.seats,
+        aircraft: seatMapData.aircraft
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // GET ADMIN STATS
+    if (action === "getAdminStats") {
+      const bookings = sheetToArray(getSheet("Bookings"));
+      const users = sheetToArray(getSheet("Users"));
+      const today = new Date().toDateString();
+      const todayBookings = bookings.filter(b => new Date(b.Timestamp || b.DepartDate).toDateString() === today);
+
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        totalBookings: bookings.length,
+        totalUsers: users.length,
+        todayBookings: todayBookings.length,
+        pendingRequests: 0 // Could be calculated from other sheets
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // GET ALL BOOKINGS (ADMIN)
+    if (action === "getAllBookings") {
+      const bookings = sheetToArray(getSheet("Bookings"));
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        bookings: bookings
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // GET ALL USERS (ADMIN)
+    if (action === "getAllUsers") {
+      const users = sheetToArray(getSheet("Users"));
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        users: users
+      })).setMimeType(ContentService.MimeType.JSON);
     }
 
     // GET HOMEPAGE (fallback for homepage data)
@@ -1045,9 +1159,9 @@ function doPost(e) {
       const sheet = getSheet("Users");
       if (!sheet) throw new Error("Users sheet not found.");
 
-      const fullName = normalizeText(data.fullName);
-      const email = normalizeText(data.email).toLowerCase();
-      const password = normalizeText(data.password);
+      const fullName = normalizeText(data.fullName || data.FullName);
+      const email = normalizeText(data.email || data.Email).toLowerCase();
+      const password = normalizeText(data.password || data.Password);
 
       if (!fullName || !email || !password) {
         throw new Error("Missing required signup fields.");
@@ -1116,13 +1230,13 @@ function doPost(e) {
       }
 
       const bSheet = getSheet("Bookings");
-      const bookingRef = String(Date.now());
+      const bookingRef = data.bookingRef ? data.bookingRef.toString() : String(Date.now());
 
       const orig = validateAirportCode(data.origin) || AIRPORT_CACHE[data.origin];
       const dest = validateAirportCode(data.destination) || AIRPORT_CACHE[data.destination];
       const distance = haversineDistance(orig.lat, orig.lng, dest.lat, dest.lng);
+      const flightDuration = calculateFlightTime(data.origin, data.destination);
       
-      // Calculate base fare with promo (all fare math server-side)
       let fare = calculateBaseFare(data.origin, data.destination, data.serviceType || "EA", data.departDate, data.promoCode);
       fare = applySurgePricing(data.departDate, fare);
       const cabinMultiplier = CABIN_MULTIPLIERS[data.paxCabin] || 1.0;
@@ -1130,25 +1244,37 @@ function doPost(e) {
       fare *= data.passengers || 1;
       const ancillariesTotal = (data.ancillaries || []).reduce((sum, anc) => sum + ((parseFloat(anc.price) || 0) * (data.passengers || 1)), 0);
       fare += ancillariesTotal;
-      
-      // Get user's loyalty tier for miles multiplier
+
       const uSheet = getSheet("Users");
       const users = sheetToArray(uSheet);
       let userTier = calculateLoyaltyTier(0);
       let userRowNum = -1;
       
       for (let i = 0; i < users.length; i++) {
-        if (users[i].Email === data.email) {
+        if ((users[i].Email || "").toString().toLowerCase() === (data.email || "").toString().toLowerCase()) {
           userTier = calculateLoyaltyTier(users[i].Miles || 0);
           userRowNum = i + 2;
           break;
         }
       }
       
-      const milesEarned = Math.round(distance * userTier.multiplier);
+      const milesEarned = Math.round(distance * (1 + (flightDuration / 10)) * userTier.multiplier);
+
+      let milesDeduction = 0;
+      if (data.paymentMethod === "miles" && userRowNum > 0) {
+        const currentMiles = users[userRowNum - 2].Miles || 0;
+        milesDeduction = Math.floor(Math.min(fare / 0.015, currentMiles));
+        fare -= milesDeduction * 0.015;
+        fare = Math.max(fare, 0);
+      }
 
       const canAutoApprove = checkBookingLimits(data.email, data.departDate);
       const bookingStatus = canAutoApprove ? "CONFIRMED" : "PENDING_REVIEW";
+      const passengerList = Array.isArray(data.passengerDetails) ? data.passengerDetails : [];
+      const firstPassenger = passengerList.length ? passengerList[0] : {};
+      const combinedPaxName = passengerList.map(p => p.name || "").filter(Boolean).join(" / ");
+      const manifest = passengerList.map(p => `${p.name || ""}|${p.gender || ""}|${p.dob || ""}|${p.passport || ""}|${p.phone || ""}`).join(";");
+
       const bookingRow = buildRowByHeaders(bSheet, {
         BookingRef: bookingRef,
         Email: data.email,
@@ -1156,43 +1282,38 @@ function doPost(e) {
         Origin: data.origin,
         Destination: data.destination,
         DepartDate: data.departDate,
-        FlightTimes: calculateFlightTime(data.origin, data.destination),
+        FlightTimes: flightDuration,
         ServiceType: data.serviceType || "EA",
         Passengers: data.passengers || 1,
         TotalPrice: Math.round(fare),
-        PaymentMethod: data.paymentMethod || "credit",
-        PaxName: data.paxName || "",
-        PaxDOB: data.paxDOB || "",
-        PaxGender: data.paxGender || "",
-        PaxPassport: data.paxPassport || "",
-        PaxPhone: data.paxPhone || "",
+        PaymentMethod: data.paymentMethod || "cash",
+        PaxName: combinedPaxName || firstPassenger.name || "",
+        PaxDOB: firstPassenger.dob || "",
+        PaxGender: firstPassenger.gender || "",
+        PaxPassport: firstPassenger.passport || "",
+        PaxPhone: firstPassenger.phone || "",
         PaxCabin: data.paxCabin || "Economy",
-        Timestamp: new Date()
+        Promo: data.promoCode || "",
+        PassengerManifest: manifest,
+        MilesUsed: milesDeduction,
+        MilesEarned: milesEarned,
+        Timestamp: new Date(Number(bookingRef) || new Date())
       });
       bSheet.appendRow(bookingRow);
 
-      // Update user miles and tier
       if (userRowNum > 0) {
-        let milesDeduction = 0;
-        if (data.paymentMethod === "miles") {
-          milesDeduction = Math.floor(Math.min(fare / 0.015, users[userRowNum - 2].Miles || 0));
-        }
         const currentMiles = users[userRowNum - 2].Miles || 0;
         const newMiles = currentMiles - milesDeduction + milesEarned;
         updateSheetByHeader(uSheet, userRowNum, "Miles", newMiles);
-        
-        // Auto-update tier
         const newTier = calculateLoyaltyTier(newMiles);
         updateSheetByHeader(uSheet, userRowNum, "Role", newTier.display);
       }
 
-      // Store seat assignment
       if (data.selectedSeat) {
         const seatSheet = getSheet("SeatAssignments");
-        seatSheet.appendRow([bookingRef, data.selectedSeat, data.paxName, data.email, new Date()]);
+        seatSheet.appendRow([bookingRef, data.selectedSeat, firstPassenger.name || "", data.email, new Date()]);
       }
 
-      // Store ancillaries
       if (data.ancillaries && data.ancillaries.length > 0) {
         const aSheet = getSheet("AncillaryBookings");
         data.ancillaries.forEach(anc => {
@@ -1200,7 +1321,6 @@ function doPost(e) {
         });
       }
       
-      // Record promo code usage
       if (data.promoCode) {
         const promoSheet = getSheet("PromoCodes");
         const result = findInSheet(promoSheet, "Code", data.promoCode.toUpperCase());
@@ -1211,24 +1331,27 @@ function doPost(e) {
       }
 
       response = {
-        success: true, 
-        bookingRef: bookingRef, 
+        success: true,
+        bookingRef: bookingRef,
         bookingStatus: bookingStatus,
         milesEarned: milesEarned,
+        milesUsed: milesDeduction,
         totalFare: Math.round(fare)
       };
     }
 
     // CANCEL BOOKING
-    else if (action === "cancel") {
+    else if (action === "cancel" || action === "cancelBooking") {
       const bSheet = getSheet("Bookings");
       const result = findInSheet(bSheet, "BookingRef", data.bookingRef);
 
       if (result.row > 0) {
         const data_row = result.data;
-        if (data_row[1] === data.email) {
+        if ((data_row[1] || "").toString().toLowerCase() === (data.email || "").toString().toLowerCase()) {
           updateSheetCell(bSheet, result.row, 3, "CANCELLED");
           response = { success: true, message: "Booking cancelled." };
+        } else {
+          throw new Error("Unauthorized");
         }
       }
     }

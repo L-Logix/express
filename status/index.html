@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sovereign Status & Audit Report</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <div id="web-ui">
+        <header class="hero">
+            <div class="hero-content">
+                <h1>System Status</h1>
+                <p>Global Infrastructure & Integration Status</p>
+                <div class="action-buttons">
+                    <button onclick="window.print()" class="print-btn primary-btn">
+                        <i class="fa-solid fa-file-pdf"></i> Generate Formal Audit Report
+                    </button>
+                    <button onclick="alert('Audit logs are restricted to Level 4 Clearance.')" class="print-btn secondary-btn">
+                        <i class="fa-solid fa-shield-halved"></i> Request Raw Logs
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <main class="container">
+            <div id="status-banner" class="overall-status status-maintenance">
+                <h2 id="status-text">Scheduled Maintenance in Progress</h2>
+                <p id="last-updated">Synchronizing manifest...</p>
+            </div>
+
+            <div class="card new-site-card">
+                <div class="card-header">
+                    <h3><i class="fa-solid fa-laptop-code"></i> Platform Infrastructure Build</h3>
+                    <span class="percentage-text" id="site-percentage">0%</span>
+                </div>
+                <p class="desc">Actively deploying core infrastructure to the Cloud environment. ISO 27001 compliance checks ongoing. Beta testing registration is open.</p>
+                <div class="progress-container">
+                    <div class="progress-bar" id="site-progress-bar"></div>
+                </div>
+            </div>
+
+            <div id="services-container"></div>
+        </main>
+        
+        <footer class="web-footer">
+            <p>&copy; 2026 System Operations. All rights reserved.</p>
+        </footer>
+    </div>
+
+    <div id="print-ui" class="print-only">
+        </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

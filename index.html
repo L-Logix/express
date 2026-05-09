@@ -898,16 +898,44 @@
                 <h2 style="margin-bottom: 2rem; color: var(--primary);">Upcoming Events</h2>
                 <div id="eventsContainer"></div>
             </div>
+
+            <!-- Contact & Travel Agent -->
+            <div class="card" style="margin-bottom: 3rem;">
+                <h2 style="margin-bottom: 1.5rem; color: var(--primary);">Contact Support</h2>
+                <div class="form-group">
+                    <label>Name</label>
+                    <input type="text" id="contactName" placeholder="Your name">
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="contactEmail" placeholder="you@example.com">
+                </div>
+                <div class="form-group">
+                    <label>Message</label>
+                    <textarea id="contactMessage" rows="4" placeholder="How can we help?"></textarea>
+                </div>
+                <button class="btn-primary" style="width: 100%; margin-bottom: 1rem;" onclick="submitContact()">Send Message</button>
+                <h2 style="margin: 1.5rem 0 1rem; color: var(--primary);">Travel Agent Request</h2>
+                <div class="form-group">
+                    <label>Agency Email</label>
+                    <input type="email" id="agentEmail" placeholder="you@agency.com">
+                </div>
+                <div class="form-group">
+                    <label>Agency Name</label>
+                    <input type="text" id="agentName" placeholder="Agency name">
+                </div>
+                <button class="btn-secondary" style="width: 100%;" onclick="submitTravelAgentRequest()">Apply as Travel Agent</button>
+            </div>
         </div>
 
         <!-- User Portal -->
         <div id="portalPage" style="display: none;">
             <div class="tabs">
-                <button class="tab-button active" onclick="switchPortalTab('dashboard')">Dashboard</button>
-                <button class="tab-button" onclick="switchPortalTab('bookings')">My Bookings</button>
-                <button class="tab-button" onclick="switchPortalTab('documents')">Documents</button>
-                <button class="tab-button" onclick="switchPortalTab('events')">Events</button>
-                <button class="tab-button" onclick="switchPortalTab('settings')">Account Settings</button>
+                <button class="tab-button active" onclick="switchPortalTab('dashboard', event)">Dashboard</button>
+                <button class="tab-button" onclick="switchPortalTab('bookings', event)">My Bookings</button>
+                <button class="tab-button" onclick="switchPortalTab('documents', event)">Documents</button>
+                <button class="tab-button" onclick="switchPortalTab('events', event)">Events</button>
+                <button class="tab-button" onclick="switchPortalTab('settings', event)">Account Settings</button>
             </div>
 
             <!-- Dashboard Tab -->
@@ -983,10 +1011,10 @@
             <h2 style="margin-bottom: 2rem;">Admin Dashboard</h2>
 
             <div class="tabs">
-                <button class="tab-button active" onclick="switchAdminTab('overview')">Overview</button>
-                <button class="tab-button" onclick="switchAdminTab('bookings')">Bookings</button>
-                <button class="tab-button" onclick="switchAdminTab('users')">Users</button>
-                <button class="tab-button" onclick="switchAdminTab('documents')">Documents</button>
+                <button class="tab-button active" onclick="switchAdminTab('overview', event)">Overview</button>
+                <button class="tab-button" onclick="switchAdminTab('bookings', event)">Bookings</button>
+                <button class="tab-button" onclick="switchAdminTab('users', event)">Users</button>
+                <button class="tab-button" onclick="switchAdminTab('documents', event)">Documents</button>
             </div>
 
             <!-- Overview Tab -->
@@ -1175,6 +1203,16 @@
         </div>
     </div>
 
+    <!-- Edit Booking Modal -->
+    <div id="editBookingModal" class="modal">
+        <div class="modal-content" style="position: relative; max-width: 600px;">
+            <button class="modal-close" onclick="closeEditBookingModal()">✕</button>
+            <div class="modal-header">Manage Booking</div>
+            <div id="editBookingContent"></div>
+            <button class="btn-primary" onclick="saveBookingChanges()" style="width: 100%; margin-top: 1rem;">Save Changes</button>
+        </div>
+    </div>
+
     <!-- eTicket Modal -->
     <div id="eticketModal" class="modal">
         <div class="modal-content" style="position: relative; max-width: 800px;">
@@ -1186,14 +1224,52 @@
 
     <script>
         // ========== GLOBAL STATE ==========
+        const API_URL = 'https://script.google.com/macros/s/AKfycbwa6kLuhaN1PdGuzOwEYnc6ZMFuJD3VR3R-T-qsPiTbB-4fnNxMJOGtitmxbkmQEWK3nQ/exec'; // Replace with your Apps Script deployment URL if needed
         let currentUser = null;
         let exchangeRate = 1;
         let currentCurrency = 'USD';
         let bookingData = {
             origin: '', destination: '', departDate: '', serviceType: '',
-            passengers: 1, cabin: 'Economy', promoCode: '', baseFare: 0
+            passengers: 1, cabin: 'Economy', promoCode: '', baseFare: 0, totalFare: 0,
+            flightTime: 0, distanceMiles: 0
         };
         let passengerData = [];
+
+        async function apiPost(action, body = {}) {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action, ...body })
+            });
+            return await response.json();
+        }
+
+        async function apiGet(action, params = {}) {
+            const query = new URLSearchParams({ action, ...params });
+            const response = await fetch(`${API_URL}?${query.toString()}`);
+            return await response.json();
+        }
+
+        function saveUserToStorage(user) {
+            if (user) {
+                currentUser = user;
+                localStorage.setItem('expressCurrentUser', JSON.stringify(user));
+            } else {
+                currentUser = null;
+                localStorage.removeItem('expressCurrentUser');
+            }
+        }
+
+        function loadUserFromStorage() {
+            const stored = localStorage.getItem('expressCurrentUser');
+            if (!stored) return null;
+            try {
+                return JSON.parse(stored);
+            } catch (err) {
+                localStorage.removeItem('expressCurrentUser');
+                return null;
+            }
+        }
 
         // ========== INITIALIZATION ==========
         window.addEventListener('load', function() {
@@ -1212,16 +1288,12 @@
         }
 
         function checkLoginStatus() {
-            fetch('?action=checkLogin')
-                .then(r => r.json())
-                .then(data => {
-                    if (data.loggedIn) {
-                        currentUser = data.user;
-                        updateNavigation();
-                        loadUserPortalData();
-                    }
-                })
-                .catch(e => console.error('Login check error:', e));
+            const savedUser = loadUserFromStorage();
+            if (savedUser) {
+                currentUser = savedUser;
+                updateNavigation();
+                loadUserPortalData();
+            }
         }
 
         // ========== NAVIGATION ==========
@@ -1285,31 +1357,32 @@
             document.getElementById('loginModal').classList.remove('active');
         }
 
-        function handleLogin() {
-            const email = document.getElementById('loginEmail').value;
-            const password = document.getElementById('loginPassword').value;
+        async function handleLogin() {
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
 
             if (!email || !password) {
                 showNotification('error', 'Error', 'Please enter email and password');
                 return;
             }
 
-            fetch('?action=login', {
-                method: 'POST',
-                body: JSON.stringify({ email, password })
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    currentUser = data.user;
-                    updateNavigation();
-                    closeLoginModal();
-                    showNotification('success', 'Welcome!', `Logged in as ${currentUser.FullName}`);
-                    loadUserPortalData();
-                } else {
-                    showNotification('error', 'Login Failed', data.message);
-                }
-            });
+            const data = await apiPost('login', { email, password });
+            if (data.success) {
+                saveUserToStorage({
+                    FullName: data.user.name,
+                    Email: data.user.email,
+                    Role: data.user.role,
+                    Miles: data.user.miles,
+                    Status: data.user.status,
+                    loyaltyTier: data.user.loyaltyTier
+                });
+                updateNavigation();
+                closeLoginModal();
+                showNotification('success', 'Welcome!', `Logged in as ${data.user.name}`);
+                loadUserPortalData();
+            } else {
+                showNotification('error', 'Login Failed', data.message || 'Invalid credentials');
+            }
         }
 
         function showSignupModal() {
@@ -1320,9 +1393,9 @@
             document.getElementById('signupModal').classList.remove('active');
         }
 
-        function handleSignup() {
-            const name = document.getElementById('signupName').value;
-            const email = document.getElementById('signupEmail').value;
+        async function handleSignup() {
+            const name = document.getElementById('signupName').value.trim();
+            const email = document.getElementById('signupEmail').value.trim();
             const password = document.getElementById('signupPassword').value;
             const confirm = document.getElementById('signupConfirm').value;
             const agree = document.getElementById('agreeTerms').checked;
@@ -1342,32 +1415,29 @@
                 return;
             }
 
-            fetch('?action=signup', {
-                method: 'POST',
-                body: JSON.stringify({ FullName: name, Email: email, Password: password })
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    currentUser = data.user;
-                    updateNavigation();
-                    closeSignupModal();
-                    showNotification('success', 'Success!', 'Account created successfully');
-                } else {
-                    showNotification('error', 'Signup Failed', data.message);
-                }
-            });
+            const data = await apiPost('signup', { fullName: name, email, password });
+            if (data.success) {
+                saveUserToStorage({
+                    FullName: data.user.name,
+                    Email: data.user.email,
+                    Role: data.user.role,
+                    Miles: data.user.miles,
+                    Status: data.user.status,
+                    loyaltyTier: data.user.loyaltyTier
+                });
+                updateNavigation();
+                closeSignupModal();
+                showNotification('success', 'Success!', 'Account created successfully');
+            } else {
+                showNotification('error', 'Signup Failed', data.message || 'Unable to sign up');
+            }
         }
 
         function logout() {
-            fetch('?action=logout', { method: 'POST' })
-                .then(r => r.json())
-                .then(data => {
-                    currentUser = null;
-                    updateNavigation();
-                    showHome();
-                    showNotification('success', 'Logged Out', 'See you soon!');
-                });
+            saveUserToStorage(null);
+            updateNavigation();
+            showHome();
+            showNotification('success', 'Logged Out', 'See you soon!');
         }
 
         // ========== FLIGHT SEARCH & BOOKING ==========
@@ -1494,35 +1564,42 @@
             }
         }
 
-        function calculateBookingPrice() {
-            fetch('?action=getFlightTime&origin=' + bookingData.origin + '&destination=' + bookingData.destination +
-                  '&departDate=' + bookingData.departDate + '&serviceType=' + bookingData.serviceType +
-                  '&promoCode=' + bookingData.promoCode)
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    bookingData.baseFare = data.surgeFare;
-                    const total = (bookingData.baseFare * bookingData.passengers);
-                    document.getElementById('subtotalPrice').textContent = formatPrice(bookingData.baseFare * bookingData.passengers);
-                    document.getElementById('totalPrice').textContent = formatPrice(total);
-
-                    // Check miles
-                    if (currentUser) {
-                        const milesPrice = total * 0.5; // 1 mile = $0.02
-                        document.getElementById('milesRequired').textContent = Math.ceil(milesPrice);
-                        document.getElementById('userMilesAvailable').textContent = currentUser.Miles;
-                    }
-                }
+        async function calculateBookingPrice() {
+            const data = await apiGet('getFlightTime', {
+                origin: bookingData.origin,
+                destination: bookingData.destination,
+                departDate: bookingData.departDate,
+                serviceType: bookingData.serviceType,
+                cabin: bookingData.cabin,
+                promoCode: bookingData.promoCode
             });
+
+            if (data.success) {
+                bookingData.flightTime = parseFloat(data.flightTime) || 0;
+                bookingData.distanceMiles = parseInt(data.distanceMiles, 10) || 0;
+                bookingData.baseFare = data.surgeFare || data.baseFare || 0;
+                bookingData.totalFare = bookingData.baseFare * bookingData.passengers;
+                document.getElementById('subtotalPrice').textContent = formatPrice(bookingData.baseFare * bookingData.passengers);
+                document.getElementById('totalPrice').textContent = formatPrice(bookingData.totalFare);
+
+                if (currentUser) {
+                    const milesRequired = Math.ceil(bookingData.totalFare / 0.015);
+                    document.getElementById('milesRequired').textContent = milesRequired;
+                    document.getElementById('userMilesAvailable').textContent = currentUser.Miles;
+                }
+            } else {
+                showNotification('error', 'Pricing Error', data.error || 'Unable to calculate pricing');
+            }
         }
 
-        function completeBooking() {
+        async function completeBooking() {
             if (!document.getElementById('agreeBookingTerms').checked) {
                 showNotification('error', 'Error', 'Please agree to Terms of Service');
                 return;
             }
 
             const bookingRefTimestamp = Date.now().toString();
+            const paymentMethod = document.getElementById('paymentMethod').value;
             const bookingPayload = {
                 bookingRef: bookingRefTimestamp,
                 email: currentUser.Email,
@@ -1530,27 +1607,22 @@
                 destination: bookingData.destination,
                 departDate: bookingData.departDate,
                 passengers: bookingData.passengers,
-                cabin: bookingData.cabin,
+                paxCabin: bookingData.cabin,
                 serviceType: bookingData.serviceType,
-                totalPrice: bookingData.baseFare * bookingData.passengers,
-                paymentMethod: document.getElementById('paymentMethod').value,
+                promoCode: bookingData.promoCode,
+                ancillaries: [],
+                paymentMethod: paymentMethod,
                 passengerDetails: passengerData
             };
 
-            fetch('?action=booking', {
-                method: 'POST',
-                body: JSON.stringify(bookingPayload)
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    showNotification('success', 'Booking Confirmed!', `Booking Reference: ${bookingRefTimestamp}`);
-                    closeBookingModal();
-                    loadUserPortalData();
-                } else {
-                    showNotification('error', 'Booking Failed', data.message);
-                }
-            });
+            const data = await apiPost('booking', bookingPayload);
+            if (data.success) {
+                showNotification('success', 'Booking Confirmed!', `Booking Reference: ${data.bookingRef || bookingRefTimestamp}`);
+                closeBookingModal();
+                loadUserPortalData();
+            } else {
+                showNotification('error', 'Booking Failed', data.message || 'Unable to complete booking');
+            }
         }
 
         function closeBookingModal() {
@@ -1558,38 +1630,42 @@
         }
 
         // ========== UPDATE FLIGHT INFO ==========
-        function updateFlightInfo() {
+        async function updateFlightInfo() {
             const origin = document.getElementById('origin').value;
             const destination = document.getElementById('destination').value;
             const departDate = document.getElementById('departDate').value;
+            const serviceType = document.getElementById('serviceType').value;
 
             if (!origin || !destination || !departDate) return;
 
-            fetch('?action=getFlightTime&origin=' + origin + '&destination=' + destination +
-                  '&departDate=' + departDate + '&serviceType=' + document.getElementById('serviceType').value)
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    document.getElementById('flightDistance').textContent = data.distanceMiles + ' mi';
-                    document.getElementById('flightTime').textContent = data.flightTime + ' hrs';
-                    document.getElementById('baseFare').textContent = formatPrice(data.baseFare);
-                    document.getElementById('weatherInfo').textContent = data.weather?.condition || '--';
-                    document.getElementById('flightInfo').style.display = 'block';
-                }
+            const data = await apiGet('getFlightTime', {
+                origin: origin.toUpperCase(),
+                destination: destination.toUpperCase(),
+                departDate: departDate,
+                serviceType: serviceType,
+                cabin: document.getElementById('cabin').value,
+                promoCode: document.getElementById('promoCode').value.trim()
             });
+            if (data.success) {
+                document.getElementById('flightDistance').textContent = `${data.distanceMiles} mi`;
+                document.getElementById('flightTime').textContent = `${data.flightTime} hrs`;
+                document.getElementById('baseFare').textContent = formatPrice(data.baseFare);
+                document.getElementById('weatherInfo').textContent = data.weather?.condition || '--';
+                document.getElementById('flightInfo').style.display = 'block';
+            } else {
+                showNotification('error', 'Flight Validation', data.error || 'Unable to validate airports');
+                document.getElementById('flightInfo').style.display = 'none';
+            }
         }
 
         // ========== CURRENCY & FORMATTING ==========
-        function updateCurrency() {
+        async function updateCurrency() {
             currentCurrency = document.getElementById('currencySelect').value;
-            fetch('?action=getExchangeRate&currency=' + currentCurrency)
-                .then(r => r.json())
-                .then(data => {
-                    if (data.success) {
-                        exchangeRate = data.rate;
-                        updateFlightInfo();
-                    }
-                });
+            const data = await apiGet('getExchangeRate', { currency: currentCurrency });
+            if (data.success) {
+                exchangeRate = data.rate;
+                updateFlightInfo();
+            }
         }
 
         function formatPrice(usd) {
@@ -1606,51 +1682,34 @@
         }
 
         // ========== USER PORTAL ==========
-        function switchPortalTab(tab) {
+        function switchPortalTab(tab, event) {
             document.querySelectorAll('#portalPage .tab-button').forEach(btn => btn.classList.remove('active'));
             document.querySelectorAll('#portalPage .tab-content').forEach(tc => tc.classList.remove('active'));
 
-            event.target.classList.add('active');
+            if (event && event.currentTarget) event.currentTarget.classList.add('active');
             document.getElementById(tab + 'Tab').classList.add('active');
         }
 
-        function loadUserPortalData() {
+        async function loadUserPortalData() {
             if (!currentUser) return;
 
-            fetch('?action=getUserBookings&email=' + currentUser.Email)
-                .then(r => r.json())
-                .then(data => {
-                    displayUserBookings(data.bookings || []);
-                });
+            const bookingResult = await apiGet('getUserBookings', { email: currentUser.Email });
+            displayUserBookings((bookingResult.bookings || []));
 
-            fetch('?action=getDocuments')
-                .then(r => r.json())
-                .then(data => {
-                    displayDocuments(data.documents || []);
-                });
+            const documentsResult = await apiGet('getDocuments');
+            displayDocuments(documentsResult.documents || []);
 
-            fetch('?action=getEvents')
-                .then(r => r.json())
-                .then(data => {
-                    displayPortalEvents(data.events || []);
-                });
+            const eventsResult = await apiGet('getEvents');
+            displayPortalEvents(eventsResult.events || []);
 
-            // Update dashboard stats
-            document.getElementById('totalMiles').textContent = currentUser.Miles;
-            const tier = calculateTier(currentUser.Miles);
-            document.getElementById('memberTier').textContent = tier;
-            document.getElementById('accountStatus').textContent = getStatusDisplay(currentUser.Status);
+            document.getElementById('totalMiles').textContent = currentUser.Miles || 0;
+            document.getElementById('memberTier').textContent = calculateTier(currentUser.Miles || 0);
+            document.getElementById('accountStatus').textContent = getStatusDisplay(currentUser.Status || 1);
 
-            // Count bookings
-            fetch('?action=getUserBookings&email=' + currentUser.Email)
-                .then(r => r.json())
-                .then(data => {
-                    document.getElementById('totalBookings').textContent = (data.bookings || []).length;
-                });
+            document.getElementById('totalBookings').textContent = (bookingResult.bookings || []).length;
 
-            // Load settings
-            document.getElementById('settingName').value = currentUser.FullName || '';
-            document.getElementById('settingEmail').value = currentUser.Email || '';
+            document.getElementById('settingName').value = currentUser.FullName || currentUser.name || '';
+            document.getElementById('settingEmail').value = currentUser.Email || currentUser.email || '';
         }
 
         function displayUserBookings(bookings) {
@@ -1703,18 +1762,22 @@
                 return;
             }
 
-            container.innerHTML = documents.map(d => `
+            container.innerHTML = documents.map(d => {
+                const isConfidential = d.confidential === true || d.Confidential === 'TRUE' || d.Confidential === true;
+                const title = d.title || d.Title || 'Document';
+                const link = d.link || d.Link || '#';
+                return `
                 <div class="document-card">
                     <div class="document-info">
                         <div class="document-title">
-                            ${d.Confidential === 'TRUE' || d.Confidential === true ? '🔒 ' : ''}
-                            ${d.Title}
+                            ${isConfidential ? '🔒 ' : ''}${title}
                         </div>
-                        ${d.Confidential === 'TRUE' || d.Confidential === true ? '<div class="document-confidential">Confidential - Restricted Access</div>' : ''}
+                        ${isConfidential ? '<div class="document-confidential">Confidential - Restricted Access</div>' : ''}
                     </div>
-                    <button class="btn-primary btn-small" onclick="window.open('${d.Link}')">Access</button>
+                    <button class="btn-primary btn-small" onclick="window.open('${link}')">Access</button>
                 </div>
-            `).join('');
+            `;
+            }).join('');
         }
 
         function displayPortalEvents(events) {
@@ -1733,67 +1796,87 @@
             `).join('');
         }
 
-        function viewEticket(bookingRef) {
-            fetch('?action=getBookingDetails&bookingRef=' + bookingRef)
-                .then(r => r.json())
-                .then(data => {
-                    const booking = data.booking;
-                    document.getElementById('eticketContent').innerHTML = `
-                        <div style="text-align: center; margin-bottom: 2rem; border-bottom: 2px solid var(--border); padding-bottom: 1rem;">
-                            <div style="font-size: 2rem; font-weight: bold; color: var(--primary);">✈️ EXPRESS AIRWAYS</div>
-                            <div style="font-size: 1.2rem; color: var(--grey-blue); margin-top: 0.5rem;">E-TICKET</div>
+        async function viewEticket(bookingRef) {
+            const data = await apiGet('getETicket', { bookingRef });
+            if (!data.success) {
+                showNotification('error', 'eTicket Error', data.message || 'Unable to retrieve booking');
+                return;
+            }
+            const booking = data.booking;
+            const manifest = booking.PassengerManifest || '';
+            const manifestRows = manifest.split(';').filter(Boolean).map(item => {
+                const [name, gender, dob, passport, phone] = item.split('|');
+                return `<div style="margin-bottom: 0.75rem;"><strong>${name}</strong><br>Gender: ${gender || 'N/A'} | DOB: ${dob || 'N/A'}<br>Passport: ${passport || 'N/A'} | Phone: ${phone || 'N/A'}</div>`;
+            }).join('');
+
+            document.getElementById('eticketContent').innerHTML = `
+                <div style="text-align: center; margin-bottom: 2rem; border-bottom: 2px solid var(--border); padding-bottom: 1rem;">
+                    <div style="font-size: 2rem; font-weight: bold; color: var(--primary);">✈️ EXPRESS AIRWAYS</div>
+                    <div style="font-size: 1.2rem; color: var(--grey-blue); margin-top: 0.5rem;">E-TICKET</div>
+                </div>
+                <div style="margin-bottom: 1.5rem;">
+                    <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+                        <div>
+                            <div style="color: var(--grey-blue); font-size: 0.9rem;">BOOKING REFERENCE</div>
+                            <div style="font-size: 1.5rem; font-weight: bold;">${booking.BookingRef}</div>
                         </div>
-                        <div class="form-row" style="margin-bottom: 1.5rem;">
-                            <div>
-                                <div style="color: var(--grey-blue); font-size: 0.9rem;">BOOKING REFERENCE</div>
-                                <div style="font-size: 1.5rem; font-weight: bold;">${booking.BookingRef}</div>
-                            </div>
-                            <div>
-                                <div style="color: var(--grey-blue); font-size: 0.9rem;">BOOKING STATUS</div>
-                                <div style="font-size: 1.5rem; font-weight: bold;">${booking.Status}</div>
-                            </div>
+                        <div>
+                            <div style="color: var(--grey-blue); font-size: 0.9rem;">STATUS</div>
+                            <div style="font-size: 1.5rem; font-weight: bold;">${booking.Status}</div>
                         </div>
-                        <div style="background: var(--light-grey); padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem;">
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                                <div>
-                                    <div style="font-size: 0.85rem; color: var(--grey-blue);">FROM</div>
-                                    <div style="font-size: 1.5rem; font-weight: bold;">${booking.Origin}</div>
-                                </div>
-                                <div>
-                                    <div style="font-size: 0.85rem; color: var(--grey-blue);">TO</div>
-                                    <div style="font-size: 1.5rem; font-weight: bold;">${booking.Destination}</div>
-                                </div>
-                            </div>
+                        <div>
+                            <div style="color: var(--grey-blue); font-size: 0.9rem;">BOOKED BY</div>
+                            <div style="font-size: 1rem; font-weight: bold;">${booking.Email}</div>
                         </div>
-                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
-                            <div>
-                                <div style="color: var(--grey-blue);">Departure Date</div>
-                                <div style="font-weight: bold;">${booking.DepartDate}</div>
-                            </div>
-                            <div>
-                                <div style="color: var(--grey-blue);">Passengers</div>
-                                <div style="font-weight: bold;">${booking.Passengers}</div>
-                            </div>
-                            <div>
-                                <div style="color: var(--grey-blue);">Cabin Class</div>
-                                <div style="font-weight: bold;">${booking.PaxCabin}</div>
-                            </div>
-                            <div>
-                                <div style="color: var(--grey-blue);">Total Amount</div>
-                                <div style="font-weight: bold;">${formatPrice(booking.TotalPrice)}</div>
-                            </div>
+                    </div>
+                </div>
+                <div style="background: var(--light-grey); padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                        <div>
+                            <div style="font-size: 0.85rem; color: var(--grey-blue);">FROM</div>
+                            <div style="font-size: 1.25rem; font-weight: bold;">${booking.Origin}</div>
                         </div>
-                        <div style="border-top: 2px solid var(--border); padding-top: 1.5rem;">
-                            <div style="font-weight: bold; margin-bottom: 1rem;">Passenger Details</div>
-                            <div style="background: var(--light-grey); padding: 1rem; border-radius: 8px;">
-                                <div>${booking.PaxName}</div>
-                                <div style="font-size: 0.9rem; color: var(--grey-blue);">Passport: ${booking.PaxPassport}</div>
-                                <div style="font-size: 0.9rem; color: var(--grey-blue);">DOB: ${booking.PaxDOB}</div>
-                            </div>
+                        <div>
+                            <div style="font-size: 0.85rem; color: var(--grey-blue);">TO</div>
+                            <div style="font-size: 1.25rem; font-weight: bold;">${booking.Destination}</div>
                         </div>
-                    `;
-                    document.getElementById('eticketModal').classList.add('active');
-                });
+                        <div>
+                            <div style="font-size: 0.85rem; color: var(--grey-blue);">DEPARTURE</div>
+                            <div style="font-size: 1.25rem; font-weight: bold;">${booking.DepartDate}</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.85rem; color: var(--grey-blue);">FLIGHT TIME</div>
+                            <div style="font-size: 1.25rem; font-weight: bold;">${booking.FlightTimes}</div>
+                        </div>
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+                    <div>
+                        <div style="color: var(--grey-blue);">Passengers</div>
+                        <div style="font-weight: bold;">${booking.Passengers}</div>
+                    </div>
+                    <div>
+                        <div style="color: var(--grey-blue);">Cabin Class</div>
+                        <div style="font-weight: bold;">${booking.PaxCabin}</div>
+                    </div>
+                    <div>
+                        <div style="color: var(--grey-blue);">Payment</div>
+                        <div style="font-weight: bold;">${booking.PaymentMethod}</div>
+                    </div>
+                    <div>
+                        <div style="color: var(--grey-blue);">Total Paid</div>
+                        <div style="font-weight: bold;">${formatPrice(booking.TotalPrice)}</div>
+                    </div>
+                </div>
+                <div style="border-top: 2px solid var(--border); padding-top: 1.5rem;">
+                    <div style="font-weight: bold; margin-bottom: 1rem;">Passenger Manifest</div>
+                    <div style="background: var(--light-grey); padding: 1rem; border-radius: 8px;">${manifestRows || '<div>No full manifest available.</div>'}</div>
+                </div>
+                <div style="margin-top: 1.5rem; font-size: 0.9rem; color: var(--grey-blue); line-height: 1.5;">
+                    <strong>Notice:</strong> This e-ticket is the official document for your flight booking. Please arrive at the airport at least 2 hours before departure, have all travel documents ready, and review the carrier policies before travel. Express Airways is not responsible for itinerary changes after ticket issuance.
+                </div>
+            `;
+            document.getElementById('eticketModal').classList.add('active');
         }
 
         function printEticket() {
@@ -1804,68 +1887,160 @@
             document.getElementById('eticketModal').classList.remove('active');
         }
 
-        function viewBookingDetails(bookingRef) {
-            showNotification('info', 'Feature', 'Booking details editing coming soon');
+        async function viewBookingDetails(bookingRef) {
+            const data = await apiGet('getBookingDetails', { bookingRef });
+            if (!data.success) {
+                showNotification('error', 'Booking Not Found', data.message || 'Unable to retrieve booking.');
+                return;
+            }
+            const booking = data.booking;
+            document.getElementById('editBookingContent').innerHTML = `
+                <div class="form-group">
+                    <label>Booking Reference</label>
+                    <input type="text" id="editBookingRef" value="${booking.BookingRef}" disabled>
+                </div>
+                <div class="form-group">
+                    <label>Departure Date</label>
+                    <input type="date" id="editDepartDate" value="${booking.DepartDate}">
+                </div>
+                <div class="form-group">
+                    <label>Passengers</label>
+                    <input type="number" id="editPassengers" min="1" value="${booking.Passengers}">
+                </div>
+                <div class="form-group">
+                    <label>Phone</label>
+                    <input type="tel" id="editPhone" value="${booking.PaxPhone}">
+                </div>
+                <div class="form-group">
+                    <label>Cabin Class</label>
+                    <select id="editCabin">
+                        <option value="Economy" ${booking.PaxCabin === 'Economy' ? 'selected' : ''}>Economy</option>
+                        <option value="Business" ${booking.PaxCabin === 'Business' ? 'selected' : ''}>Business</option>
+                        <option value="FirstClass" ${booking.PaxCabin === 'FirstClass' ? 'selected' : ''}>First Class</option>
+                    </select>
+                </div>
+            `;
+            document.getElementById('editBookingModal').classList.add('active');
         }
 
-        function cancelBooking(bookingRef) {
-            if (confirm('Are you sure you want to cancel this booking?')) {
-                fetch('?action=cancelBooking&bookingRef=' + bookingRef, { method: 'POST' })
-                    .then(r => r.json())
-                    .then(data => {
-                        if (data.success) {
-                            showNotification('success', 'Booking Cancelled', 'Your booking has been cancelled');
-                            loadUserPortalData();
-                        }
-                    });
+        async function saveBookingChanges() {
+            const bookingRef = document.getElementById('editBookingRef').value;
+            const departDate = document.getElementById('editDepartDate').value;
+            const passengers = parseInt(document.getElementById('editPassengers').value, 10) || 1;
+            const phone = document.getElementById('editPhone').value.trim();
+            const cabin = document.getElementById('editCabin').value;
+
+            const data = await apiPost('changeBooking', {
+                bookingRef,
+                email: currentUser.Email,
+                departDate,
+                passengers,
+                paxPhone: phone,
+                paxCabin: cabin
+            });
+            if (data.success) {
+                showNotification('success', 'Booking Updated', 'Your booking details were saved.');
+                closeEditBookingModal();
+                loadUserPortalData();
+            } else {
+                showNotification('error', 'Update Failed', data.message || 'Unable to update booking');
             }
         }
 
-        function saveSettings() {
+        function closeEditBookingModal() {
+            document.getElementById('editBookingModal').classList.remove('active');
+        }
+
+        async function cancelBooking(bookingRef) {
+            if (!confirm('Are you sure you want to cancel this booking?')) return;
+            const result = await apiPost('cancel', { bookingRef, email: currentUser.Email });
+            if (result.success) {
+                showNotification('success', 'Booking Cancelled', 'Your booking has been cancelled');
+                loadUserPortalData();
+            } else {
+                showNotification('error', 'Cancel Failed', result.message || 'Unable to cancel');
+            }
+        }
+
+        async function saveSettings() {
             const settings = {
-                FullName: document.getElementById('settingName').value,
-                Email: currentUser.Email
+                email: currentUser.Email,
+                fullName: document.getElementById('settingName').value,
+                phone: document.getElementById('settingPhone').value
             };
 
-            fetch('?action=updateAccount', {
-                method: 'POST',
-                body: JSON.stringify(settings)
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    currentUser.FullName = settings.FullName;
-                    updateNavigation();
-                    showNotification('success', 'Settings Saved', 'Your account settings have been updated');
-                }
+            const data = await apiPost('updateAccount', settings);
+            if (data.success) {
+                currentUser.FullName = settings.fullName;
+                saveUserToStorage(currentUser);
+                updateNavigation();
+                showNotification('success', 'Settings Saved', 'Your account settings have been updated');
+            } else {
+                showNotification('error', 'Save Failed', data.message || 'Unable to save account settings');
+            }
+        }
+
+        async function submitContact() {
+            const name = document.getElementById('contactName').value.trim();
+            const email = document.getElementById('contactEmail').value.trim();
+            const message = document.getElementById('contactMessage').value.trim();
+            if (!name || !email || !message) {
+                showNotification('error', 'Contact Error', 'Please fill in all fields');
+                return;
+            }
+            const result = await apiPost('contact', {
+                sheetName: 'Contact',
+                name,
+                email,
+                message
             });
+            if (result.success) {
+                document.getElementById('contactName').value = '';
+                document.getElementById('contactEmail').value = '';
+                document.getElementById('contactMessage').value = '';
+                showNotification('success', 'Message Sent', 'Your request was saved to the contact sheet');
+            } else {
+                showNotification('error', 'Failed', result.message || 'Unable to send message');
+            }
+        }
+
+        async function submitTravelAgentRequest() {
+            const email = document.getElementById('agentEmail').value.trim();
+            const name = document.getElementById('agentName').value.trim();
+            if (!email || !name) {
+                showNotification('error', 'Travel Agent', 'Please fill in both fields');
+                return;
+            }
+            const result = await apiPost('travelAgent', {
+                email,
+                status: 1
+            });
+            if (result.success) {
+                showNotification('success', 'Travel Agent Requested', 'Your account will be updated once approved');
+            } else {
+                showNotification('error', 'Failed', result.message || 'Unable to request travel agent status');
+            }
         }
 
         // ========== ADMIN PORTAL ==========
-        function switchAdminTab(tab) {
+        function switchAdminTab(tab, event) {
             document.querySelectorAll('#adminPage .tab-button').forEach(btn => btn.classList.remove('active'));
             document.querySelectorAll('#adminPage .tab-content').forEach(tc => tc.classList.remove('active'));
 
-            event.target.classList.add('active');
+            if (event && event.currentTarget) event.currentTarget.classList.add('active');
             document.getElementById(tab + 'Tab').classList.add('active');
         }
 
-        function loadAdminData() {
-            fetch('?action=getAdminStats')
-                .then(r => r.json())
-                .then(data => {
-                    document.getElementById('adminTotalBookings').textContent = data.totalBookings || 0;
-                    document.getElementById('adminTotalUsers').textContent = data.totalUsers || 0;
-                    document.getElementById('adminTodayBookings').textContent = data.todayBookings || 0;
-                    document.getElementById('adminPendingRequests').textContent = data.pendingRequests || 0;
-                });
+        async function loadAdminData() {
+            const stats = await apiGet('getAdminStats');
+            document.getElementById('adminTotalBookings').textContent = stats.totalBookings || 0;
+            document.getElementById('adminTotalUsers').textContent = stats.totalUsers || 0;
+            document.getElementById('adminTodayBookings').textContent = stats.todayBookings || 0;
+            document.getElementById('adminPendingRequests').textContent = stats.pendingRequests || 0;
 
-            // Load all bookings
-            fetch('?action=getAllBookings')
-                .then(r => r.json())
-                .then(data => {
-                    const table = document.getElementById('adminBookingsTable');
-                    table.innerHTML = (data.bookings || []).map(b => `
+            const bookingsResult = await apiGet('getAllBookings');
+            const bookingTable = document.getElementById('adminBookingsTable');
+            bookingTable.innerHTML = (bookingsResult.bookings || []).map(b => `
                         <tr>
                             <td>${b.BookingRef}</td>
                             <td>${b.Email}</td>
@@ -1875,14 +2050,10 @@
                             <td><button class="btn-small" onclick="approveBooking('${b.BookingRef}')">Approve</button></td>
                         </tr>
                     `).join('');
-                });
 
-            // Load all users
-            fetch('?action=getAllUsers')
-                .then(r => r.json())
-                .then(data => {
-                    const table = document.getElementById('adminUsersTable');
-                    table.innerHTML = (data.users || []).map(u => `
+            const usersResult = await apiGet('getAllUsers');
+            const userTable = document.getElementById('adminUsersTable');
+            userTable.innerHTML = (usersResult.users || []).map(u => `
                         <tr>
                             <td>${u.FullName}</td>
                             <td>${u.Email}</td>
@@ -1892,68 +2063,73 @@
                             <td><button class="btn-small" onclick="editUser('${u.Email}')">Edit</button></td>
                         </tr>
                     `).join('');
-                });
 
-            // Load documents
-            fetch('?action=getDocuments')
-                .then(r => r.json())
-                .then(data => {
-                    const table = document.getElementById('adminDocumentsTable');
-                    table.innerHTML = (data.documents || []).map(d => `
+            const documentsResult = await apiGet('getDocuments');
+            const docsTable = document.getElementById('adminDocumentsTable');
+            docsTable.innerHTML = (documentsResult.documents || []).map(d => `
                         <tr>
-                            <td>${d.Title}</td>
-                            <td>${d.Confidential === 'TRUE' ? '🔒 Yes' : 'No'}</td>
-                            <td><a href="${d.Link}" target="_blank">Link</a></td>
+                            <td>${d.Title || d.title}</td>
+                            <td>${(d.Confidential === 'TRUE' || d.confidential === true) ? '🔒 Yes' : 'No'}</td>
+                            <td><a href="${d.Link || d.link}" target="_blank">Link</a></td>
                         </tr>
                     `).join('');
-                });
         }
 
         // ========== INITIAL DATA LOAD ==========
-        function loadInitialData() {
-            // Load hero
-            fetch('?action=getHero')
-                .then(r => r.json())
-                .then(data => {
-                    if (data.success) {
-                        document.querySelector('.hero h1').textContent = data.hero.headline;
-                        document.querySelector('.hero p').textContent = data.hero.subheader;
-                    }
-                });
+        async function loadInitialData() {
+            const heroResult = await apiGet('getHero');
+            if (heroResult.success && heroResult.hero) {
+                document.querySelector('.hero h1').textContent = heroResult.hero.headline;
+                document.querySelector('.hero p').textContent = heroResult.hero.subheader;
+                if (heroResult.hero.image) {
+                    document.querySelector('.hero').style.backgroundImage = `url('${heroResult.hero.image}')`;
+                    document.querySelector('.hero').style.backgroundSize = 'cover';
+                    document.querySelector('.hero').style.backgroundPosition = 'center';
+                }
+            }
 
-            // Load sections
-            fetch('?action=getSections')
-                .then(r => r.json())
-                .then(data => {
-                    displaySections(data.sections || []);
-                });
+            const sectionResult = await apiGet('getSections');
+            displaySections(sectionResult.sections || []);
 
-            // Load events
-            fetch('?action=getEvents')
-                .then(r => r.json())
-                .then(data => {
-                    displayEvents(data.events || []);
-                });
+            const eventResult = await apiGet('getEvents');
+            displayEvents(eventResult.events || []);
         }
 
         function displaySections(sections) {
             const container = document.getElementById('sectionsContainer');
-            if (sections.length === 0) return;
+            if (sections.length === 0) {
+                container.innerHTML = '';
+                return;
+            }
 
             container.innerHTML = '<h2 style="margin-bottom: 2rem; color: var(--primary);">Featured</h2>' +
-            '<div class="section-grid">' +
-            sections.map(s => `
-                <div class="section-card" onclick="${s.Link ? 'window.open("' + s.Link + '")' : ''}">
-                    <div class="section-image">
-                        <img src="${s.Image || 'https://via.placeholder.com/250x200?text=Flight'}" alt="${s.Title}">
-                    </div>
-                    <div class="section-content">
-                        <div class="section-title">${s.Title}</div>
-                        <div class="section-description">${s.Description}</div>
-                        ${s.Link ? '<button class="btn-primary btn-small">Learn More</button>' : ''}
-                    </div>
-                </div>
-            `).join('') + '</div>';
+                '<div class="section-grid">' +
+                sections.map(s => {
+                    const image = s.Image || s.image || 'https://via.placeholder.com/250x200?text=Flight';
+                    const title = s.Title || s.title || 'Travel Service';
+                    const description = s.Description || s.description || '';
+                    const link = s.Link || s.link || '';
+                    return `
+                        <div class="section-card" ${link ? 'data-link="' + link + '"' : ''}>
+                            <div class="section-image">
+                                <img src="${image}" alt="${title}">
+                            </div>
+                            <div class="section-content">
+                                <div class="section-title">${title}</div>
+                                <div class="section-description">${description}</div>
+                                ${link ? '<button class="btn-primary btn-small">Learn More</button>' : ''}
+                            </div>
+                        </div>
+                    `;
+                }).join('') + '</div>';
+
+            Array.from(container.querySelectorAll('.section-card')).forEach(card => {
+                const link = card.getAttribute('data-link');
+                if (link) {
+                    card.style.cursor = 'pointer';
+                    card.addEventListener('click', () => window.open(link, '_blank'));
+                }
+            });
         }
 
         function displayEvents(events) {
