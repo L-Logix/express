@@ -20,6 +20,12 @@ const CABIN_MULTIPLIERS = {
   FirstClass: 5.0
 };
 
+const BETA_PROTECT_ENABLED = true;
+const BETA_PROTECT_MODE = "on";
+const BETA_PROTECT_SHEET = "BetaAccess";
+const BETA_CHALLENGE_EXPIRY_MINUTES = 15;
+const CORS_ALLOWED_ORIGIN = "*";
+
 // PROMO CODE DATABASE (IN-MEMORY CACHE)
 let PROMO_CODES_CACHE = {};
 
@@ -124,6 +130,27 @@ function normalizeText(v) {
   return (v || "").toString().replace(/^\uFEFF/, "").trim();
 }
 
+function getConfigValue(key, fallback) {
+  try {
+    const sheet = getSheet("Config");
+    if (!sheet) return fallback;
+    const data = sheet.getDataRange().getValues();
+    for (let i = 1; i < data.length; i++) {
+      if ((data[i][0] || "").toString().trim().toLowerCase() === (key || "").toString().trim().toLowerCase()) {
+        return data[i][1] !== undefined ? data[i][1] : fallback;
+      }
+    }
+  } catch (e) {
+    return fallback;
+  }
+  return fallback;
+}
+
+function getBetaProtectMode() {
+  const configValue = getConfigValue("beta_protect", BETA_PROTECT_MODE);
+  return (configValue || "").toString().trim().toLowerCase() === "on" ? "on" : "off";
+}
+
 function parseJsonField(value, fallback) {
   if (value === undefined || value === null || value === "") return fallback;
   if (typeof value === "object") return value;
@@ -147,6 +174,123 @@ function parseFormEncodedBody(raw) {
     if (key) obj[key] = value;
   });
   return obj;
+}
+
+function jsonResponse(payload) {
+  const output = ContentService.createTextOutput(JSON.stringify(payload)).setMimeType(ContentService.MimeType.JSON);
+  if (output && typeof output.setHeader === 'function') {
+    output.setHeader('Access-Control-Allow-Origin', CORS_ALLOWED_ORIGIN);
+    output.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    output.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  }
+  return output;
+}
+
+function addCorsHeaders(output) {
+  if (output && typeof output.setHeader === 'function') {
+    output.setHeader('Access-Control-Allow-Origin', CORS_ALLOWED_ORIGIN);
+    output.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    output.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  }
+  return output;
+}
+
+function doOptions(e) {
+  return addCorsHeaders(ContentService.createTextOutput('').setMimeType(ContentService.MimeType.JSON));
+}
+
+function getUserRecordByEmail(email) {
+  const normalized = (email || "").toString().toLowerCase();
+  const users = sheetToArray(getSheet("Users"));
+  return users.find(u => (u.Email || "").toString().toLowerCase() === normalized);
+}
+
+function getBetaAccessRow(email) {
+  const normalized = (email || "").toString().toLowerCase();
+  const sheet = getSheet(BETA_PROTECT_SHEET);
+  if (!sheet) return null;
+  const rows = sheetToArray(sheet);
+  return rows.find(r => (r.Email || "").toString().toLowerCase() === normalized) || null;
+}
+
+function generateBetaPasskey() {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+function sendBetaPasskey(email) {
+  const betaSheet = getSheet(BETA_PROTECT_SHEET);
+  if (!betaSheet) return { success: false, message: "Beta access sheet not configured" };
+  const rows = betaSheet.getDataRange().getValues();
+  const headers = rows[0].map(h => (h || "").toString().trim());
+  const emailIndex = headers.indexOf("Email");
+  const passkeyIndex = headers.getBetaProtectMode());
+  const expiresIndex = headers.indexOf("ExpiresAt");
+  const approvedIndex = headers.indexOf("Approved");
+  const normalized = (email || "").toString().toLowerCase();
+  for (let i = 1; i < rows.length; i++) {
+    if ((rows[i][emailIndex] || "").toString().toLowerCase() === normalized) {
+      if (approvedIndex >= 0 && rows[i][approvedIndex] !== "TRUE") {
+        return { success: false, message: "Email is not approved for beta access" };
+      }
+      const passkey = generateBetaPasskey();
+      const expiresAt = new Date(Date.now() + BETA_CHALLENGE_EXPIRY_MINUTES * 60000);
+      if (passkeyIndex >= 0) betaSheet.getRange(i + 1, passkeyIndex + 1).setValue(passkey);
+      if (expiresIndex >= 0) betaSheet.getRange(i + 1, expiresIndex + 1).setValue(expiresAt);
+      MailApp.sendEmail(email, "Your Express Airways Beta Passkey", `Your beta passkey: ${passkey}\nExpires at: ${expiresAt.toISOString()}`);
+      return { success: true, message: "Beta passkey emailed to you." };
+    }
+  }
+  return { success: false, message: "Email not found in beta access list." };
+}
+
+function validateBetaAccess(user, passkey, betaPhrase, clientIp, loginTime) {
+  if (!BETA_PROTECT_ENABLED || BETA_PROTECT_MODE !== "on") return true;
+  if (!user) return false;
+  if ((user.BetaTester || "").toString().toUpperCase() !== "TRUE") return false;
+  const entry = getBetaAccessRow(user.Email);
+  if (!entry) return false;
+
+  const now = new Date();
+  const expires = new Date(entry.ExpiresAt || 0);
+  if (!passkey || (entry.Passkey || "").toString() !== passkey || expires < now) return false;
+
+  if (betaPhrase) {
+    const requiredPhrase = (entry.BetaPhrase || "").toString().trim().toLowerCase();
+    if (!requiredPhrase || requiredPhrase !== betaPhrase.toString().trim().toLowerCase()) return false;
+  }
+
+  if (clientIp) {
+    const allowedIps = ((entry.AllowedIPs || entry.AllowedIP || "") + "").toString().split(/\s*,\s*/).filter(Boolean);
+    if (allowedIps.length && !allowedIps.some(allowed => clientIp === allowed)) {
+      return false;
+    }
+  }
+
+  if (loginTime) {
+    try {
+      const loginDate = new Date(loginTime);
+      if (!isNaN(loginDate.getTime())) {
+        const allowedWindow = ((entry.AllowedHours || entry.AllowedTime || "") + "").toString().trim();
+        if (allowedWindow) {
+          const [start, end] = allowedWindow.split(/\s*-\s*/).map(v => parseInt(v.replace(/[^0-9]/g, ""), 10));
+          if (!isNaN(start) && !isNaN(end)) {
+            const hour = loginDate.getUTCHours();
+            const normalizedStart = start >= 0 && start <= 23 ? start : 0;
+            const normalizedEnd = end >= 0 && end <= 23 ? end : 23;
+            if (normalizedStart <= normalizedEnd) {
+              if (hour < normalizedStart || hour > normalizedEnd) return false;
+            } else {
+              if (hour < normalizedStart && hour > normalizedEnd) return false;
+            }
+          }
+        }
+      }
+    } catch (e) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 function findInSheet(sheet, key, value) {
@@ -462,9 +606,36 @@ function checkBookingLimits(email, departDate) {
   return todayBookings.length < 2; // Max 2 bookings per day
 }
 
+function heartbeatSiteStatus(source, page, user, clientIp) {
+  const sheet = getSheet("SiteStatus");
+  if (!sheet) return false;
+  const statusObj = {
+    Page: page || "unknown",
+    User: user || "anonymous",
+    IP: clientIp || "",
+    Status: "online",
+    Timestamp: new Date()
+  };
+  return upsertSheetRow(sheet, "Source", source || "website", statusObj);
+}
+
 function getStatusValue(v) {
   const n = parseInt(v, 10);
   return Number.isFinite(n) ? n : 1;
+}
+
+function upsertSheetRow(sheet, keyField, keyValue, dataObj) {
+  if (!sheet) return false;
+  const result = findInSheet(sheet, keyField, keyValue);
+  if (result.row > 0) {
+    Object.keys(dataObj).forEach(key => {
+      updateSheetByHeader(sheet, result.row, key, dataObj[key]);
+    });
+    return true;
+  }
+  const row = buildRowByHeaders(sheet, Object.assign({ [keyField]: keyValue }, dataObj));
+  sheet.appendRow(row);
+  return true;
 }
 
 function getUserRecordByEmail(email) {
@@ -559,9 +730,31 @@ function getSystemStatus() {
     for (let i = 1; i < data.length; i++) {
       status[data[i][0]] = data[i][1];
     }
+    status.timestamp = new Date();
     return status;
   } catch(e) {
     return { error: "Unable to fetch system status" };
+  }
+}
+
+function getStatusRows() {
+  try {
+    const statusSheet = getSheet("Status");
+    if (!statusSheet) return [];
+    return sheetToArray(statusSheet).map(row => ({
+      section: row.Section || row.section || "Unknown",
+      name: row.Name || row.name || "Unknown",
+      statusText: row.statusText || row.StatusText || "Unknown",
+      type: parseInt(row.Type, 10) || 1,
+      protocol: row.Protocol || row.protocol || "N/A",
+      dataCenter: row.dataCenter || row.DataCenter || row.DataCenter || "Global",
+      latency: row.Latency || row.latency || "N/A",
+      uptimePct: row.UptimePCT || row.uptimePct || "0",
+      description: row.Description || row.description || "",
+      history: row.History || row.history || ""
+    }));
+  } catch(e) {
+    return [];
   }
 }
 
@@ -654,24 +847,24 @@ function doGet(e) {
         Promo: r.Promo || ""
       }));
 
-      return ContentService.createTextOutput(JSON.stringify({
+      return jsonResponse({
         success: true,
         bookings: bookings
-      })).setMimeType(ContentService.MimeType.JSON);
+      });
     }
 
     // CHECK LOGIN STATUS (stateless - requires email)
     if (action === "checkLogin") {
       const email = (params.email || "").toString().toLowerCase();
       if (!email) {
-        return ContentService.createTextOutput(JSON.stringify({ success: true, loggedIn: false })).setMimeType(ContentService.MimeType.JSON);
+        return jsonResponse({ success: true, loggedIn: false });
       }
       const user = getUserRecordByEmail(email);
       if (!user) {
-        return ContentService.createTextOutput(JSON.stringify({ success: true, loggedIn: false })).setMimeType(ContentService.MimeType.JSON);
+        return jsonResponse({ success: true, loggedIn: false });
       }
       const tierData = calculateLoyaltyTier(user.Miles || 0);
-      return ContentService.createTextOutput(JSON.stringify({
+      return jsonResponse({
         success: true,
         loggedIn: true,
         user: {
@@ -682,32 +875,23 @@ function doGet(e) {
           Status: getStatusValue(user.Status),
           loyaltyTier: tierData.display
         }
-      })).setMimeType(ContentService.MimeType.JSON);
+      });
     }
 
     // VALIDATE AIRPORT
     if (action === "validateAirport") {
       const airport = validateAirportCode(params.code);
       if (airport) {
-        return ContentService.createTextOutput(JSON.stringify({
-          success: true,
-          airport: airport
-        })).setMimeType(ContentService.MimeType.JSON);
+        return jsonResponse({ success: true, airport: airport });
       } else {
-        return ContentService.createTextOutput(JSON.stringify({
-          success: false,
-          error: "Invalid airport code"
-        })).setMimeType(ContentService.MimeType.JSON);
+        return jsonResponse({ success: false, error: "Invalid airport code" });
       }
     }
 
     // SEARCH AIRPORTS
     if (action === "searchAirports") {
       const airports = searchAirports(params.query);
-      return ContentService.createTextOutput(JSON.stringify({
-        success: true,
-        airports: airports
-      })).setMimeType(ContentService.MimeType.JSON);
+      return jsonResponse({ success: true, airports: airports });
     }
 
     // GET FLIGHT TIME
@@ -716,18 +900,12 @@ function doGet(e) {
       const destAirport = validateAirportCode(params.destination) || AIRPORT_CACHE[params.destination];
 
       if (!origAirport || !destAirport) {
-        return ContentService.createTextOutput(JSON.stringify({
-          success: false,
-          error: "Invalid airport codes"
-        })).setMimeType(ContentService.MimeType.JSON);
+        return jsonResponse({ success: false, error: "Invalid airport codes" });
       }
 
       if (params.serviceType === "EX") {
         if (origAirport.type !== "domestic" || destAirport.type !== "domestic") {
-          return ContentService.createTextOutput(JSON.stringify({
-            success: false,
-            error: "Explore Airways is domestic only. Please select domestic airports."
-          })).setMimeType(ContentService.MimeType.JSON);
+          return jsonResponse({ success: false, error: "Explore Airways is domestic only. Please select domestic airports." });
         }
       }
 
@@ -747,7 +925,7 @@ function doGet(e) {
       }
       arrivalDate.setMinutes(arrivalDate.getMinutes() + Math.round(time * 60));
 
-      return ContentService.createTextOutput(JSON.stringify({
+      return jsonResponse({
         success: true,
         flightTime: time.toFixed(2),
         baseFare: baseFare,
@@ -759,7 +937,7 @@ function doGet(e) {
         arrivalTime: Utilities.formatDate(arrivalDate, Session.getScriptTimeZone(), "yyyy-MM-dd HH:mm"),
         weather: destWeather,
         flightStatus: flightStatus
-      })).setMimeType(ContentService.MimeType.JSON);
+      });
     }
 
     // GET WEATHER
@@ -767,23 +945,14 @@ function doGet(e) {
       const airport = validateAirportCode(params.code) || AIRPORT_CACHE[params.code];
       if (airport) {
         const weather = getDestinationWeather(airport.lat, airport.lng);
-        return ContentService.createTextOutput(JSON.stringify({
-          success: true,
-          weather: weather,
-          airport: params.code
-        })).setMimeType(ContentService.MimeType.JSON);
+        return jsonResponse({ success: true, weather: weather, airport: params.code });
       }
     }
 
     // GET EXCHANGE RATE
     if (action === "getExchangeRate") {
       const rate = getExchangeRate("USD", params.currency || "EUR");
-      return ContentService.createTextOutput(JSON.stringify({
-        success: true,
-        rate: rate,
-        from: "USD",
-        to: params.currency || "EUR"
-      })).setMimeType(ContentService.MimeType.JSON);
+      return jsonResponse({ success: true, rate: rate, from: "USD", to: params.currency || "EUR" });
     }
 
     // GET SEATS
@@ -796,7 +965,7 @@ function doGet(e) {
           seats.push({ seat: data[i][1], available: data[i][2] !== "TAKEN" });
         }
       }
-      return ContentService.createTextOutput(JSON.stringify({ success: true, seats })).setMimeType(ContentService.MimeType.JSON);
+      return jsonResponse({ success: true, seats });
     }
 
     // GET ANCILLARIES
@@ -807,7 +976,7 @@ function doGet(e) {
       for (let i = 1; i < data.length; i++) {
         ancillaries.push({ type: data[i][0], description: data[i][1], price: parseFloat(data[i][2]) });
       }
-      return ContentService.createTextOutput(JSON.stringify({ success: true, ancillaries })).setMimeType(ContentService.MimeType.JSON);
+      return jsonResponse({ success: true, ancillaries });
     }
 
     // GET DASHBOARD
@@ -847,10 +1016,7 @@ function doGet(e) {
         }
       }
 
-      return ContentService.createTextOutput(JSON.stringify({
-        success: true,
-        data: { bookings, events, docs, user }
-      })).setMimeType(ContentService.MimeType.JSON);
+      return jsonResponse({ success: true, data: { bookings, events, docs, user } });
     }
 
     // GET HOMEPAGE
@@ -870,24 +1036,23 @@ function doGet(e) {
         });
       }
 
-      return ContentService.createTextOutput(JSON.stringify(response)).setMimeType(ContentService.MimeType.JSON);
+      return jsonResponse(response);
     }
 
     // GET SYSTEM STATUS
     if (action === "getSystemStatus") {
       const status = getSystemStatus();
-      return ContentService.createTextOutput(JSON.stringify({
-        success: true,
-        status: status
-      })).setMimeType(ContentService.MimeType.JSON);
+      return jsonResponse({ success: true, status: status });
+    }
+
+    // GET STATUS SHEET ROWS
+    if (action === "getStatusRows") {
+      return jsonResponse({ success: true, rows: getStatusRows() });
     }
 
     // GET HERO DATA
     if (action === "getHero") {
-      return ContentService.createTextOutput(JSON.stringify({
-        success: true,
-        hero: readHeroConfig()
-      })).setMimeType(ContentService.MimeType.JSON);
+      return jsonResponse({ success: true, hero: readHeroConfig() });
     }
 
     // GET SECTIONS
@@ -895,15 +1060,9 @@ function doGet(e) {
       const sectionSheet = getSheet("Sections");
       if (sectionSheet) {
         const sections = sheetToArray(sectionSheet);
-        return ContentService.createTextOutput(JSON.stringify({
-          success: true,
-          sections: sections
-        })).setMimeType(ContentService.MimeType.JSON);
+        return jsonResponse({ success: true, sections: sections });
       }
-      return ContentService.createTextOutput(JSON.stringify({
-        success: true,
-        sections: []
-      })).setMimeType(ContentService.MimeType.JSON);
+      return jsonResponse({ success: true, sections: [] });
     }
 
     // GET NOTICES
@@ -911,15 +1070,9 @@ function doGet(e) {
       const noticeSheet = getSheet("Notices");
       if (noticeSheet) {
         const notices = sheetToArray(noticeSheet);
-        return ContentService.createTextOutput(JSON.stringify({
-          success: true,
-          notices: notices
-        })).setMimeType(ContentService.MimeType.JSON);
+        return jsonResponse({ success: true, notices: notices });
       }
-      return ContentService.createTextOutput(JSON.stringify({
-        success: true,
-        notices: []
-      })).setMimeType(ContentService.MimeType.JSON);
+      return jsonResponse({ success: true, notices: [] });
     }
 
     // GET EVENTS
@@ -932,7 +1085,7 @@ function doGet(e) {
         link: r.Link || "",
         image: r.Image || ""
       }));
-      return ContentService.createTextOutput(JSON.stringify({ success: true, events })).setMimeType(ContentService.MimeType.JSON);
+      return jsonResponse({ success: true, events });
     }
 
     // GET DOCUMENTS
@@ -944,7 +1097,7 @@ function doGet(e) {
         confidential: r.Confidential === true || r.Confidential === "TRUE",
         image: r.Image || ""
       }));
-      return ContentService.createTextOutput(JSON.stringify({ success: true, documents })).setMimeType(ContentService.MimeType.JSON);
+      return jsonResponse({ success: true, documents });
     }
 
     // GET LIVE STATE (homepage + notices + status in one call)
@@ -974,7 +1127,7 @@ function doGet(e) {
         response.notices = sheetToArray(noticeSheet);
       }
 
-      return ContentService.createTextOutput(JSON.stringify(response)).setMimeType(ContentService.MimeType.JSON);
+      return jsonResponse(response);
     }
 
     // GET USER
@@ -987,7 +1140,7 @@ function doGet(e) {
         const sameUserIdAsEmail = (u.Email || "").toString().toLowerCase() === (params.userId || "").toString().toLowerCase();
         if (sameEmail || sameLegacyId || sameUserIdAsEmail) {
           const tierData = calculateLoyaltyTier(u.Miles || 0);
-          return ContentService.createTextOutput(JSON.stringify({
+          return jsonResponse({
             success: true,
             user: {
               id: u.UserID || u.Email,
@@ -998,13 +1151,10 @@ function doGet(e) {
               status: getStatusValue(u.Status),
               loyaltyTier: tierData.display
             }
-          })).setMimeType(ContentService.MimeType.JSON);
+          });
         }
       }
-      return ContentService.createTextOutput(JSON.stringify({
-        success: false,
-        error: "User not found"
-      })).setMimeType(ContentService.MimeType.JSON);
+      return jsonResponse({ success: false, error: "User not found" });
     }
 
     // GET E-TICKET
@@ -1013,9 +1163,9 @@ function doGet(e) {
       const bookings = sheetToArray(getSheet("Bookings"));
       const booking = bookings.find(b => (b.BookingRef || "").toString() === (bookingRef || "").toString());
       if (!booking) {
-        return ContentService.createTextOutput(JSON.stringify({ success: false, message: "Booking not found" })).setMimeType(ContentService.MimeType.JSON);
+        return jsonResponse({ success: false, message: "Booking not found" });
       }
-      return ContentService.createTextOutput(JSON.stringify({ success: true, booking })).setMimeType(ContentService.MimeType.JSON);
+      return jsonResponse({ success: true, booking });
     }
 
     // GET BOOKING DETAILS
@@ -1024,20 +1174,16 @@ function doGet(e) {
       const bookings = sheetToArray(getSheet("Bookings"));
       const booking = bookings.find(b => (b.BookingRef || "").toString() === (bookingRef || "").toString());
       if (!booking) {
-        return ContentService.createTextOutput(JSON.stringify({ success: false, message: "Booking not found" })).setMimeType(ContentService.MimeType.JSON);
+        return jsonResponse({ success: false, message: "Booking not found" });
       }
-      return ContentService.createTextOutput(JSON.stringify({ success: true, booking })).setMimeType(ContentService.MimeType.JSON);
+      return jsonResponse({ success: true, booking });
     }
 
     // GET SEAT MAP
     if (action === "getSeatMap") {
       const distance = parseFloat(params.distanceMiles) || 1000;
       const seatMapData = generateSeatMap(params.bookingRef || "", distance);
-      return ContentService.createTextOutput(JSON.stringify({
-        success: true,
-        seats: seatMapData.seats,
-        aircraft: seatMapData.aircraft
-      })).setMimeType(ContentService.MimeType.JSON);
+      return jsonResponse({ success: true, seats: seatMapData.seats, aircraft: seatMapData.aircraft });
     }
 
     // GET ADMIN STATS
@@ -1047,31 +1193,25 @@ function doGet(e) {
       const today = new Date().toDateString();
       const todayBookings = bookings.filter(b => new Date(b.Timestamp || b.DepartDate).toDateString() === today);
 
-      return ContentService.createTextOutput(JSON.stringify({
+      return jsonResponse({
         success: true,
         totalBookings: bookings.length,
         totalUsers: users.length,
         todayBookings: todayBookings.length,
         pendingRequests: 0 // Could be calculated from other sheets
-      })).setMimeType(ContentService.MimeType.JSON);
+      });
     }
 
     // GET ALL BOOKINGS (ADMIN)
     if (action === "getAllBookings") {
       const bookings = sheetToArray(getSheet("Bookings"));
-      return ContentService.createTextOutput(JSON.stringify({
-        success: true,
-        bookings: bookings
-      })).setMimeType(ContentService.MimeType.JSON);
+      return jsonResponse({ success: true, bookings: bookings });
     }
 
     // GET ALL USERS (ADMIN)
     if (action === "getAllUsers") {
       const users = sheetToArray(getSheet("Users"));
-      return ContentService.createTextOutput(JSON.stringify({
-        success: true,
-        users: users
-      })).setMimeType(ContentService.MimeType.JSON);
+      return jsonResponse({ success: true, users: users });
     }
 
     // GET HOMEPAGE (fallback for homepage data)
@@ -1090,10 +1230,10 @@ function doGet(e) {
       });
     }
 
-    return ContentService.createTextOutput(JSON.stringify(response)).setMimeType(ContentService.MimeType.JSON);
+    return jsonResponse(response);
 
   } catch (error) {
-    return ContentService.createTextOutput(JSON.stringify({ success: false, error: error.toString() })).setMimeType(ContentService.MimeType.JSON);
+    return jsonResponse({ success: false, error: error.toString() });
   }
 }
 
@@ -1135,6 +1275,11 @@ function doPost(e) {
           if (statusValue === 2) {
             throw new Error("Account suspended. Contact support.");
           }
+          if (BETA_PROTECT_ENABLED && BETA_PROTECT_MODE === "on") {
+            if (!validateBetaAccess(u, data.betaPasskey, data.betaPhrase, data.clientIp, data.loginTime)) {
+              throw new Error("Beta access validation failed. Request a secure passkey, verify your IP, and login within your allowed time window.");
+            }
+          }
           const tierData = calculateLoyaltyTier(u.Miles || 0);
           response = {
             success: true,
@@ -1156,6 +1301,11 @@ function doPost(e) {
 
     // SIGNUP
     else if (action === "signup") {
+    else if (action === "heartbeat") {
+      heartbeatSiteStatus(data.source || "website", data.page || "home", data.user || "anonymous", data.clientIp || "");
+      response = { success: true, message: "Heartbeat recorded" };
+    }
+
       const sheet = getSheet("Users");
       if (!sheet) throw new Error("Users sheet not found.");
 
@@ -1180,6 +1330,7 @@ function doPost(e) {
         Role: data.role || "User",
         Miles: 0,
         Status: 1,
+        BetaTester: data.betaTester || "FALSE",
         JoinDate: new Date(),
         Timestamp: new Date(),
         UpdatedAt: new Date()
@@ -1187,16 +1338,20 @@ function doPost(e) {
       sheet.appendRow(row);
       response = {
         success: true,
-        user: { 
+        user: {
           id: email,
-          name: fullName, 
-          email: email, 
-          role: data.role || "User", 
-          miles: 0, 
+          name: fullName,
+          email: email,
+          role: data.role || "User",
+          miles: 0,
           status: 1,
-          loyaltyTier: "Basic" 
+          loyaltyTier: "Basic"
         }
       };
+    }
+    else if (action === "requestBetaPasskey") {
+      if (!data.email) throw new Error("Email is required for beta passkey request.");
+      response = sendBetaPasskey(data.email);
     }
 
     // VALIDATE PROMO CODE
@@ -1451,9 +1606,9 @@ function doPost(e) {
       }
     }
 
-    return ContentService.createTextOutput(JSON.stringify(response)).setMimeType(ContentService.MimeType.JSON);
+    return jsonResponse(response);
 
   } catch (error) {
-    return ContentService.createTextOutput(JSON.stringify({ success: false, message: error.toString() })).setMimeType(ContentService.MimeType.JSON);
+    return jsonResponse({ success: false, message: error.toString() });
   }
 }

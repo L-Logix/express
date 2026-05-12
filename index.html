@@ -894,7 +894,7 @@
             <div id="sectionsContainer"></div>
 
             <!-- Events -->
-            <div style="margin-bottom: 3rem;">
+            <div id="eventsSection" style="margin-bottom: 3rem;">
                 <h2 style="margin-bottom: 2rem; color: var(--primary);">Upcoming Events</h2>
                 <div id="eventsContainer"></div>
             </div>
@@ -1102,6 +1102,18 @@
                 <label>Password</label>
                 <input type="password" id="loginPassword" placeholder="Enter password">
             </div>
+            <div class="form-group">
+                <label>Beta Passkey</label>
+                <input type="text" id="loginBetaPasskey" placeholder="Enter beta passkey">
+            </div>
+            <div class="form-group">
+                <label>Beta Phrase</label>
+                <input type="text" id="loginBetaPhrase" placeholder="Enter beta phrase">
+            </div>
+            <div class="form-row" style="grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                <button class="btn-secondary" onclick="requestBetaPasskey()" style="width: 100%;">Request Beta Passkey</button>
+                <button class="btn-secondary" onclick="showBetaInfo()" style="width: 100%;">Need Help?</button>
+            </div>
             <div class="button-group">
                 <button class="btn-primary" onclick="handleLogin()" style="flex: 1;">Login</button>
                 <button class="btn-secondary" onclick="closeLoginModal()" style="flex: 1;">Cancel</button>
@@ -1228,6 +1240,7 @@
         let currentUser = null;
         let exchangeRate = 1;
         let currentCurrency = 'USD';
+        let clientIpCache = '';
         let bookingData = {
             origin: '', destination: '', departDate: '', serviceType: '',
             passengers: 1, cabin: 'Economy', promoCode: '', baseFare: 0, totalFare: 0,
@@ -1235,19 +1248,98 @@
         };
         let passengerData = [];
 
-        async function apiPost(action, body = {}) {
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action, ...body })
-            });
+        async function apiFetch(url, options = {}) {
+            const response = await fetch(url, options);
+            if (!response.ok) {
+                throw new Error(`Request failed: ${response.status}`);
+            }
             return await response.json();
         }
 
+        async function apiPost(action, body = {}) {
+            const payload = { action, ...body };
+            const options = {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            };
+            try {
+                return await apiFetch(API_URL, options);
+            } catch (err) {
+                const fallbackBody = new URLSearchParams(payload).toString();
+                const fallbackUrl = `${window.location.origin}${window.location.pathname}`;
+                try {
+                    return await apiFetch(fallbackUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: fallbackBody
+                    });
+                } catch (fallbackErr) {
+                    console.error('API POST failed:', err, fallbackErr);
+                    return { success: false, message: err.message || 'Unable to reach API' };
+                }
+            }
+        }
+
         async function apiGet(action, params = {}) {
-            const query = new URLSearchParams({ action, ...params });
-            const response = await fetch(`${API_URL}?${query.toString()}`);
-            return await response.json();
+            const query = new URLSearchParams({ action, ...params }).toString();
+            try {
+                return await apiFetch(`${API_URL}?${query}`);
+            } catch (err) {
+                const fallbackUrl = `${window.location.origin}${window.location.pathname}?${query}`;
+                try {
+                    return await apiFetch(fallbackUrl);
+                } catch (fallbackErr) {
+                    console.error('API GET failed:', err, fallbackErr);
+                    return { success: false, message: err.message || 'Unable to reach API' };
+                }
+            }
+        }
+
+        async function getPublicIp() {
+            if (clientIpCache) return clientIpCache;
+            try {
+                const response = await fetch('https://api.ipify.org/?format=json');
+                if (!response.ok) return '';
+                const data = await response.json();
+                clientIpCache = data.ip || '';
+                return clientIpCache;
+            } catch (e) {
+                return '';
+            }
+        }
+
+        async function sendHeartbeat() {
+            const clientIp = await getPublicIp();
+            await apiPost('heartbeat', {
+                source: 'website',
+                page: 'homepage',
+                user: currentUser ? currentUser.Email : 'anonymous',
+                clientIp: clientIp,
+                status: 'online'
+            });
+        }
+
+        async function getPublicIp() {
+            try {
+                const response = await fetch('https://api.ipify.org/?format=json');
+                if (!response.ok) return '';
+                const data = await response.json();
+                return data.ip || '';
+            } catch (e) {
+                return '';
+            }
+        }
+
+        async function getPublicIp() {
+            try {
+                const response = await fetch('https://api.ipify.org/?format=json');
+                if (!response.ok) return '';
+                const data = await response.json();
+                return data.ip || '';
+            } catch (e) {
+                return '';
+            }
         }
 
         function saveUserToStorage(user) {
@@ -1278,6 +1370,7 @@
                 loadInitialData();
                 checkLoginStatus();
                 setMinDate();
+                setInterval(loadInitialData, 60000);
             }, 800);
         });
 
@@ -1357,16 +1450,20 @@
             document.getElementById('loginModal').classList.remove('active');
         }
 
-        async function handleLogin() {
+        async funcclientIp = await getPublicIp();
+            const loginTime = new Date().toISOString();
+            const data = await apiPost('login', { email, password, betaPasskey, betaPhrase, clientIp, loginTim
             const email = document.getElementById('loginEmail').value.trim();
             const password = document.getElementById('loginPassword').value.trim();
+            const betaPasskey = document.getElementById('loginBetaPasskey').value.trim();
+            const betaPhrase = document.getElementById('loginBetaPhrase').value.trim();
 
             if (!email || !password) {
                 showNotification('error', 'Error', 'Please enter email and password');
                 return;
             }
 
-            const data = await apiPost('login', { email, password });
+            const data = await apiPost('login', { email, password, betaPasskey, betaPhrase });
             if (data.success) {
                 saveUserToStorage({
                     FullName: data.user.name,
@@ -1383,6 +1480,24 @@
             } else {
                 showNotification('error', 'Login Failed', data.message || 'Invalid credentials');
             }
+        }
+
+        async function requestBetaPasskey() {
+            const email = document.getElementById('loginEmail').value.trim();
+            if (!email) {
+                showNotification('error', 'Error', 'Please enter your email to request a beta passkey');
+                return;
+            }
+            const result = await apiPost('requestBetaPasskey', { email });
+            if (result.success) {
+                showNotification('success', 'Beta Passkey Sent', result.message || 'Check your email for the passkey');
+            } else {
+                showNotification('error', 'Beta Passkey Failed', result.message || 'Unable to send beta passkey');
+            }
+        }
+
+        function showBetaInfo() {
+            showNotification('info', 'Beta Security', 'Beta access requires 4-step verification: credentials, emailed passkey, approved IP, and allowed login window. Only approved beta testers should be allowed and each login attempt is tied to a one-time passkey.');
         }
 
         function showSignupModal() {
@@ -2093,6 +2208,8 @@
 
             const eventResult = await apiGet('getEvents');
             displayEvents(eventResult.events || []);
+
+            await sendHeartbeat();
         }
 
         function displaySections(sections) {
@@ -2133,17 +2250,18 @@
         }
 
         function displayEvents(events) {
+            const section = document.getElementById('eventsSection');
             const container = document.getElementById('eventsContainer');
-            if (events.length === 0) {
-                container.innerHTML = '<div class="alert alert-info">No upcoming events</div>';
+            if (!events || events.length === 0) {
+                if (section) section.style.display = 'none';
                 return;
             }
-
+            if (section) section.style.display = 'block';
             container.innerHTML = events.map(e => `
                 <div class="event-card">
-                    <div class="event-date">${e.Date}</div>
-                    <div class="event-title">${e.Title}</div>
-                    <div style="color: var(--grey-blue); margin-top: 0.5rem;">${e.Description}</div>
+                    <div class="event-date">${e.date || e.Date}</div>
+                    <div class="event-title">${e.title || e.Title}</div>
+                    <div style="color: var(--grey-blue); margin-top: 0.5rem;">${e.description || e.Description}</div>
                 </div>
             `).join('');
         }

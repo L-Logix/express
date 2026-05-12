@@ -70,6 +70,101 @@ const CONFIG = {
 };
 
 // ==========================================
+// LIVE STATUS SHEET SYNCHRONIZATION
+// ==========================================
+const STATUS_API_URL = 'https://script.google.com/macros/s/AKfycbwa6kLuhaN1PdGuzOwEYnc6ZMFuJD3VR3R-T-qsPiTbB-4fnNxMJOGtitmxbkmQEWK3nQ/exec';
+
+async function statusFetch(url, options = {}) {
+    const response = await fetch(url, options);
+    if (!response.ok) {
+        throw new Error(`Status fetch failed: ${response.status}`);
+    }
+    return await response.json();
+}
+
+async function statusGet(action, params = {}) {
+    const query = new URLSearchParams({ action, ...params }).toString();
+    try {
+        return await statusFetch(`${STATUS_API_URL}?${query}`);
+    } catch (error) {
+        console.warn('Primary status API failed, attempting fallback.', error);
+        const fallbackUrl = `${window.location.origin}${window.location.pathname}?${query}`;
+        try {
+            return await statusFetch(fallbackUrl);
+        } catch (fallbackError) {
+            console.error('Status fallback failed.', fallbackError);
+            return { success: false, message: fallbackError.message };
+        }
+    }
+}
+
+async function fetchStatusRows() {
+    try {
+        const result = await statusGet('getStatusRows');
+        if (result && result.success && Array.isArray(result.rows) && result.rows.length) {
+            renderStatusRows(result.rows);
+            return;
+        }
+    } catch (error) {
+        console.error('Unable to load status rows:', error);
+    }
+}
+
+function getOverallStatusFromRows(rows) {
+    if (!rows || !rows.length) return { bannerClass: 'status-operational', bannerText: 'All systems operational' };
+    const highest = rows.reduce((acc, row) => Math.max(acc, row.type || 1), 1);
+    if (highest === 4) return { bannerClass: 'status-maintenance', bannerText: 'Planned maintenance or migration in progress' };
+    if (highest === 3) return { bannerClass: 'status-down', bannerText: 'Major outage detected' };
+    if (highest === 2) return { bannerClass: 'status-degraded', bannerText: 'Degraded performance across one or more services' };
+    return { bannerClass: 'status-operational', bannerText: 'All systems operational' };
+}
+
+function renderStatusRows(rows) {
+    const banner = document.getElementById('status-banner');
+    const bannerText = document.getElementById('status-text');
+    const { bannerClass, bannerText: overallText } = getOverallStatusFromRows(rows);
+    banner.className = `overall-status ${bannerClass}`;
+    bannerText.innerText = overallText;
+
+    const webContainer = document.getElementById('services-container');
+    webContainer.innerHTML = '';
+    const grouped = {};
+    rows.forEach(row => {
+        const sectionKey = row.section || 'General';
+        grouped[sectionKey] = grouped[sectionKey] || [];
+        grouped[sectionKey].push(row);
+    });
+
+    Object.keys(grouped).forEach(sectionTitle => {
+        const sectionHeader = document.createElement('h2');
+        sectionHeader.className = 'category-title';
+        sectionHeader.innerText = sectionTitle;
+        webContainer.appendChild(sectionHeader);
+
+        grouped[sectionTitle].forEach(service => {
+            const classes = getTypeClasses(service.type);
+            const graphHtml = generateVisualGraph(service.type);
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.innerHTML = `
+                <div class="service-header">
+                    <h3>${service.name}</h3>
+                    <span class="badge ${classes.badge}">${service.statusText}</span>
+                </div>
+                <div class="service-meta">
+                    <span class="latency-indicator">[LATENCY: ${service.latency}]</span>
+                    <span><strong>${service.uptimePct}% SLA Compliance</strong></span>
+                </div>
+                <div class="uptime-graph">${graphHtml}</div>
+                <p class="service-desc">${service.description || 'No details provided.'}</p>
+                ${service.history ? `<p class="service-history"><strong>History:</strong> ${service.history}</p>` : ''}
+            `;
+            webContainer.appendChild(card);
+        });
+    });
+}
+
+// ==========================================
 // RENDER ENGINE (NO SIMULATION)
 // ==========================================
 
@@ -112,11 +207,15 @@ document.addEventListener("DOMContentLoaded", () => {
     updateTime();
     setInterval(updateTime, 1000);
 
-    // 2. Set Global Banner
+    // 2. Set Global Banner until sheet data is loaded
     const banner = document.getElementById('status-banner');
     const bannerText = document.getElementById('status-text');
     banner.className = `overall-status ${CONFIG.globalBannerState}`;
     bannerText.innerText = CONFIG.globalBannerText;
+
+    // 3. Live sheet update every minute
+    fetchStatusRows();
+    setInterval(fetchStatusRows, 60000);
 
     // 3. Set Progress Bar
     setTimeout(() => {
