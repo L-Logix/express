@@ -51,26 +51,26 @@ function loadPromoCodes() {
 function validatePromoCode(code) {
   loadPromoCodes();
   const promoCode = PROMO_CODES_CACHE[code.toString().toUpperCase()];
-
+  
   if (!promoCode) {
     return { valid: false, message: "Invalid promo code" };
   }
-
+  
   if (!promoCode.active) {
     return { valid: false, message: "Promo code is inactive" };
   }
-
+  
   if (promoCode.usedCount >= promoCode.maxUses) {
     return { valid: false, message: "Promo code usage limit exceeded" };
   }
-
+  
   const expiry = new Date(promoCode.expiryDate);
   if (expiry < new Date()) {
     return { valid: false, message: "Promo code has expired" };
   }
-
-  return {
-    valid: true,
+  
+  return { 
+    valid: true, 
     code: promoCode.code,
     discountPercent: promoCode.discountPercent,
     discountDollars: promoCode.discountDollars
@@ -190,6 +190,24 @@ function buildRowByHeaders(sheet, dataObj) {
     if (!key) return "";
     return dataObj[key] !== undefined ? dataObj[key] : "";
   });
+}
+
+// CORS and JSON responder helpers
+function addCorsHeaders(output) {
+  if (!output) return output;
+  try {
+    output.setHeader('Access-Control-Allow-Origin', '*');
+    output.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    output.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  } catch (e) {
+    // Some environments may not allow header injection; ignore.
+  }
+  return output;
+}
+
+function respond(payload) {
+  const txt = JSON.stringify(payload || {});
+  return addCorsHeaders(ContentService.createTextOutput(txt).setMimeType(ContentService.MimeType.JSON));
 }
 
 // AIRCRAFT CONFIGURATIONS (Distance-based)
@@ -326,44 +344,35 @@ function applySurgePricing(departDate, baseFare) {
 
 // REAL-TIME AIRPORT DATA
 function validateAirportCode(code) {
-  const normalized = (code || "").toString().trim().toUpperCase();
-  if (!normalized) return null;
-  if (AIRPORT_CACHE[normalized]) {
-    return AIRPORT_CACHE[normalized];
+  if (AIRPORT_CACHE[code]) {
+    return AIRPORT_CACHE[code];
   }
 
   try {
-    const openSkyUrl = `https://opensky-network.org/api/airports/query?query=${encodeURIComponent(normalized)}`;
+    const openSkyUrl = `https://opensky-network.org/api/airports/query?icao=${code}`;
     const response = UrlFetchApp.fetch(openSkyUrl, {muteHttpExceptions: true});
 
     if (response.getResponseCode() === 200) {
       const data = JSON.parse(response.getContentText());
       if (data.result && data.result.length > 0) {
-        const airport = data.result.find(a =>
-          (a.iata || "").toString().toUpperCase() === normalized ||
-          (a.icao || "").toString().toUpperCase() === normalized
-        ) || data.result[0];
-        if (airport && airport.latitude && airport.longitude) {
-          const airportData = {
-            name: airport.name || normalized,
-            lat: airport.latitude,
-            lng: airport.longitude,
-            type: (airport.country || "").toString().toUpperCase() === "USA" ? "domestic" : "international",
-            city: airport.municipality || "Unknown",
-            country: airport.country || "Unknown",
-            iata: (airport.iata || "").toString().toUpperCase(),
-            icao: (airport.icao || "").toString().toUpperCase()
-          };
-          AIRPORT_CACHE[normalized] = airportData;
-          return airportData;
-        }
+        const airport = data.result[0];
+        const airportData = {
+          name: airport.name || code,
+          lat: airport.latitude,
+          lng: airport.longitude,
+          type: "international",
+          city: airport.municipality || "Unknown",
+          country: airport.country || "Unknown"
+        };
+        AIRPORT_CACHE[code] = airportData;
+        return airportData;
       }
     }
   } catch(e) {
-    // Silent fail, use cache when possible
+    // Silent fail, use cache
   }
 
-  return AIRPORT_CACHE[normalized] || null;
+  return AIRPORT_CACHE[code] || null;
 }
 
 function searchAirports(query) {
@@ -559,40 +568,73 @@ function getSystemStatus() {
     for (let i = 1; i < data.length; i++) {
       status[data[i][0]] = data[i][1];
     }
+    // Persist live status to Config sheet for monitoring
+    try {
+      postConfigUpdates(status);
+    } catch (e) {
+      Logger.log('Failed to post status to Config: ' + e);
+    }
+    // include a timestamp
+    status.timestamp = new Date().toISOString();
     return status;
   } catch(e) {
     return { error: "Unable to fetch system status" };
   }
 }
 
+// Ensure Config sheet exists and can be upserted
+function ensureConfigSheet() {
+  const ss = SpreadsheetApp.openByUrl(SHEET_URL);
+  let sheet = ss.getSheetByName("Config");
+  if (!sheet) {
+    sheet = ss.insertSheet("Config");
+    sheet.appendRow(["Key", "Value"]);
+  }
+  return sheet;
+}
+
+function upsertConfigKey(key, value) {
+  try {
+    const sheet = ensureConfigSheet();
+    const found = findInSheet(sheet, "Key", key);
+    if (found.row > 0) {
+      updateSheetByHeader(sheet, found.row, "Value", value);
+    } else {
+      sheet.appendRow([key, value]);
+    }
+    return true;
+  } catch (e) {
+    Logger.log("Config upsert error: " + e);
+    return false;
+  }
+}
+
+function postConfigUpdates(statusObj) {
+  try {
+    if (!statusObj || typeof statusObj !== 'object') return false;
+    const keys = Object.keys(statusObj);
+    for (let k of keys) {
+      try {
+        upsertConfigKey(k, statusObj[k]);
+      } catch (e) {
+        // continue on errors per-key
+      }
+    }
+    upsertConfigKey('SystemStatusTimestamp', new Date().toISOString());
+    return true;
+  } catch (e) {
+    Logger.log('postConfigUpdates error: ' + e);
+    return false;
+  }
+}
+
 // EMAIL NOTIFICATIONS (uses Google Apps Script native email)
 function sendBookingConfirmation(email, bookingRef, origin, destination, departDate) {
+  // Email sending disabled per admin request. Log action and return success.
   try {
-    const subject = "Booking Confirmation - Express Airways - Ref: " + bookingRef;
-    const message = `
-Dear Valued Customer,
-
-Your flight booking has been confirmed!
-
-Booking Reference: ${bookingRef}
-Route: ${origin} → ${destination}
-Departure Date: ${departDate}
-
-Next Steps:
-1. Check your dashboard for seats and ancillaries
-2. Select your preferred seat
-3. Complete payment if not already done
-
-For assistance, visit our support portal or reply to this email.
-
-Best regards,
-Express Airways Team
-    `;
-    
-    MailApp.sendEmail(email, subject, message);
-    return { success: true };
-  } catch(e) {
-    Logger.log("Email send error: " + e);
+    Logger.log('sendBookingConfirmation called for ' + email + ' (email disabled)');
+    return { success: true, message: 'Email sending disabled by server configuration.' };
+  } catch (e) {
     return { success: false, error: e.toString() };
   }
 }
@@ -620,10 +662,7 @@ function doGet(e) {
       }
 
       if (!resolvedEmail) {
-        return ContentService.createTextOutput(JSON.stringify({
-          success: false,
-          message: "email or userId is required"
-        })).setMimeType(ContentService.MimeType.JSON);
+        return respond({ success: false, message: "email or userId is required" });
       }
 
       const seatAssignments = seatSheet ? sheetToArray(seatSheet) : [];
@@ -634,80 +673,35 @@ function doGet(e) {
 
       const normalizedEmail = (resolvedEmail || "").toString().toLowerCase();
       const rows = sheetToArray(bookingsSheet).filter(r => (r.Email || "").toString().toLowerCase() === normalizedEmail);
-      const bookings = rows.map(r => ({
-        BookingRef: r.BookingRef,
-        Status: r.Status || "CONFIRMED",
-        Origin: r.Origin || "",
-        Destination: r.Destination || "",
-        DepartDate: r.DepartDate || "",
-        FlightTimes: r.FlightTimes || "",
-        ServiceType: r.ServiceType || "",
-        Passengers: parseInt(r.Passengers, 10) || 1,
-        TotalPrice: r.TotalPrice || 0,
-        PaymentMethod: r.PaymentMethod || "",
-        PaxName: r.PaxName || "",
-        PaxDOB: r.PaxDOB || "",
-        PaxGender: r.PaxGender || "",
-        PaxPassport: r.PaxPassport || "",
-        PaxPhone: r.PaxPhone || "",
-        PaxCabin: r.PaxCabin || "",
-        Promo: r.Promo || ""
+      const data = rows.map(r => ({
+        bookingRef: r.BookingRef,
+        status: r.Status || "CONFIRMED",
+        seat: seatsByBooking[r.BookingRef] || "",
+        flightData: {
+          origin: r.Origin || "",
+          destination: r.Destination || "",
+          departDate: r.DepartDate || "",
+          passengers: parseInt(r.Passengers, 10) || 1
+        }
       }));
 
-      return ContentService.createTextOutput(JSON.stringify({
-        success: true,
-        bookings: bookings
-      })).setMimeType(ContentService.MimeType.JSON);
-    }
-
-    // CHECK LOGIN STATUS (stateless - requires email)
-    if (action === "checkLogin") {
-      const email = (params.email || "").toString().toLowerCase();
-      if (!email) {
-        return ContentService.createTextOutput(JSON.stringify({ success: true, loggedIn: false })).setMimeType(ContentService.MimeType.JSON);
-      }
-      const user = getUserRecordByEmail(email);
-      if (!user) {
-        return ContentService.createTextOutput(JSON.stringify({ success: true, loggedIn: false })).setMimeType(ContentService.MimeType.JSON);
-      }
-      const tierData = calculateLoyaltyTier(user.Miles || 0);
-      return ContentService.createTextOutput(JSON.stringify({
-        success: true,
-        loggedIn: true,
-        user: {
-          FullName: user.FullName,
-          Email: user.Email,
-          Role: user.Role,
-          Miles: user.Miles || 0,
-          Status: getStatusValue(user.Status),
-          loyaltyTier: tierData.display
-        }
-      })).setMimeType(ContentService.MimeType.JSON);
+      return respond({ success: true, data: data });
     }
 
     // VALIDATE AIRPORT
     if (action === "validateAirport") {
       const airport = validateAirportCode(params.code);
       if (airport) {
-        return ContentService.createTextOutput(JSON.stringify({
-          success: true,
-          airport: airport
-        })).setMimeType(ContentService.MimeType.JSON);
+        return respond({ success: true, airport: airport });
       } else {
-        return ContentService.createTextOutput(JSON.stringify({
-          success: false,
-          error: "Invalid airport code"
-        })).setMimeType(ContentService.MimeType.JSON);
+        return respond({ success: false, error: "Invalid airport code" });
       }
     }
 
     // SEARCH AIRPORTS
     if (action === "searchAirports") {
       const airports = searchAirports(params.query);
-      return ContentService.createTextOutput(JSON.stringify({
-        success: true,
-        airports: airports
-      })).setMimeType(ContentService.MimeType.JSON);
+      return respond({ success: true, airports: airports });
     }
 
     // GET FLIGHT TIME
@@ -716,23 +710,11 @@ function doGet(e) {
       const destAirport = validateAirportCode(params.destination) || AIRPORT_CACHE[params.destination];
 
       if (!origAirport || !destAirport) {
-        return ContentService.createTextOutput(JSON.stringify({
-          success: false,
-          error: "Invalid airport codes"
-        })).setMimeType(ContentService.MimeType.JSON);
-      }
-
-      if (params.serviceType === "EX") {
-        if (origAirport.type !== "domestic" || destAirport.type !== "domestic") {
-          return ContentService.createTextOutput(JSON.stringify({
-            success: false,
-            error: "Explore Airways is domestic only. Please select domestic airports."
-          })).setMimeType(ContentService.MimeType.JSON);
-        }
+        return respond({ success: false, error: "Invalid airport codes" });
       }
 
       const time = calculateFlightTime(params.origin, params.destination);
-      const baseFareRaw = calculateBaseFare(params.origin, params.destination, params.serviceType || "EA", params.departDate, params.promoCode);
+      const baseFareRaw = calculateBaseFare(params.origin, params.destination, params.serviceType || "EA", params.departDate);
       const surgeFareRaw = applySurgePricing(params.departDate, baseFareRaw);
       const cabinMultiplier = CABIN_MULTIPLIERS[params.cabin] || 1.0;
       const baseFare = Math.round(baseFareRaw * cabinMultiplier);
@@ -747,7 +729,7 @@ function doGet(e) {
       }
       arrivalDate.setMinutes(arrivalDate.getMinutes() + Math.round(time * 60));
 
-      return ContentService.createTextOutput(JSON.stringify({
+      return respond({
         success: true,
         flightTime: time.toFixed(2),
         baseFare: baseFare,
@@ -759,31 +741,22 @@ function doGet(e) {
         arrivalTime: Utilities.formatDate(arrivalDate, Session.getScriptTimeZone(), "yyyy-MM-dd HH:mm"),
         weather: destWeather,
         flightStatus: flightStatus
-      })).setMimeType(ContentService.MimeType.JSON);
+      });
     }
 
     // GET WEATHER
     if (action === "getWeather") {
       const airport = validateAirportCode(params.code) || AIRPORT_CACHE[params.code];
-      if (airport) {
+        if (airport) {
         const weather = getDestinationWeather(airport.lat, airport.lng);
-        return ContentService.createTextOutput(JSON.stringify({
-          success: true,
-          weather: weather,
-          airport: params.code
-        })).setMimeType(ContentService.MimeType.JSON);
+        return respond({ success: true, weather: weather, airport: params.code });
       }
     }
 
     // GET EXCHANGE RATE
     if (action === "getExchangeRate") {
       const rate = getExchangeRate("USD", params.currency || "EUR");
-      return ContentService.createTextOutput(JSON.stringify({
-        success: true,
-        rate: rate,
-        from: "USD",
-        to: params.currency || "EUR"
-      })).setMimeType(ContentService.MimeType.JSON);
+      return respond({ success: true, rate: rate, from: "USD", to: params.currency || "EUR" });
     }
 
     // GET SEATS
@@ -796,7 +769,7 @@ function doGet(e) {
           seats.push({ seat: data[i][1], available: data[i][2] !== "TAKEN" });
         }
       }
-      return ContentService.createTextOutput(JSON.stringify({ success: true, seats })).setMimeType(ContentService.MimeType.JSON);
+      return respond({ success: true, seats });
     }
 
     // GET ANCILLARIES
@@ -807,7 +780,7 @@ function doGet(e) {
       for (let i = 1; i < data.length; i++) {
         ancillaries.push({ type: data[i][0], description: data[i][1], price: parseFloat(data[i][2]) });
       }
-      return ContentService.createTextOutput(JSON.stringify({ success: true, ancillaries })).setMimeType(ContentService.MimeType.JSON);
+      return respond({ success: true, ancillaries });
     }
 
     // GET DASHBOARD
@@ -847,10 +820,7 @@ function doGet(e) {
         }
       }
 
-      return ContentService.createTextOutput(JSON.stringify({
-        success: true,
-        data: { bookings, events, docs, user }
-      })).setMimeType(ContentService.MimeType.JSON);
+      return respond({ success: true, data: { bookings, events, docs, user } });
     }
 
     // GET HOMEPAGE
@@ -870,24 +840,18 @@ function doGet(e) {
         });
       }
 
-      return ContentService.createTextOutput(JSON.stringify(response)).setMimeType(ContentService.MimeType.JSON);
+      return respond(response);
     }
 
     // GET SYSTEM STATUS
     if (action === "getSystemStatus") {
       const status = getSystemStatus();
-      return ContentService.createTextOutput(JSON.stringify({
-        success: true,
-        status: status
-      })).setMimeType(ContentService.MimeType.JSON);
+      return respond({ success: true, status: status });
     }
 
     // GET HERO DATA
     if (action === "getHero") {
-      return ContentService.createTextOutput(JSON.stringify({
-        success: true,
-        hero: readHeroConfig()
-      })).setMimeType(ContentService.MimeType.JSON);
+      return respond({ success: true, hero: readHeroConfig() });
     }
 
     // GET SECTIONS
@@ -895,15 +859,8 @@ function doGet(e) {
       const sectionSheet = getSheet("Sections");
       if (sectionSheet) {
         const sections = sheetToArray(sectionSheet);
-        return ContentService.createTextOutput(JSON.stringify({
-          success: true,
-          sections: sections
-        })).setMimeType(ContentService.MimeType.JSON);
+        return respond({ success: true, sections: sections });
       }
-      return ContentService.createTextOutput(JSON.stringify({
-        success: true,
-        sections: []
-      })).setMimeType(ContentService.MimeType.JSON);
     }
 
     // GET NOTICES
@@ -911,18 +868,11 @@ function doGet(e) {
       const noticeSheet = getSheet("Notices");
       if (noticeSheet) {
         const notices = sheetToArray(noticeSheet);
-        return ContentService.createTextOutput(JSON.stringify({
-          success: true,
-          notices: notices
-        })).setMimeType(ContentService.MimeType.JSON);
+        return respond({ success: true, notices: notices });
       }
-      return ContentService.createTextOutput(JSON.stringify({
-        success: true,
-        notices: []
-      })).setMimeType(ContentService.MimeType.JSON);
+      return respond({ success: true, notices: [] });
     }
 
-    // GET EVENTS
     if (action === "getEvents") {
       const eSheet = getSheet("Events");
       const events = sheetToArray(eSheet).map(r => ({
@@ -932,10 +882,9 @@ function doGet(e) {
         link: r.Link || "",
         image: r.Image || ""
       }));
-      return ContentService.createTextOutput(JSON.stringify({ success: true, events })).setMimeType(ContentService.MimeType.JSON);
+      return respond({ success: true, events });
     }
 
-    // GET DOCUMENTS
     if (action === "getDocuments") {
       const dSheet = getSheet("Documents");
       const documents = sheetToArray(dSheet).map(r => ({
@@ -944,7 +893,45 @@ function doGet(e) {
         confidential: r.Confidential === true || r.Confidential === "TRUE",
         image: r.Image || ""
       }));
-      return ContentService.createTextOutput(JSON.stringify({ success: true, documents })).setMimeType(ContentService.MimeType.JSON);
+      return respond({ success: true, documents });
+    }
+
+    // ADMIN: Get all bookings (for admin UI)
+    if (action === "getAllBookings") {
+      const bSheet = getSheet("Bookings");
+      const bookings = bSheet ? sheetToArray(bSheet) : [];
+      return respond({ success: true, bookings });
+    }
+
+    // ADMIN: Get all users
+    if (action === "getAllUsers") {
+      const uSheet = getSheet("Users");
+      const users = uSheet ? sheetToArray(uSheet) : [];
+      return respond({ success: true, users });
+    }
+
+    // ADMIN: Get promo codes
+    if (action === "getPromoCodes") {
+      const pSheet = getSheet("PromoCodes");
+      const promos = pSheet ? sheetToArray(pSheet) : [];
+      return respond({ success: true, promos });
+    }
+
+    // ADMIN: Get ancillaries
+    if (action === "getAncillariesAll") {
+      const aSheet = getSheet("Ancillaries");
+      const anc = aSheet ? sheetToArray(aSheet) : [];
+      return respond({ success: true, ancillaries: anc });
+    }
+
+    // ADMIN: Stats
+    if (action === "getAdminStats") {
+      const bookings = sheetToArray(getSheet("Bookings") || []) || [];
+      const users = sheetToArray(getSheet("Users") || []) || [];
+      const today = new Date().toDateString();
+      const todayBookings = bookings.filter(b => (b.DepartDate || '').toString() === today).length;
+      const pending = bookings.filter(b => (b.Status || '').toString().toUpperCase().indexOf('PENDING') === 0).length;
+      return respond({ success: true, totalBookings: bookings.length, totalUsers: users.length, todayBookings: todayBookings, pendingRequests: pending });
     }
 
     // GET LIVE STATE (homepage + notices + status in one call)
@@ -974,7 +961,7 @@ function doGet(e) {
         response.notices = sheetToArray(noticeSheet);
       }
 
-      return ContentService.createTextOutput(JSON.stringify(response)).setMimeType(ContentService.MimeType.JSON);
+      return respond(response);
     }
 
     // GET USER
@@ -987,91 +974,20 @@ function doGet(e) {
         const sameUserIdAsEmail = (u.Email || "").toString().toLowerCase() === (params.userId || "").toString().toLowerCase();
         if (sameEmail || sameLegacyId || sameUserIdAsEmail) {
           const tierData = calculateLoyaltyTier(u.Miles || 0);
-          return ContentService.createTextOutput(JSON.stringify({
-            success: true,
-            user: {
-              id: u.UserID || u.Email,
-              name: u.FullName,
-              email: u.Email,
-              role: u.Role || "basic",
-              miles: u.Miles || 0,
-              status: getStatusValue(u.Status),
-              loyaltyTier: tierData.display
-            }
-          })).setMimeType(ContentService.MimeType.JSON);
+          return respond({ success: true, user: { id: u.UserID || u.Email, name: u.FullName, email: u.Email, role: u.Role || "basic", miles: u.Miles || 0, status: getStatusValue(u.Status), loyaltyTier: tierData.display } });
         }
       }
-      return ContentService.createTextOutput(JSON.stringify({
-        success: false,
-        error: "User not found"
-      })).setMimeType(ContentService.MimeType.JSON);
+      return respond({ success: false, error: "User not found" });
     }
 
-    // GET E-TICKET
     if (action === "getETicket") {
       const bookingRef = params.bookingRef;
       const bookings = sheetToArray(getSheet("Bookings"));
       const booking = bookings.find(b => (b.BookingRef || "").toString() === (bookingRef || "").toString());
       if (!booking) {
-        return ContentService.createTextOutput(JSON.stringify({ success: false, message: "Booking not found" })).setMimeType(ContentService.MimeType.JSON);
+        return respond({ success: false, message: "Booking not found" });
       }
-      return ContentService.createTextOutput(JSON.stringify({ success: true, booking })).setMimeType(ContentService.MimeType.JSON);
-    }
-
-    // GET BOOKING DETAILS
-    if (action === "getBookingDetails") {
-      const bookingRef = params.bookingRef;
-      const bookings = sheetToArray(getSheet("Bookings"));
-      const booking = bookings.find(b => (b.BookingRef || "").toString() === (bookingRef || "").toString());
-      if (!booking) {
-        return ContentService.createTextOutput(JSON.stringify({ success: false, message: "Booking not found" })).setMimeType(ContentService.MimeType.JSON);
-      }
-      return ContentService.createTextOutput(JSON.stringify({ success: true, booking })).setMimeType(ContentService.MimeType.JSON);
-    }
-
-    // GET SEAT MAP
-    if (action === "getSeatMap") {
-      const distance = parseFloat(params.distanceMiles) || 1000;
-      const seatMapData = generateSeatMap(params.bookingRef || "", distance);
-      return ContentService.createTextOutput(JSON.stringify({
-        success: true,
-        seats: seatMapData.seats,
-        aircraft: seatMapData.aircraft
-      })).setMimeType(ContentService.MimeType.JSON);
-    }
-
-    // GET ADMIN STATS
-    if (action === "getAdminStats") {
-      const bookings = sheetToArray(getSheet("Bookings"));
-      const users = sheetToArray(getSheet("Users"));
-      const today = new Date().toDateString();
-      const todayBookings = bookings.filter(b => new Date(b.Timestamp || b.DepartDate).toDateString() === today);
-
-      return ContentService.createTextOutput(JSON.stringify({
-        success: true,
-        totalBookings: bookings.length,
-        totalUsers: users.length,
-        todayBookings: todayBookings.length,
-        pendingRequests: 0 // Could be calculated from other sheets
-      })).setMimeType(ContentService.MimeType.JSON);
-    }
-
-    // GET ALL BOOKINGS (ADMIN)
-    if (action === "getAllBookings") {
-      const bookings = sheetToArray(getSheet("Bookings"));
-      return ContentService.createTextOutput(JSON.stringify({
-        success: true,
-        bookings: bookings
-      })).setMimeType(ContentService.MimeType.JSON);
-    }
-
-    // GET ALL USERS (ADMIN)
-    if (action === "getAllUsers") {
-      const users = sheetToArray(getSheet("Users"));
-      return ContentService.createTextOutput(JSON.stringify({
-        success: true,
-        users: users
-      })).setMimeType(ContentService.MimeType.JSON);
+      return respond({ success: true, booking });
     }
 
     // GET HOMEPAGE (fallback for homepage data)
@@ -1090,10 +1006,10 @@ function doGet(e) {
       });
     }
 
-    return ContentService.createTextOutput(JSON.stringify(response)).setMimeType(ContentService.MimeType.JSON);
+    return respond(response);
 
   } catch (error) {
-    return ContentService.createTextOutput(JSON.stringify({ success: false, error: error.toString() })).setMimeType(ContentService.MimeType.JSON);
+    return respond({ success: false, error: error.toString() });
   }
 }
 
@@ -1159,9 +1075,9 @@ function doPost(e) {
       const sheet = getSheet("Users");
       if (!sheet) throw new Error("Users sheet not found.");
 
-      const fullName = normalizeText(data.fullName || data.FullName);
-      const email = normalizeText(data.email || data.Email).toLowerCase();
-      const password = normalizeText(data.password || data.Password);
+      const fullName = normalizeText(data.fullName);
+      const email = normalizeText(data.email).toLowerCase();
+      const password = normalizeText(data.password);
 
       if (!fullName || !email || !password) {
         throw new Error("Missing required signup fields.");
@@ -1230,13 +1146,13 @@ function doPost(e) {
       }
 
       const bSheet = getSheet("Bookings");
-      const bookingRef = data.bookingRef ? data.bookingRef.toString() : String(Date.now());
+      const bookingRef = String(Date.now());
 
       const orig = validateAirportCode(data.origin) || AIRPORT_CACHE[data.origin];
       const dest = validateAirportCode(data.destination) || AIRPORT_CACHE[data.destination];
       const distance = haversineDistance(orig.lat, orig.lng, dest.lat, dest.lng);
-      const flightDuration = calculateFlightTime(data.origin, data.destination);
       
+      // Calculate base fare with promo (all fare math server-side)
       let fare = calculateBaseFare(data.origin, data.destination, data.serviceType || "EA", data.departDate, data.promoCode);
       fare = applySurgePricing(data.departDate, fare);
       const cabinMultiplier = CABIN_MULTIPLIERS[data.paxCabin] || 1.0;
@@ -1244,37 +1160,25 @@ function doPost(e) {
       fare *= data.passengers || 1;
       const ancillariesTotal = (data.ancillaries || []).reduce((sum, anc) => sum + ((parseFloat(anc.price) || 0) * (data.passengers || 1)), 0);
       fare += ancillariesTotal;
-
+      
+      // Get user's loyalty tier for miles multiplier
       const uSheet = getSheet("Users");
       const users = sheetToArray(uSheet);
       let userTier = calculateLoyaltyTier(0);
       let userRowNum = -1;
       
       for (let i = 0; i < users.length; i++) {
-        if ((users[i].Email || "").toString().toLowerCase() === (data.email || "").toString().toLowerCase()) {
+        if (users[i].Email === data.email) {
           userTier = calculateLoyaltyTier(users[i].Miles || 0);
           userRowNum = i + 2;
           break;
         }
       }
       
-      const milesEarned = Math.round(distance * (1 + (flightDuration / 10)) * userTier.multiplier);
-
-      let milesDeduction = 0;
-      if (data.paymentMethod === "miles" && userRowNum > 0) {
-        const currentMiles = users[userRowNum - 2].Miles || 0;
-        milesDeduction = Math.floor(Math.min(fare / 0.015, currentMiles));
-        fare -= milesDeduction * 0.015;
-        fare = Math.max(fare, 0);
-      }
+      const milesEarned = Math.round(distance * userTier.multiplier);
 
       const canAutoApprove = checkBookingLimits(data.email, data.departDate);
       const bookingStatus = canAutoApprove ? "CONFIRMED" : "PENDING_REVIEW";
-      const passengerList = Array.isArray(data.passengerDetails) ? data.passengerDetails : [];
-      const firstPassenger = passengerList.length ? passengerList[0] : {};
-      const combinedPaxName = passengerList.map(p => p.name || "").filter(Boolean).join(" / ");
-      const manifest = passengerList.map(p => `${p.name || ""}|${p.gender || ""}|${p.dob || ""}|${p.passport || ""}|${p.phone || ""}`).join(";");
-
       const bookingRow = buildRowByHeaders(bSheet, {
         BookingRef: bookingRef,
         Email: data.email,
@@ -1282,38 +1186,43 @@ function doPost(e) {
         Origin: data.origin,
         Destination: data.destination,
         DepartDate: data.departDate,
-        FlightTimes: flightDuration,
+        FlightTimes: calculateFlightTime(data.origin, data.destination),
         ServiceType: data.serviceType || "EA",
         Passengers: data.passengers || 1,
         TotalPrice: Math.round(fare),
-        PaymentMethod: data.paymentMethod || "cash",
-        PaxName: combinedPaxName || firstPassenger.name || "",
-        PaxDOB: firstPassenger.dob || "",
-        PaxGender: firstPassenger.gender || "",
-        PaxPassport: firstPassenger.passport || "",
-        PaxPhone: firstPassenger.phone || "",
+        PaymentMethod: data.paymentMethod || "credit",
+        PaxName: data.paxName || "",
+        PaxDOB: data.paxDOB || "",
+        PaxGender: data.paxGender || "",
+        PaxPassport: data.paxPassport || "",
+        PaxPhone: data.paxPhone || "",
         PaxCabin: data.paxCabin || "Economy",
-        Promo: data.promoCode || "",
-        PassengerManifest: manifest,
-        MilesUsed: milesDeduction,
-        MilesEarned: milesEarned,
-        Timestamp: new Date(Number(bookingRef) || new Date())
+        Timestamp: new Date()
       });
       bSheet.appendRow(bookingRow);
 
+      // Update user miles and tier
       if (userRowNum > 0) {
+        let milesDeduction = 0;
+        if (data.paymentMethod === "miles") {
+          milesDeduction = Math.floor(Math.min(fare / 0.015, users[userRowNum - 2].Miles || 0));
+        }
         const currentMiles = users[userRowNum - 2].Miles || 0;
         const newMiles = currentMiles - milesDeduction + milesEarned;
         updateSheetByHeader(uSheet, userRowNum, "Miles", newMiles);
+        
+        // Auto-update tier
         const newTier = calculateLoyaltyTier(newMiles);
         updateSheetByHeader(uSheet, userRowNum, "Role", newTier.display);
       }
 
+      // Store seat assignment
       if (data.selectedSeat) {
         const seatSheet = getSheet("SeatAssignments");
-        seatSheet.appendRow([bookingRef, data.selectedSeat, firstPassenger.name || "", data.email, new Date()]);
+        seatSheet.appendRow([bookingRef, data.selectedSeat, data.paxName, data.email, new Date()]);
       }
 
+      // Store ancillaries
       if (data.ancillaries && data.ancillaries.length > 0) {
         const aSheet = getSheet("AncillaryBookings");
         data.ancillaries.forEach(anc => {
@@ -1321,6 +1230,7 @@ function doPost(e) {
         });
       }
       
+      // Record promo code usage
       if (data.promoCode) {
         const promoSheet = getSheet("PromoCodes");
         const result = findInSheet(promoSheet, "Code", data.promoCode.toUpperCase());
@@ -1331,27 +1241,24 @@ function doPost(e) {
       }
 
       response = {
-        success: true,
-        bookingRef: bookingRef,
+        success: true, 
+        bookingRef: bookingRef, 
         bookingStatus: bookingStatus,
         milesEarned: milesEarned,
-        milesUsed: milesDeduction,
         totalFare: Math.round(fare)
       };
     }
 
     // CANCEL BOOKING
-    else if (action === "cancel" || action === "cancelBooking") {
+    else if (action === "cancel") {
       const bSheet = getSheet("Bookings");
       const result = findInSheet(bSheet, "BookingRef", data.bookingRef);
 
       if (result.row > 0) {
         const data_row = result.data;
-        if ((data_row[1] || "").toString().toLowerCase() === (data.email || "").toString().toLowerCase()) {
+        if (data_row[1] === data.email) {
           updateSheetCell(bSheet, result.row, 3, "CANCELLED");
           response = { success: true, message: "Booking cancelled." };
-        } else {
-          throw new Error("Unauthorized");
         }
       }
     }
@@ -1451,9 +1358,111 @@ function doPost(e) {
       }
     }
 
-    return ContentService.createTextOutput(JSON.stringify(response)).setMimeType(ContentService.MimeType.JSON);
+    // ADMIN ACTIONS (CRUD for PromoCodes, Bookings, Users, Sections, Events, Documents, Ancillaries, Notices, SystemStatus)
+    else if (action === 'admin.addPromo') {
+      const pSheet = getSheet('PromoCodes');
+      if (!pSheet) throw new Error('PromoCodes sheet missing');
+      const row = buildRowByHeaders(pSheet, {
+        Code: data.code || '',
+        DiscountPercent: data.discountPercent || 0,
+        DiscountDollars: data.discountDollars || 0,
+        MaxUses: data.maxUses || 999,
+        UsedCount: data.usedCount || 0,
+        ExpiryDate: data.expiryDate || '',
+        Active: data.active ? 'TRUE' : 'FALSE'
+      });
+      pSheet.appendRow(row);
+      response = { success: true, message: 'Promo added' };
+    }
+
+    else if (action === 'admin.updatePromo') {
+      const pSheet = getSheet('PromoCodes');
+      const found = findInSheet(pSheet, 'Code', data.code);
+      if (found.row > 0) {
+        if (data.discountPercent !== undefined) updateSheetByHeader(pSheet, found.row, 'DiscountPercent', data.discountPercent);
+        if (data.discountDollars !== undefined) updateSheetByHeader(pSheet, found.row, 'DiscountDollars', data.discountDollars);
+        if (data.maxUses !== undefined) updateSheetByHeader(pSheet, found.row, 'MaxUses', data.maxUses);
+        if (data.expiryDate !== undefined) updateSheetByHeader(pSheet, found.row, 'ExpiryDate', data.expiryDate);
+        if (data.active !== undefined) updateSheetByHeader(pSheet, found.row, 'Active', data.active ? 'TRUE' : 'FALSE');
+        response = { success: true, message: 'Promo updated' };
+      } else response = { success: false, message: 'Promo not found' };
+    }
+
+    else if (action === 'admin.approveBooking') {
+      const bSheet = getSheet('Bookings');
+      const found = findInSheet(bSheet, 'BookingRef', data.bookingRef);
+      if (found.row > 0) {
+        updateSheetByHeader(bSheet, found.row, 'Status', data.status || 'CONFIRMED');
+        response = { success: true, message: 'Booking updated' };
+      } else response = { success: false, message: 'Booking not found' };
+    }
+
+    else if (action === 'admin.updateUser') {
+      const uSheet = getSheet('Users');
+      const found = findInSheet(uSheet, 'Email', data.email);
+      if (found.row > 0) {
+        if (data.fullName) updateSheetByHeader(uSheet, found.row, 'FullName', data.fullName);
+        if (data.role) updateSheetByHeader(uSheet, found.row, 'Role', data.role);
+        if (data.status !== undefined) updateSheetByHeader(uSheet, found.row, 'Status', data.status);
+        if (data.miles !== undefined) updateSheetByHeader(uSheet, found.row, 'Miles', data.miles);
+        response = { success: true, message: 'User updated' };
+      } else response = { success: false, message: 'User not found' };
+    }
+
+    else if (action === 'admin.addSection') {
+      const sSheet = getSheet('Sections');
+      const row = buildRowByHeaders(sSheet, { Title: data.title || '', Description: data.description || '', Image: data.image || '', Link: data.link || '', ButtonText: data.buttonText || '' });
+      sSheet.appendRow(row);
+      response = { success: true, message: 'Section added' };
+    }
+
+    else if (action === 'admin.addEvent') {
+      const eSheet = getSheet('Events');
+      const row = buildRowByHeaders(eSheet, { Date: data.date || '', Title: data.title || '', Description: data.description || '', Link: data.link || '', Image: data.image || '' });
+      eSheet.appendRow(row);
+      response = { success: true, message: 'Event added' };
+    }
+
+    else if (action === 'admin.addDocument') {
+      const dSheet = getSheet('Documents');
+      const row = buildRowByHeaders(dSheet, { Title: data.title || '', Link: data.link || '', Confidential: data.confidential ? 'TRUE' : 'FALSE', Image: data.image || '' });
+      dSheet.appendRow(row);
+      response = { success: true, message: 'Document added' };
+    }
+
+    else if (action === 'admin.addAncillary') {
+      const aSheet = getSheet('Ancillaries');
+      const row = buildRowByHeaders(aSheet, { Type: data.type || '', Description: data.description || '', Price: data.price || 0 });
+      aSheet.appendRow(row);
+      response = { success: true, message: 'Ancillary added' };
+    }
+
+    else if (action === 'admin.updateSystemStatus') {
+      const sSheet = getSheet('SystemStatus');
+      if (!sSheet) {
+        const ss = SpreadsheetApp.openByUrl(SHEET_URL);
+        ss.insertSheet('SystemStatus');
+      }
+      // upsert key/value rows
+      const keys = data.status || {};
+      const sheet = getSheet('SystemStatus');
+      const headers = sheet.getDataRange().getValues();
+      // find existing rows and update or append
+      // simple approach: append rows for provided statuses
+      Object.keys(keys).forEach(k => sheet.appendRow([k, keys[k]]));
+      response = { success: true, message: 'System status updated' };
+    }
+
+    else if (action === 'admin.addNotice') {
+      const nSheet = getSheet('Notices');
+      const row = buildRowByHeaders(nSheet, { Title: data.title || '', Message: data.message || '', Severity: data.severity || 'info', Timestamp: new Date() });
+      nSheet.appendRow(row);
+      response = { success: true, message: 'Notice added' };
+    }
+
+    return respond(response);
 
   } catch (error) {
-    return ContentService.createTextOutput(JSON.stringify({ success: false, message: error.toString() })).setMimeType(ContentService.MimeType.JSON);
+    return respond({ success: false, message: error.toString() });
   }
 }

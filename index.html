@@ -69,46 +69,17 @@
             position: relative;
         }
 
-        .loading-globe {
-            width: 100px;
-            height: 100px;
-            margin: 0 auto 2rem;
-            position: relative;
-        }
-
-        .globe-circle {
-            width: 100%;
-            height: 100%;
-            border: 3px solid rgba(255, 255, 255, 0.3);
+        .spinner {
+            width: 80px;
+            height: 80px;
+            border: 8px solid rgba(255,255,255,0.12);
+            border-top-color: rgba(255,255,255,0.95);
             border-radius: 50%;
-            position: relative;
-            background: radial-gradient(circle at 30% 30%, rgba(37, 99, 235, 0.2), rgba(71, 85, 105, 0.5));
+            margin: 0 auto 1rem;
+            animation: spin 1s linear infinite;
         }
 
-        .plane {
-            width: 40px;
-            height: 40px;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%) rotate(-45deg);
-            animation: planeOrbit 4s linear infinite;
-        }
-
-        .plane::before {
-            content: '✈️';
-            font-size: 2rem;
-            position: absolute;
-            animation: planeSpin 4s linear infinite reverse;
-        }
-
-        @keyframes planeOrbit {
-            from { transform: translate(-50%, -50%) rotate(0deg); }
-            to { transform: translate(-50%, -50%) rotate(360deg); }
-        }
-
-        @keyframes planeSpin {
-            from { transform: rotate(0deg); }
+        @keyframes spin {
             to { transform: rotate(360deg); }
         }
 
@@ -772,11 +743,7 @@
     <!-- Loading Overlay -->
     <div id="loadingOverlay">
         <div class="loading-container">
-            <div class="loading-globe">
-                <div class="globe-circle">
-                    <div class="plane">✈️</div>
-                </div>
-            </div>
+            <div class="spinner" role="status" aria-hidden="true"></div>
             <div class="loading-text">
                 Loading<span class="loading-dot">.</span><span class="loading-dot">.</span><span class="loading-dot">.</span>
             </div>
@@ -798,6 +765,9 @@
     </nav>
 
     <!-- Main Content -->
+    <div id="systemStatusBar" class="card" style="margin: 1rem auto; max-width: 1400px; display: none;">
+        <div id="systemStatusContent" style="display:flex; gap:1rem; flex-wrap:wrap; align-items:center;"></div>
+    </div>
     <div class="container" id="mainContent">
         <!-- Home Page -->
         <div id="homePage">
@@ -898,44 +868,16 @@
                 <h2 style="margin-bottom: 2rem; color: var(--primary);">Upcoming Events</h2>
                 <div id="eventsContainer"></div>
             </div>
-
-            <!-- Contact & Travel Agent -->
-            <div class="card" style="margin-bottom: 3rem;">
-                <h2 style="margin-bottom: 1.5rem; color: var(--primary);">Contact Support</h2>
-                <div class="form-group">
-                    <label>Name</label>
-                    <input type="text" id="contactName" placeholder="Your name">
-                </div>
-                <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" id="contactEmail" placeholder="you@example.com">
-                </div>
-                <div class="form-group">
-                    <label>Message</label>
-                    <textarea id="contactMessage" rows="4" placeholder="How can we help?"></textarea>
-                </div>
-                <button class="btn-primary" style="width: 100%; margin-bottom: 1rem;" onclick="submitContact()">Send Message</button>
-                <h2 style="margin: 1.5rem 0 1rem; color: var(--primary);">Travel Agent Request</h2>
-                <div class="form-group">
-                    <label>Agency Email</label>
-                    <input type="email" id="agentEmail" placeholder="you@agency.com">
-                </div>
-                <div class="form-group">
-                    <label>Agency Name</label>
-                    <input type="text" id="agentName" placeholder="Agency name">
-                </div>
-                <button class="btn-secondary" style="width: 100%;" onclick="submitTravelAgentRequest()">Apply as Travel Agent</button>
-            </div>
         </div>
 
         <!-- User Portal -->
         <div id="portalPage" style="display: none;">
             <div class="tabs">
-                <button class="tab-button active" onclick="switchPortalTab('dashboard', event)">Dashboard</button>
-                <button class="tab-button" onclick="switchPortalTab('bookings', event)">My Bookings</button>
-                <button class="tab-button" onclick="switchPortalTab('documents', event)">Documents</button>
-                <button class="tab-button" onclick="switchPortalTab('events', event)">Events</button>
-                <button class="tab-button" onclick="switchPortalTab('settings', event)">Account Settings</button>
+                <button class="tab-button active" onclick="switchPortalTab('dashboard')">Dashboard</button>
+                <button class="tab-button" onclick="switchPortalTab('bookings')">My Bookings</button>
+                <button class="tab-button" onclick="switchPortalTab('documents')">Documents</button>
+                <button class="tab-button" onclick="switchPortalTab('events')">Events</button>
+                <button class="tab-button" onclick="switchPortalTab('settings')">Account Settings</button>
             </div>
 
             <!-- Dashboard Tab -->
@@ -1001,6 +943,12 @@
                             <option value="FirstClass">First Class</option>
                         </select>
                     </div>
+                    <div class="form-group">
+                        <select id="paymentMethod" onchange="document.getElementById('milesPaymentInfo').style.display = this.value === 'miles' ? 'block' : 'none';">
+    <option value="cash">Credit Card / Debit Card</option>
+    <option value="miles">Pay with Miles</option>
+</select></div>
+                    </div>
                     <button class="btn-primary" onclick="saveSettings()">Save Settings</button>
                 </div>
             </div>
@@ -1011,10 +959,12 @@
             <h2 style="margin-bottom: 2rem;">Admin Dashboard</h2>
 
             <div class="tabs">
-                <button class="tab-button active" onclick="switchAdminTab('overview', event)">Overview</button>
-                <button class="tab-button" onclick="switchAdminTab('bookings', event)">Bookings</button>
-                <button class="tab-button" onclick="switchAdminTab('users', event)">Users</button>
-                <button class="tab-button" onclick="switchAdminTab('documents', event)">Documents</button>
+                <button class="tab-button active" onclick="switchAdminTab('overview')">Overview</button>
+                <button class="tab-button" onclick="switchAdminTab('bookings')">Bookings</button>
+                <button class="tab-button" onclick="switchAdminTab('users')">Users</button>
+                <button class="tab-button" onclick="switchAdminTab('documents')">Documents</button>
+                <button class="tab-button" onclick="switchAdminTab('promos')">Promo Codes</button>
+                <button class="tab-button" onclick="switchAdminTab('ancillaries')">Ancillaries</button>
             </div>
 
             <!-- Overview Tab -->
@@ -1085,6 +1035,77 @@
                     </thead>
                     <tbody id="adminDocumentsTable"></tbody>
                 </table>
+            </div>
+            <!-- Promo Codes Tab -->
+            <div id="promosTab" class="tab-content">
+                <div style="display:flex; gap:1rem; align-items:flex-start; margin-bottom:1rem;">
+                    <div style="flex:1">
+                        <h3>Add Promo Code</h3>
+                        <div class="form-group">
+                            <label>Code</label>
+                            <input type="text" id="promoCodeInput">
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Discount %</label>
+                                <input type="number" id="promoPercent" value="0">
+                            </div>
+                            <div class="form-group">
+                                <label>Discount $</label>
+                                <input type="number" id="promoDollars" value="0">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Max Uses</label>
+                                <input type="number" id="promoMaxUses" value="999">
+                            </div>
+                            <div class="form-group">
+                                <label>Expiry Date</label>
+                                <input type="date" id="promoExpiry">
+                            </div>
+                        </div>
+                        <button class="btn-primary" onclick="adminAddPromo()">Add Promo</button>
+                    </div>
+                    <div style="flex:2">
+                        <h3>Existing Promo Codes</h3>
+                        <table>
+                            <thead>
+                                <tr><th>Code</th><th>%</th><th>$</th><th>Max</th><th>Used</th><th>Expiry</th><th>Active</th></tr>
+                            </thead>
+                            <tbody id="adminPromoTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ancillaries Tab -->
+            <div id="ancillariesTab" class="tab-content">
+                <div style="display:flex; gap:1rem; align-items:flex-start;">
+                    <div style="flex:1">
+                        <h3>Add Ancillary</h3>
+                        <div class="form-group">
+                            <label>Type</label>
+                            <input type="text" id="ancType">
+                        </div>
+                        <div class="form-group">
+                            <label>Description</label>
+                            <input type="text" id="ancDesc">
+                        </div>
+                        <div class="form-group">
+                            <label>Price</label>
+                            <input type="number" id="ancPrice" value="0">
+                        </div>
+                        <button class="btn-primary" onclick="adminAddAncillary()">Add Ancillary</button>
+                    </div>
+                    <div style="flex:2">
+                        <h3>Existing Ancillaries</h3>
+                        <table>
+                            <thead><tr><th>Type</th><th>Description</th><th>Price</th></tr></thead>
+                            <tbody id="adminAncillariesTable"></tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -1203,16 +1224,6 @@
         </div>
     </div>
 
-    <!-- Edit Booking Modal -->
-    <div id="editBookingModal" class="modal">
-        <div class="modal-content" style="position: relative; max-width: 600px;">
-            <button class="modal-close" onclick="closeEditBookingModal()">✕</button>
-            <div class="modal-header">Manage Booking</div>
-            <div id="editBookingContent"></div>
-            <button class="btn-primary" onclick="saveBookingChanges()" style="width: 100%; margin-top: 1rem;">Save Changes</button>
-        </div>
-    </div>
-
     <!-- eTicket Modal -->
     <div id="eticketModal" class="modal">
         <div class="modal-content" style="position: relative; max-width: 800px;">
@@ -1222,63 +1233,41 @@
         </div>
     </div>
 
-    <script>
+  <script>
         // ========== GLOBAL STATE ==========
-        const API_URL = 'https://script.google.com/macros/s/AKfycbwa6kLuhaN1PdGuzOwEYnc6ZMFuJD3VR3R-T-qsPiTbB-4fnNxMJOGtitmxbkmQEWK3nQ/exec'; // Replace with your Apps Script deployment URL if needed
+        // ⚠️ CRITICAL: Replace this with your actual Google Apps Script Web App URL ending in /exec
+        const API_URL = 'https://script.google.com/macros/s/AKfycbwOpzPgTj94-tQAEjIJ3Q3l54zCLGC7Ag2XDlNUPwvb8M1v8p6qhuVDVigGYz8G-bGWhQ/exec'; 
+        
         let currentUser = null;
         let exchangeRate = 1;
         let currentCurrency = 'USD';
         let bookingData = {
             origin: '', destination: '', departDate: '', serviceType: '',
-            passengers: 1, cabin: 'Economy', promoCode: '', baseFare: 0, totalFare: 0,
-            flightTime: 0, distanceMiles: 0
+            passengers: 1, cabin: 'Economy', promoCode: '', baseFare: 0
         };
         let passengerData = [];
 
-        async function apiPost(action, body = {}) {
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action, ...body })
-            });
-            return await response.json();
-        }
-
-        async function apiGet(action, params = {}) {
-            const query = new URLSearchParams({ action, ...params });
-            const response = await fetch(`${API_URL}?${query.toString()}`);
-            return await response.json();
-        }
-
-        function saveUserToStorage(user) {
-            if (user) {
-                currentUser = user;
-                localStorage.setItem('expressCurrentUser', JSON.stringify(user));
-            } else {
-                currentUser = null;
-                localStorage.removeItem('expressCurrentUser');
-            }
-        }
-
-        function loadUserFromStorage() {
-            const stored = localStorage.getItem('expressCurrentUser');
-            if (!stored) return null;
-            try {
-                return JSON.parse(stored);
-            } catch (err) {
-                localStorage.removeItem('expressCurrentUser');
-                return null;
-            }
-        }
-
         // ========== INITIALIZATION ==========
-        window.addEventListener('load', function() {
-            setTimeout(() => {
-                document.getElementById('loadingOverlay').classList.add('hidden');
-                loadInitialData();
-                checkLoginStatus();
-                setMinDate();
-            }, 800);
+        window.addEventListener('load', async function() {
+            setMinDate();
+            
+            try {
+                // BETTER LOADING: Wait for both data requests to finish BEFORE hiding the loading screen
+                await Promise.all([
+                    loadInitialData(), 
+                    checkLoginStatus()
+                ]);
+            } catch (error) {
+                console.error("Error during initial data load:", error);
+            } finally {
+                // Hide overlay only after we have the data, with a tiny buffer for a smooth fade
+                setTimeout(() => {
+                    const overlay = document.getElementById('loadingOverlay');
+                    if(overlay) overlay.classList.add('hidden');
+                    // start polling system status after initial load
+                    startStatusPolling();
+                }, 300);
+            }
         });
 
         function setMinDate() {
@@ -1287,13 +1276,28 @@
             document.getElementById('departDate').value = today;
         }
 
+        // Must return the fetch promise so the loader knows when to hide
         function checkLoginStatus() {
-            const savedUser = loadUserFromStorage();
-            if (savedUser) {
-                currentUser = savedUser;
-                updateNavigation();
-                loadUserPortalData();
-            }
+            return fetch(API_URL + '?action=checkLogin')
+                .then(async response => {
+                    // get raw response text first
+                    const text = await response.text();
+                    // try converting to JSON safely
+                    try {
+                        return JSON.parse(text);
+                    } catch (e) {
+                        console.error('Invalid JSON response:', text);
+                        throw e;
+                    }
+                })
+                .then(data => {
+                    if (data && data.loggedIn) {
+                        currentUser = data.user;
+                        updateNavigation();
+                        loadUserPortalData();
+                    }
+                })
+                .catch(e => console.error('Login check error:', e));
         }
 
         // ========== NAVIGATION ==========
@@ -1357,32 +1361,31 @@
             document.getElementById('loginModal').classList.remove('active');
         }
 
-        async function handleLogin() {
-            const email = document.getElementById('loginEmail').value.trim();
-            const password = document.getElementById('loginPassword').value.trim();
+        function handleLogin() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
 
             if (!email || !password) {
                 showNotification('error', 'Error', 'Please enter email and password');
                 return;
             }
 
-            const data = await apiPost('login', { email, password });
-            if (data.success) {
-                saveUserToStorage({
-                    FullName: data.user.name,
-                    Email: data.user.email,
-                    Role: data.user.role,
-                    Miles: data.user.miles,
-                    Status: data.user.status,
-                    loyaltyTier: data.user.loyaltyTier
-                });
-                updateNavigation();
-                closeLoginModal();
-                showNotification('success', 'Welcome!', `Logged in as ${data.user.name}`);
-                loadUserPortalData();
-            } else {
-                showNotification('error', 'Login Failed', data.message || 'Invalid credentials');
-            }
+            fetch(API_URL + '?action=login', {
+                method: 'POST',
+                body: JSON.stringify({ email, password })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    currentUser = data.user;
+                    updateNavigation();
+                    closeLoginModal();
+                    showNotification('success', 'Welcome!', `Logged in as ${currentUser.FullName}`);
+                    loadUserPortalData();
+                } else {
+                    showNotification('error', 'Login Failed', data.message);
+                }
+            });
         }
 
         function showSignupModal() {
@@ -1393,9 +1396,9 @@
             document.getElementById('signupModal').classList.remove('active');
         }
 
-        async function handleSignup() {
-            const name = document.getElementById('signupName').value.trim();
-            const email = document.getElementById('signupEmail').value.trim();
+        function handleSignup() {
+            const name = document.getElementById('signupName').value;
+            const email = document.getElementById('signupEmail').value;
             const password = document.getElementById('signupPassword').value;
             const confirm = document.getElementById('signupConfirm').value;
             const agree = document.getElementById('agreeTerms').checked;
@@ -1415,29 +1418,32 @@
                 return;
             }
 
-            const data = await apiPost('signup', { fullName: name, email, password });
-            if (data.success) {
-                saveUserToStorage({
-                    FullName: data.user.name,
-                    Email: data.user.email,
-                    Role: data.user.role,
-                    Miles: data.user.miles,
-                    Status: data.user.status,
-                    loyaltyTier: data.user.loyaltyTier
-                });
-                updateNavigation();
-                closeSignupModal();
-                showNotification('success', 'Success!', 'Account created successfully');
-            } else {
-                showNotification('error', 'Signup Failed', data.message || 'Unable to sign up');
-            }
+            fetch(API_URL + '?action=signup', {
+                method: 'POST',
+                body: JSON.stringify({ FullName: name, Email: email, Password: password })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    currentUser = data.user;
+                    updateNavigation();
+                    closeSignupModal();
+                    showNotification('success', 'Success!', 'Account created successfully');
+                } else {
+                    showNotification('error', 'Signup Failed', data.message);
+                }
+            });
         }
 
         function logout() {
-            saveUserToStorage(null);
-            updateNavigation();
-            showHome();
-            showNotification('success', 'Logged Out', 'See you soon!');
+            fetch(API_URL + '?action=logout', { method: 'POST' })
+                .then(r => r.json())
+                .then(data => {
+                    currentUser = null;
+                    updateNavigation();
+                    showHome();
+                    showNotification('success', 'Logged Out', 'See you soon!');
+                });
         }
 
         // ========== FLIGHT SEARCH & BOOKING ==========
@@ -1564,42 +1570,35 @@
             }
         }
 
-        async function calculateBookingPrice() {
-            const data = await apiGet('getFlightTime', {
-                origin: bookingData.origin,
-                destination: bookingData.destination,
-                departDate: bookingData.departDate,
-                serviceType: bookingData.serviceType,
-                cabin: bookingData.cabin,
-                promoCode: bookingData.promoCode
-            });
+        function calculateBookingPrice() {
+            fetch(API_URL + '?action=getFlightTime&origin=' + bookingData.origin + '&destination=' + bookingData.destination +
+                  '&departDate=' + bookingData.departDate + '&serviceType=' + bookingData.serviceType +
+                  '&promoCode=' + bookingData.promoCode)
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    bookingData.baseFare = data.surgeFare;
+                    const total = (bookingData.baseFare * bookingData.passengers);
+                    document.getElementById('subtotalPrice').textContent = formatPrice(bookingData.baseFare * bookingData.passengers);
+                    document.getElementById('totalPrice').textContent = formatPrice(total);
 
-            if (data.success) {
-                bookingData.flightTime = parseFloat(data.flightTime) || 0;
-                bookingData.distanceMiles = parseInt(data.distanceMiles, 10) || 0;
-                bookingData.baseFare = data.surgeFare || data.baseFare || 0;
-                bookingData.totalFare = bookingData.baseFare * bookingData.passengers;
-                document.getElementById('subtotalPrice').textContent = formatPrice(bookingData.baseFare * bookingData.passengers);
-                document.getElementById('totalPrice').textContent = formatPrice(bookingData.totalFare);
-
-                if (currentUser) {
-                    const milesRequired = Math.ceil(bookingData.totalFare / 0.015);
-                    document.getElementById('milesRequired').textContent = milesRequired;
-                    document.getElementById('userMilesAvailable').textContent = currentUser.Miles;
+                    // Check miles
+                    if (currentUser) {
+                        const milesPrice = total * 0.5; // 1 mile = $0.02
+                        document.getElementById('milesRequired').textContent = Math.ceil(milesPrice);
+                        document.getElementById('userMilesAvailable').textContent = currentUser.Miles;
+                    }
                 }
-            } else {
-                showNotification('error', 'Pricing Error', data.error || 'Unable to calculate pricing');
-            }
+            });
         }
 
-        async function completeBooking() {
+        function completeBooking() {
             if (!document.getElementById('agreeBookingTerms').checked) {
                 showNotification('error', 'Error', 'Please agree to Terms of Service');
                 return;
             }
 
             const bookingRefTimestamp = Date.now().toString();
-            const paymentMethod = document.getElementById('paymentMethod').value;
             const bookingPayload = {
                 bookingRef: bookingRefTimestamp,
                 email: currentUser.Email,
@@ -1607,22 +1606,27 @@
                 destination: bookingData.destination,
                 departDate: bookingData.departDate,
                 passengers: bookingData.passengers,
-                paxCabin: bookingData.cabin,
+                cabin: bookingData.cabin,
                 serviceType: bookingData.serviceType,
-                promoCode: bookingData.promoCode,
-                ancillaries: [],
-                paymentMethod: paymentMethod,
+                totalPrice: bookingData.baseFare * bookingData.passengers,
+                paymentMethod: document.getElementById('paymentMethod').value,
                 passengerDetails: passengerData
             };
 
-            const data = await apiPost('booking', bookingPayload);
-            if (data.success) {
-                showNotification('success', 'Booking Confirmed!', `Booking Reference: ${data.bookingRef || bookingRefTimestamp}`);
-                closeBookingModal();
-                loadUserPortalData();
-            } else {
-                showNotification('error', 'Booking Failed', data.message || 'Unable to complete booking');
-            }
+            fetch(API_URL + '?action=booking', {
+                method: 'POST',
+                body: JSON.stringify(bookingPayload)
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('success', 'Booking Confirmed!', `Booking Reference: ${bookingRefTimestamp}`);
+                    closeBookingModal();
+                    loadUserPortalData();
+                } else {
+                    showNotification('error', 'Booking Failed', data.message);
+                }
+            });
         }
 
         function closeBookingModal() {
@@ -1630,42 +1634,38 @@
         }
 
         // ========== UPDATE FLIGHT INFO ==========
-        async function updateFlightInfo() {
+        function updateFlightInfo() {
             const origin = document.getElementById('origin').value;
             const destination = document.getElementById('destination').value;
             const departDate = document.getElementById('departDate').value;
-            const serviceType = document.getElementById('serviceType').value;
 
             if (!origin || !destination || !departDate) return;
 
-            const data = await apiGet('getFlightTime', {
-                origin: origin.toUpperCase(),
-                destination: destination.toUpperCase(),
-                departDate: departDate,
-                serviceType: serviceType,
-                cabin: document.getElementById('cabin').value,
-                promoCode: document.getElementById('promoCode').value.trim()
+            fetch(API_URL + '?action=getFlightTime&origin=' + origin + '&destination=' + destination +
+                  '&departDate=' + departDate + '&serviceType=' + document.getElementById('serviceType').value)
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('flightDistance').textContent = data.distanceMiles + ' mi';
+                    document.getElementById('flightTime').textContent = data.flightTime + ' hrs';
+                    document.getElementById('baseFare').textContent = formatPrice(data.baseFare);
+                    document.getElementById('weatherInfo').textContent = data.weather?.condition || '--';
+                    document.getElementById('flightInfo').style.display = 'block';
+                }
             });
-            if (data.success) {
-                document.getElementById('flightDistance').textContent = `${data.distanceMiles} mi`;
-                document.getElementById('flightTime').textContent = `${data.flightTime} hrs`;
-                document.getElementById('baseFare').textContent = formatPrice(data.baseFare);
-                document.getElementById('weatherInfo').textContent = data.weather?.condition || '--';
-                document.getElementById('flightInfo').style.display = 'block';
-            } else {
-                showNotification('error', 'Flight Validation', data.error || 'Unable to validate airports');
-                document.getElementById('flightInfo').style.display = 'none';
-            }
         }
 
         // ========== CURRENCY & FORMATTING ==========
-        async function updateCurrency() {
+        function updateCurrency() {
             currentCurrency = document.getElementById('currencySelect').value;
-            const data = await apiGet('getExchangeRate', { currency: currentCurrency });
-            if (data.success) {
-                exchangeRate = data.rate;
-                updateFlightInfo();
-            }
+            fetch(API_URL + '?action=getExchangeRate&currency=' + currentCurrency)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        exchangeRate = data.rate;
+                        updateFlightInfo();
+                    }
+                });
         }
 
         function formatPrice(usd) {
@@ -1682,34 +1682,51 @@
         }
 
         // ========== USER PORTAL ==========
-        function switchPortalTab(tab, event) {
+        function switchPortalTab(tab) {
             document.querySelectorAll('#portalPage .tab-button').forEach(btn => btn.classList.remove('active'));
             document.querySelectorAll('#portalPage .tab-content').forEach(tc => tc.classList.remove('active'));
 
-            if (event && event.currentTarget) event.currentTarget.classList.add('active');
+            event.target.classList.add('active');
             document.getElementById(tab + 'Tab').classList.add('active');
         }
 
-        async function loadUserPortalData() {
+        function loadUserPortalData() {
             if (!currentUser) return;
 
-            const bookingResult = await apiGet('getUserBookings', { email: currentUser.Email });
-            displayUserBookings((bookingResult.bookings || []));
+            fetch(API_URL + '?action=getUserBookings&email=' + currentUser.Email)
+                .then(r => r.json())
+                .then(data => {
+                    displayUserBookings(data.bookings || []);
+                });
 
-            const documentsResult = await apiGet('getDocuments');
-            displayDocuments(documentsResult.documents || []);
+            fetch(API_URL + '?action=getDocuments')
+                .then(r => r.json())
+                .then(data => {
+                    displayDocuments(data.documents || []);
+                });
 
-            const eventsResult = await apiGet('getEvents');
-            displayPortalEvents(eventsResult.events || []);
+            fetch(API_URL + '?action=getEvents')
+                .then(r => r.json())
+                .then(data => {
+                    displayPortalEvents(data.events || []);
+                });
 
-            document.getElementById('totalMiles').textContent = currentUser.Miles || 0;
-            document.getElementById('memberTier').textContent = calculateTier(currentUser.Miles || 0);
-            document.getElementById('accountStatus').textContent = getStatusDisplay(currentUser.Status || 1);
+            // Update dashboard stats
+            document.getElementById('totalMiles').textContent = currentUser.Miles;
+            const tier = calculateTier(currentUser.Miles);
+            document.getElementById('memberTier').textContent = tier;
+            document.getElementById('accountStatus').textContent = getStatusDisplay(currentUser.Status);
 
-            document.getElementById('totalBookings').textContent = (bookingResult.bookings || []).length;
+            // Count bookings
+            fetch(API_URL + '?action=getUserBookings&email=' + currentUser.Email)
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('totalBookings').textContent = (data.bookings || []).length;
+                });
 
-            document.getElementById('settingName').value = currentUser.FullName || currentUser.name || '';
-            document.getElementById('settingEmail').value = currentUser.Email || currentUser.email || '';
+            // Load settings
+            document.getElementById('settingName').value = currentUser.FullName || '';
+            document.getElementById('settingEmail').value = currentUser.Email || '';
         }
 
         function displayUserBookings(bookings) {
@@ -1762,22 +1779,18 @@
                 return;
             }
 
-            container.innerHTML = documents.map(d => {
-                const isConfidential = d.confidential === true || d.Confidential === 'TRUE' || d.Confidential === true;
-                const title = d.title || d.Title || 'Document';
-                const link = d.link || d.Link || '#';
-                return `
+            container.innerHTML = documents.map(d => `
                 <div class="document-card">
                     <div class="document-info">
                         <div class="document-title">
-                            ${isConfidential ? '🔒 ' : ''}${title}
+                            ${d.Confidential === 'TRUE' || d.Confidential === true ? '🔒 ' : ''}
+                            ${d.Title}
                         </div>
-                        ${isConfidential ? '<div class="document-confidential">Confidential - Restricted Access</div>' : ''}
+                        ${d.Confidential === 'TRUE' || d.Confidential === true ? '<div class="document-confidential">Confidential - Restricted Access</div>' : ''}
                     </div>
-                    <button class="btn-primary btn-small" onclick="window.open('${link}')">Access</button>
+                    <button class="btn-primary btn-small" onclick="window.open('${d.Link}')">Access</button>
                 </div>
-            `;
-            }).join('');
+            `).join('');
         }
 
         function displayPortalEvents(events) {
@@ -1796,87 +1809,67 @@
             `).join('');
         }
 
-        async function viewEticket(bookingRef) {
-            const data = await apiGet('getETicket', { bookingRef });
-            if (!data.success) {
-                showNotification('error', 'eTicket Error', data.message || 'Unable to retrieve booking');
-                return;
-            }
-            const booking = data.booking;
-            const manifest = booking.PassengerManifest || '';
-            const manifestRows = manifest.split(';').filter(Boolean).map(item => {
-                const [name, gender, dob, passport, phone] = item.split('|');
-                return `<div style="margin-bottom: 0.75rem;"><strong>${name}</strong><br>Gender: ${gender || 'N/A'} | DOB: ${dob || 'N/A'}<br>Passport: ${passport || 'N/A'} | Phone: ${phone || 'N/A'}</div>`;
-            }).join('');
-
-            document.getElementById('eticketContent').innerHTML = `
-                <div style="text-align: center; margin-bottom: 2rem; border-bottom: 2px solid var(--border); padding-bottom: 1rem;">
-                    <div style="font-size: 2rem; font-weight: bold; color: var(--primary);">✈️ EXPRESS AIRWAYS</div>
-                    <div style="font-size: 1.2rem; color: var(--grey-blue); margin-top: 0.5rem;">E-TICKET</div>
-                </div>
-                <div style="margin-bottom: 1.5rem;">
-                    <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
-                        <div>
-                            <div style="color: var(--grey-blue); font-size: 0.9rem;">BOOKING REFERENCE</div>
-                            <div style="font-size: 1.5rem; font-weight: bold;">${booking.BookingRef}</div>
+        function viewEticket(bookingRef) {
+            fetch(API_URL + '?action=getBookingDetails&bookingRef=' + bookingRef)
+                .then(r => r.json())
+                .then(data => {
+                    const booking = data.booking;
+                    document.getElementById('eticketContent').innerHTML = `
+                        <div style="text-align: center; margin-bottom: 2rem; border-bottom: 2px solid var(--border); padding-bottom: 1rem;">
+                            <div style="font-size: 2rem; font-weight: bold; color: var(--primary);">✈️ EXPRESS AIRWAYS</div>
+                            <div style="font-size: 1.2rem; color: var(--grey-blue); margin-top: 0.5rem;">E-TICKET</div>
                         </div>
-                        <div>
-                            <div style="color: var(--grey-blue); font-size: 0.9rem;">STATUS</div>
-                            <div style="font-size: 1.5rem; font-weight: bold;">${booking.Status}</div>
+                        <div class="form-row" style="margin-bottom: 1.5rem;">
+                            <div>
+                                <div style="color: var(--grey-blue); font-size: 0.9rem;">BOOKING REFERENCE</div>
+                                <div style="font-size: 1.5rem; font-weight: bold;">${booking.BookingRef}</div>
+                            </div>
+                            <div>
+                                <div style="color: var(--grey-blue); font-size: 0.9rem;">BOOKING STATUS</div>
+                                <div style="font-size: 1.5rem; font-weight: bold;">${booking.Status}</div>
+                            </div>
                         </div>
-                        <div>
-                            <div style="color: var(--grey-blue); font-size: 0.9rem;">BOOKED BY</div>
-                            <div style="font-size: 1rem; font-weight: bold;">${booking.Email}</div>
+                        <div style="background: var(--light-grey); padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                                <div>
+                                    <div style="font-size: 0.85rem; color: var(--grey-blue);">FROM</div>
+                                    <div style="font-size: 1.5rem; font-weight: bold;">${booking.Origin}</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 0.85rem; color: var(--grey-blue);">TO</div>
+                                    <div style="font-size: 1.5rem; font-weight: bold;">${booking.Destination}</div>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                </div>
-                <div style="background: var(--light-grey); padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem;">
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
-                        <div>
-                            <div style="font-size: 0.85rem; color: var(--grey-blue);">FROM</div>
-                            <div style="font-size: 1.25rem; font-weight: bold;">${booking.Origin}</div>
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
+                            <div>
+                                <div style="color: var(--grey-blue);">Departure Date</div>
+                                <div style="font-weight: bold;">${booking.DepartDate}</div>
+                            </div>
+                            <div>
+                                <div style="color: var(--grey-blue);">Passengers</div>
+                                <div style="font-weight: bold;">${booking.Passengers}</div>
+                            </div>
+                            <div>
+                                <div style="color: var(--grey-blue);">Cabin Class</div>
+                                <div style="font-weight: bold;">${booking.PaxCabin}</div>
+                            </div>
+                            <div>
+                                <div style="color: var(--grey-blue);">Total Amount</div>
+                                <div style="font-weight: bold;">${formatPrice(booking.TotalPrice)}</div>
+                            </div>
                         </div>
-                        <div>
-                            <div style="font-size: 0.85rem; color: var(--grey-blue);">TO</div>
-                            <div style="font-size: 1.25rem; font-weight: bold;">${booking.Destination}</div>
+                        <div style="border-top: 2px solid var(--border); padding-top: 1.5rem;">
+                            <div style="font-weight: bold; margin-bottom: 1rem;">Passenger Details</div>
+                            <div style="background: var(--light-grey); padding: 1rem; border-radius: 8px;">
+                                <div>${booking.PaxName}</div>
+                                <div style="font-size: 0.9rem; color: var(--grey-blue);">Passport: ${booking.PaxPassport}</div>
+                                <div style="font-size: 0.9rem; color: var(--grey-blue);">DOB: ${booking.PaxDOB}</div>
+                            </div>
                         </div>
-                        <div>
-                            <div style="font-size: 0.85rem; color: var(--grey-blue);">DEPARTURE</div>
-                            <div style="font-size: 1.25rem; font-weight: bold;">${booking.DepartDate}</div>
-                        </div>
-                        <div>
-                            <div style="font-size: 0.85rem; color: var(--grey-blue);">FLIGHT TIME</div>
-                            <div style="font-size: 1.25rem; font-weight: bold;">${booking.FlightTimes}</div>
-                        </div>
-                    </div>
-                </div>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
-                    <div>
-                        <div style="color: var(--grey-blue);">Passengers</div>
-                        <div style="font-weight: bold;">${booking.Passengers}</div>
-                    </div>
-                    <div>
-                        <div style="color: var(--grey-blue);">Cabin Class</div>
-                        <div style="font-weight: bold;">${booking.PaxCabin}</div>
-                    </div>
-                    <div>
-                        <div style="color: var(--grey-blue);">Payment</div>
-                        <div style="font-weight: bold;">${booking.PaymentMethod}</div>
-                    </div>
-                    <div>
-                        <div style="color: var(--grey-blue);">Total Paid</div>
-                        <div style="font-weight: bold;">${formatPrice(booking.TotalPrice)}</div>
-                    </div>
-                </div>
-                <div style="border-top: 2px solid var(--border); padding-top: 1.5rem;">
-                    <div style="font-weight: bold; margin-bottom: 1rem;">Passenger Manifest</div>
-                    <div style="background: var(--light-grey); padding: 1rem; border-radius: 8px;">${manifestRows || '<div>No full manifest available.</div>'}</div>
-                </div>
-                <div style="margin-top: 1.5rem; font-size: 0.9rem; color: var(--grey-blue); line-height: 1.5;">
-                    <strong>Notice:</strong> This e-ticket is the official document for your flight booking. Please arrive at the airport at least 2 hours before departure, have all travel documents ready, and review the carrier policies before travel. Express Airways is not responsible for itinerary changes after ticket issuance.
-                </div>
-            `;
-            document.getElementById('eticketModal').classList.add('active');
+                    `;
+                    document.getElementById('eticketModal').classList.add('active');
+                });
         }
 
         function printEticket() {
@@ -1887,253 +1880,270 @@
             document.getElementById('eticketModal').classList.remove('active');
         }
 
-        async function viewBookingDetails(bookingRef) {
-            const data = await apiGet('getBookingDetails', { bookingRef });
-            if (!data.success) {
-                showNotification('error', 'Booking Not Found', data.message || 'Unable to retrieve booking.');
-                return;
-            }
-            const booking = data.booking;
-            document.getElementById('editBookingContent').innerHTML = `
-                <div class="form-group">
-                    <label>Booking Reference</label>
-                    <input type="text" id="editBookingRef" value="${booking.BookingRef}" disabled>
-                </div>
-                <div class="form-group">
-                    <label>Departure Date</label>
-                    <input type="date" id="editDepartDate" value="${booking.DepartDate}">
-                </div>
-                <div class="form-group">
-                    <label>Passengers</label>
-                    <input type="number" id="editPassengers" min="1" value="${booking.Passengers}">
-                </div>
-                <div class="form-group">
-                    <label>Phone</label>
-                    <input type="tel" id="editPhone" value="${booking.PaxPhone}">
-                </div>
-                <div class="form-group">
-                    <label>Cabin Class</label>
-                    <select id="editCabin">
-                        <option value="Economy" ${booking.PaxCabin === 'Economy' ? 'selected' : ''}>Economy</option>
-                        <option value="Business" ${booking.PaxCabin === 'Business' ? 'selected' : ''}>Business</option>
-                        <option value="FirstClass" ${booking.PaxCabin === 'FirstClass' ? 'selected' : ''}>First Class</option>
-                    </select>
-                </div>
-            `;
-            document.getElementById('editBookingModal').classList.add('active');
+        function viewBookingDetails(bookingRef) {
+            showNotification('info', 'Feature', 'Booking details editing coming soon');
         }
 
-        async function saveBookingChanges() {
-            const bookingRef = document.getElementById('editBookingRef').value;
-            const departDate = document.getElementById('editDepartDate').value;
-            const passengers = parseInt(document.getElementById('editPassengers').value, 10) || 1;
-            const phone = document.getElementById('editPhone').value.trim();
-            const cabin = document.getElementById('editCabin').value;
-
-            const data = await apiPost('changeBooking', {
-                bookingRef,
-                email: currentUser.Email,
-                departDate,
-                passengers,
-                paxPhone: phone,
-                paxCabin: cabin
-            });
-            if (data.success) {
-                showNotification('success', 'Booking Updated', 'Your booking details were saved.');
-                closeEditBookingModal();
-                loadUserPortalData();
-            } else {
-                showNotification('error', 'Update Failed', data.message || 'Unable to update booking');
+        function cancelBooking(bookingRef) {
+            if (confirm('Are you sure you want to cancel this booking?')) {
+                fetch(API_URL + '?action=cancelBooking&bookingRef=' + bookingRef, { method: 'POST' })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.success) {
+                            showNotification('success', 'Booking Cancelled', 'Your booking has been cancelled');
+                            loadUserPortalData();
+                        }
+                    });
             }
         }
 
-        function closeEditBookingModal() {
-            document.getElementById('editBookingModal').classList.remove('active');
-        }
-
-        async function cancelBooking(bookingRef) {
-            if (!confirm('Are you sure you want to cancel this booking?')) return;
-            const result = await apiPost('cancel', { bookingRef, email: currentUser.Email });
-            if (result.success) {
-                showNotification('success', 'Booking Cancelled', 'Your booking has been cancelled');
-                loadUserPortalData();
-            } else {
-                showNotification('error', 'Cancel Failed', result.message || 'Unable to cancel');
-            }
-        }
-
-        async function saveSettings() {
+        function saveSettings() {
             const settings = {
-                email: currentUser.Email,
-                fullName: document.getElementById('settingName').value,
-                phone: document.getElementById('settingPhone').value
+                FullName: document.getElementById('settingName').value,
+                Email: currentUser.Email
             };
 
-            const data = await apiPost('updateAccount', settings);
-            if (data.success) {
-                currentUser.FullName = settings.fullName;
-                saveUserToStorage(currentUser);
-                updateNavigation();
-                showNotification('success', 'Settings Saved', 'Your account settings have been updated');
-            } else {
-                showNotification('error', 'Save Failed', data.message || 'Unable to save account settings');
-            }
-        }
-
-        async function submitContact() {
-            const name = document.getElementById('contactName').value.trim();
-            const email = document.getElementById('contactEmail').value.trim();
-            const message = document.getElementById('contactMessage').value.trim();
-            if (!name || !email || !message) {
-                showNotification('error', 'Contact Error', 'Please fill in all fields');
-                return;
-            }
-            const result = await apiPost('contact', {
-                sheetName: 'Contact',
-                name,
-                email,
-                message
+            fetch(API_URL + '?action=updateAccount', {
+                method: 'POST',
+                body: JSON.stringify(settings)
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    currentUser.FullName = settings.FullName;
+                    updateNavigation();
+                    showNotification('success', 'Settings Saved', 'Your account settings have been updated');
+                }
             });
-            if (result.success) {
-                document.getElementById('contactName').value = '';
-                document.getElementById('contactEmail').value = '';
-                document.getElementById('contactMessage').value = '';
-                showNotification('success', 'Message Sent', 'Your request was saved to the contact sheet');
-            } else {
-                showNotification('error', 'Failed', result.message || 'Unable to send message');
-            }
-        }
-
-        async function submitTravelAgentRequest() {
-            const email = document.getElementById('agentEmail').value.trim();
-            const name = document.getElementById('agentName').value.trim();
-            if (!email || !name) {
-                showNotification('error', 'Travel Agent', 'Please fill in both fields');
-                return;
-            }
-            const result = await apiPost('travelAgent', {
-                email,
-                status: 1
-            });
-            if (result.success) {
-                showNotification('success', 'Travel Agent Requested', 'Your account will be updated once approved');
-            } else {
-                showNotification('error', 'Failed', result.message || 'Unable to request travel agent status');
-            }
         }
 
         // ========== ADMIN PORTAL ==========
-        function switchAdminTab(tab, event) {
+        function switchAdminTab(tab) {
             document.querySelectorAll('#adminPage .tab-button').forEach(btn => btn.classList.remove('active'));
             document.querySelectorAll('#adminPage .tab-content').forEach(tc => tc.classList.remove('active'));
 
-            if (event && event.currentTarget) event.currentTarget.classList.add('active');
+            event.target.classList.add('active');
             document.getElementById(tab + 'Tab').classList.add('active');
         }
 
-        async function loadAdminData() {
-            const stats = await apiGet('getAdminStats');
-            document.getElementById('adminTotalBookings').textContent = stats.totalBookings || 0;
-            document.getElementById('adminTotalUsers').textContent = stats.totalUsers || 0;
-            document.getElementById('adminTodayBookings').textContent = stats.todayBookings || 0;
-            document.getElementById('adminPendingRequests').textContent = stats.pendingRequests || 0;
+        function loadAdminData() {
+            fetch(API_URL + '?action=getAdminStats')
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('adminTotalBookings').textContent = data.totalBookings || 0;
+                    document.getElementById('adminTotalUsers').textContent = data.totalUsers || 0;
+                    document.getElementById('adminTodayBookings').textContent = data.todayBookings || 0;
+                    document.getElementById('adminPendingRequests').textContent = data.pendingRequests || 0;
+                });
 
-            const bookingsResult = await apiGet('getAllBookings');
-            const bookingTable = document.getElementById('adminBookingsTable');
-            bookingTable.innerHTML = (bookingsResult.bookings || []).map(b => `
-                        <tr>
-                            <td>${b.BookingRef}</td>
-                            <td>${b.Email}</td>
-                            <td>${b.Origin} → ${b.Destination}</td>
-                            <td>${b.DepartDate}</td>
-                            <td>${b.Status}</td>
-                            <td><button class="btn-small" onclick="approveBooking('${b.BookingRef}')">Approve</button></td>
-                        </tr>
-                    `).join('');
+            // Load all bookings
+            fetch(API_URL + '?action=getAllBookings')
 
-            const usersResult = await apiGet('getAllUsers');
-            const userTable = document.getElementById('adminUsersTable');
-            userTable.innerHTML = (usersResult.users || []).map(u => `
-                        <tr>
-                            <td>${u.FullName}</td>
-                            <td>${u.Email}</td>
-                            <td>${u.Miles}</td>
-                            <td>${calculateTier(u.Miles)}</td>
-                            <td>${u.Status}</td>
-                            <td><button class="btn-small" onclick="editUser('${u.Email}')">Edit</button></td>
-                        </tr>
-                    `).join('');
+.then(r => r.json())
+                .then(data => {
+                    const table = document.getElementById('adminBookingsTable');
+                    if (table) {
+                        table.innerHTML = (data.bookings || []).map(b => `
+                            <tr>
+                                <td>${b.BookingRef}</td>
+                                <td>${b.Email}</td>
+                                <td>${b.Origin} → ${b.Destination}</td>
+                                <td>${b.DepartDate}</td>
+                                <td>${b.Status}</td>
+                                <td><button class="btn-small" onclick="approveBooking('${b.BookingRef}')">Approve</button></td>
+                            </tr>
+                        `).join('');
+                    }
+                });
 
-            const documentsResult = await apiGet('getDocuments');
-            const docsTable = document.getElementById('adminDocumentsTable');
-            docsTable.innerHTML = (documentsResult.documents || []).map(d => `
-                        <tr>
-                            <td>${d.Title || d.title}</td>
-                            <td>${(d.Confidential === 'TRUE' || d.confidential === true) ? '🔒 Yes' : 'No'}</td>
-                            <td><a href="${d.Link || d.link}" target="_blank">Link</a></td>
-                        </tr>
-                    `).join('');
+            // Load all users
+            fetch(API_URL + '?action=getAllUsers')
+                .then(r => r.json())
+                .then(data => {
+                    const table = document.getElementById('adminUsersTable');
+                    if (table) {
+                        table.innerHTML = (data.users || []).map(u => `
+                            <tr>
+                                <td>${u.FullName}</td>
+                                <td>${u.Email}</td>
+                                <td>${u.Miles}</td>
+                                <td>${calculateTier(u.Miles)}</td>
+                                <td>${u.Status}</td>
+                                <td><button class="btn-small" onclick="editUser('${u.Email}')">Edit</button></td>
+                            </tr>
+                        `).join('');
+                    }
+                });
+
+            // Load promo codes
+            fetch(API_URL + '?action=getPromoCodes')
+                .then(r => r.json())
+                .then(data => {
+                    const table = document.getElementById('adminPromoTable');
+                    if (table) {
+                        table.innerHTML = (data.promos || []).map(p => `
+                            <tr>
+                                <td>${p.Code}</td>
+                                <td>${p.DiscountPercent}</td>
+                                <td>${p.DiscountDollars}</td>
+                                <td>${p.MaxUses}</td>
+                                <td>${p.UsedCount}</td>
+                                <td>${p.ExpiryDate}</td>
+                                <td>${p.Active}</td>
+                            </tr>
+                        `).join('');
+                    }
+                });
+
+            // Load ancillaries
+            fetch(API_URL + '?action=getAncillariesAll')
+                .then(r => r.json())
+                .then(data => {
+                    const table = document.getElementById('adminAncillariesTable');
+                    if (table) {
+                        table.innerHTML = (data.ancillaries || []).map(a => `
+                            <tr>
+                                <td>${a.Type}</td>
+                                <td>${a.Description}</td>
+                                <td>${a.Price}</td>
+                            </tr>
+                        `).join('');
+                    }
+                });
+
+            // Load documents
+            fetch(API_URL + '?action=getDocuments')
+                .then(r => r.json())
+                .then(data => {
+                    const table = document.getElementById('adminDocumentsTable');
+                    if (table) {
+                        table.innerHTML = (data.documents || []).map(d => `
+                            <tr>
+                                <td>${d.Title}</td>
+                                <td>${d.Confidential === 'TRUE' ? '🔒 Yes' : 'No'}</td>
+                                <td><a href="${d.Link}" target="_blank">Link</a></td>
+                            </tr>
+                        `).join('');
+                    }
+                });
         }
 
         // ========== INITIAL DATA LOAD ==========
-        async function loadInitialData() {
-            const heroResult = await apiGet('getHero');
-            if (heroResult.success && heroResult.hero) {
-                document.querySelector('.hero h1').textContent = heroResult.hero.headline;
-                document.querySelector('.hero p').textContent = heroResult.hero.subheader;
-                if (heroResult.hero.image) {
-                    document.querySelector('.hero').style.backgroundImage = `url('${heroResult.hero.image}')`;
-                    document.querySelector('.hero').style.backgroundSize = 'cover';
-                    document.querySelector('.hero').style.backgroundPosition = 'center';
-                }
-            }
+        function loadInitialData() {
+            // Load hero
+            fetch(API_URL + '?action=getHero')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        const heroH1 = document.querySelector('.hero h1');
+                        const heroP = document.querySelector('.hero p');
+                        if (heroH1) heroH1.textContent = data.hero.headline;
+                        if (heroP) heroP.textContent = data.hero.subheader;
+                    }
+                });
 
-            const sectionResult = await apiGet('getSections');
-            displaySections(sectionResult.sections || []);
+            // Load sections
+            fetch(API_URL + '?action=getSections')
+                .then(r => r.json())
+                .then(data => {
+                    displaySections(data.sections || []);
+                });
 
-            const eventResult = await apiGet('getEvents');
-            displayEvents(eventResult.events || []);
+            // Load events
+            fetch(API_URL + '?action=getEvents')
+                .then(r => r.json())
+                .then(data => {
+                    displayEvents(data.events || []);
+                });
+            // initial system status render
+            pollSystemStatus();
+        }
+
+        // ========== SYSTEM STATUS POLLING ==========
+        function renderSystemStatus(status) {
+            const container = document.getElementById('systemStatusContent');
+            if (!container) return;
+            container.innerHTML = '';
+            const keys = Object.keys(status || {});
+            if (keys.length === 0) return;
+            keys.forEach(k => {
+                if (k === 'timestamp') return;
+                const val = status[k];
+                const el = document.createElement('div');
+                el.style.display = 'flex';
+                el.style.alignItems = 'center';
+                el.style.gap = '0.5rem';
+                el.style.padding = '0.4rem 0.6rem';
+                el.style.borderRadius = '8px';
+                el.style.background = 'rgba(243,244,246,0.7)';
+                el.style.fontWeight = '600';
+                const dot = document.createElement('span');
+                dot.style.width = '10px';
+                dot.style.height = '10px';
+                dot.style.borderRadius = '50%';
+                if ((val || '').toString().toUpperCase().indexOf('OP') === 0 || (val || '').toString().toUpperCase() === 'OPERATIONAL') dot.style.background = '#10b981';
+                else if ((val || '').toString().toUpperCase().indexOf('PEN') === 0 || (val || '').toString().toUpperCase() === 'DEGRADED') dot.style.background = '#f59e0b';
+                else dot.style.background = '#ef4444';
+                const label = document.createElement('div');
+                label.textContent = `${k}: ${val}`;
+                el.appendChild(dot);
+                el.appendChild(label);
+                container.appendChild(el);
+            });
+            // timestamp
+            const ts = status.timestamp || new Date().toISOString();
+            const tsEl = document.createElement('div');
+            tsEl.style.marginLeft = 'auto';
+            tsEl.style.color = '#475569';
+            tsEl.style.fontSize = '0.9rem';
+            tsEl.textContent = 'Updated: ' + new Date(ts).toLocaleString();
+            container.appendChild(tsEl);
+            document.getElementById('systemStatusBar').style.display = 'block';
+        }
+
+        function pollSystemStatus() {
+            fetch(API_URL + '?action=getSystemStatus')
+                .then(r => r.json())
+                .then(data => {
+                    if (!data) return;
+                    const payload = data.status || data;
+                    // backend now persists this to Config; render on frontend
+                    renderSystemStatus(payload);
+                })
+                .catch(e => console.error('System status fetch error', e));
+        }
+
+        function startStatusPolling() {
+            // immediate
+            pollSystemStatus();
+            // then every 30s
+            setInterval(pollSystemStatus, 30000);
         }
 
         function displaySections(sections) {
             const container = document.getElementById('sectionsContainer');
-            if (sections.length === 0) {
-                container.innerHTML = '';
-                return;
-            }
+            if (!container || sections.length === 0) return;
 
             container.innerHTML = '<h2 style="margin-bottom: 2rem; color: var(--primary);">Featured</h2>' +
-                '<div class="section-grid">' +
-                sections.map(s => {
-                    const image = s.Image || s.image || 'https://via.placeholder.com/250x200?text=Flight';
-                    const title = s.Title || s.title || 'Travel Service';
-                    const description = s.Description || s.description || '';
-                    const link = s.Link || s.link || '';
-                    return `
-                        <div class="section-card" ${link ? 'data-link="' + link + '"' : ''}>
-                            <div class="section-image">
-                                <img src="${image}" alt="${title}">
-                            </div>
-                            <div class="section-content">
-                                <div class="section-title">${title}</div>
-                                <div class="section-description">${description}</div>
-                                ${link ? '<button class="btn-primary btn-small">Learn More</button>' : ''}
-                            </div>
-                        </div>
-                    `;
-                }).join('') + '</div>';
-
-            Array.from(container.querySelectorAll('.section-card')).forEach(card => {
-                const link = card.getAttribute('data-link');
-                if (link) {
-                    card.style.cursor = 'pointer';
-                    card.addEventListener('click', () => window.open(link, '_blank'));
-                }
-            });
+            '<div class="section-grid">' +
+            sections.map(s => `
+                <div class="section-card" onclick="${s.Link ? 'window.open("' + s.Link + '")' : ''}">
+                    <div class="section-image">
+                        <img src="${s.Image || 'https://via.placeholder.com/250x200?text=Flight'}" alt="${s.Title}">
+                    </div>
+                    <div class="section-content">
+                        <div class="section-title">${s.Title}</div>
+                        <div class="section-description">${s.Description}</div>
+                        ${s.Link ? '<button class="btn-primary btn-small">Learn More</button>' : ''}
+                    </div>
+                </div>
+            `).join('') + '</div>';
         }
 
         function displayEvents(events) {
             const container = document.getElementById('eventsContainer');
+            if (!container) return;
+            
             if (events.length === 0) {
                 container.innerHTML = '<div class="alert alert-info">No upcoming events</div>';
                 return;
@@ -2182,8 +2192,60 @@
         }
 
         // Stub functions for admin
-        function approveBooking(ref) { showNotification('info', 'Approved', 'Booking approved'); }
-        function editUser(email) { showNotification('info', 'Edit User', 'User editing coming soon'); }
+        function approveBooking(ref) {
+            if (!confirm('Approve booking ' + ref + '?')) return;
+            fetch(API_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'admin.approveBooking', bookingRef: ref, status: 'CONFIRMED' })
+            }).then(r => r.json()).then(data => {
+                if (data.success) {
+                    showNotification('success', 'Approved', 'Booking approved');
+                    loadAdminData();
+                } else showNotification('error', 'Error', data.message || 'Unable to approve');
+            }).catch(e => showNotification('error', 'Error', e.toString()));
+        }
+
+        function adminAddPromo() {
+            const code = document.getElementById('promoCodeInput').value.trim();
+            const pct = parseFloat(document.getElementById('promoPercent').value) || 0;
+            const dollars = parseFloat(document.getElementById('promoDollars').value) || 0;
+            const maxUses = parseInt(document.getElementById('promoMaxUses').value, 10) || 999;
+            const expiry = document.getElementById('promoExpiry').value || '';
+            if (!code) { showNotification('error', 'Validation', 'Promo code required'); return; }
+            fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'admin.addPromo', code: code, discountPercent: pct, discountDollars: dollars, maxUses: maxUses, expiryDate: expiry, active: true }) })
+                .then(r => r.json()).then(data => {
+                    if (data.success) { showNotification('success', 'Promo Added', data.message); loadAdminData(); }
+                    else showNotification('error', 'Error', data.message || 'Failed');
+                }).catch(e => showNotification('error', 'Error', e.toString()));
+        }
+
+        function adminAddAncillary() {
+            const type = document.getElementById('ancType').value.trim();
+            const desc = document.getElementById('ancDesc').value.trim();
+            const price = parseFloat(document.getElementById('ancPrice').value) || 0;
+            if (!type) { showNotification('error', 'Validation', 'Type required'); return; }
+            fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'admin.addAncillary', type: type, description: desc, price: price }) })
+                .then(r => r.json()).then(data => {
+                    if (data.success) { showNotification('success', 'Added', data.message); loadAdminData(); }
+                    else showNotification('error', 'Error', data.message || 'Failed');
+                }).catch(e => showNotification('error', 'Error', e.toString()));
+        }
+
+        function editUser(email) {
+            const name = prompt('New full name (leave blank to skip) for ' + email + ':');
+            const role = prompt('New role (leave blank to skip) for ' + email + ':');
+            const miles = prompt('Miles (leave blank to skip):');
+            const payload = { action: 'admin.updateUser', email: email };
+            if (name) payload.fullName = name;
+            if (role) payload.role = role;
+            if (miles) payload.miles = parseInt(miles, 10) || 0;
+            fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) }).then(r => r.json()).then(data => {
+                if (data.success) { showNotification('success', 'User Updated', data.message); loadAdminData(); }
+                else showNotification('error', 'Error', data.message || 'Failed');
+            });
+        }
     </script>
+</body>
+</html>
 </body>
 </html>

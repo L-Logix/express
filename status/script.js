@@ -1,209 +1,253 @@
-// ==========================================
-// 100% DETERMINISTIC CONFIGURATION AREA
-// You have total control. No fake data. No simulations.
-// 
-// STATUS TYPES:
-// 1 = Operational
-// 2 = Degraded Performance
-// 3 = Major Outage
-// 4 = Planned Maintenance / Migrating
-// ==========================================
+const API_URL = "https://script.google.com/macros/s/AKfycbwOpzPgTj94-tQAEjIJ3Q3l54zCLGC7Ag2XDlNUPwvb8M1v8p6qhuVDVigGYz8G-bGWhQ/exec";
 
-const CONFIG = {
-    newSiteProgress: 12,
-    globalBannerState: "status-maintenance", // "status-operational", "status-maintenance", "status-down"
-    globalBannerText: "Scheduled Infrastructure Upgrade in Progress",
-    
-    categories: [
-        {
-            title: "Core Routing Systems",
-            services: [
-                { 
-                    name: "Primary Database Cluster", 
-                    statusText: "Migrating", 
-                    type: 4, 
-                    protocol: "TCP/IP TLS 1.3", 
-                    dataCenter: "US-East-1", 
-                    latency: "142ms",
-                    uptimePct: "99.80",
-                    description: "The primary database is currently in read-only mode while data is migrated to the new Sovereign environment. Expect slightly elevated latency until the cutover is complete."
-                },
-                { 
-                    name: "Authentication Gateway", 
-                    statusText: "Operational", 
-                    type: 1, 
-                    protocol: "OATH2 / SAML 2.0", 
-                    dataCenter: "Global Edge", 
-                    latency: "18ms",
-                    uptimePct: "100.00",
-                    description: "Identity and Access Management (IAM) systems are fully operational. Zero-trust security policies are actively enforced across all nodes. Please note that the current authentication gateway is not open to the public at this time."
-                }
-            ]
-        },
-        {
-            title: "External Integrations & APIs",
-            services: [
-                { 
-                    name: "Payment Processing API", 
-                    statusText: "Migrating", 
-                    type: 4, 
-                    protocol: "PCI-DSS Level 1", 
-                    dataCenter: "Multi-Region", 
-                    latency: "25ms",
-                    uptimePct: "99.95",
-                    description: "The third-party payment clearinghouse is responding within expected SLA limits but is currently being upgraded as part of Project Zenith. Please see the website status above for the overall status of Project Zenith."
-                },
-                { 
-                    name: "Logistics Tracking Network", 
-                    statusText: "Migrating", 
-                    type: 4, 
-                    protocol: "REST API", 
-                    dataCenter: "EU-West", 
-                    latency: "450ms",
-                    uptimePct: "98.50",
-                    description: "We are currently observing elevated packet loss with this external logistics provider. Our routing systems are queuing requests to prevent data loss while their engineers work to improve the system."
-                }
-                
-            ]
+let cachedConfig = null;
+
+async function syncInfrastructure() {
+    const loader = document.getElementById('loading-overlay');
+    loader.style.display = 'flex';
+
+    try {
+        const response = await fetch(`${API_URL}?action=getStatusRows`);
+        const data = await response.json();
+        if (data.success) {
+            cachedConfig = data.config;
+            renderUI(data.config);
         }
-    ]
-};
-
-// ==========================================
-// RENDER ENGINE (NO SIMULATION)
-// ==========================================
-
-// Helper: Determine CSS classes based on Type
-function getTypeClasses(type) {
-    switch(type) {
-        case 1: return { badge: 'badge-operational', day: 'day-up' };
-        case 2: return { badge: 'badge-degraded', day: 'day-degraded' };
-        case 3: return { badge: 'badge-down', day: 'day-down' };
-        case 4: return { badge: 'badge-maintenance', day: 'day-maintenance' };
-        default: return { badge: 'badge-operational', day: 'day-up' };
+    } catch (err) {
+        console.error("Failed to Connect:", err);
+    } finally {
+        setTimeout(() => { loader.style.display = 'none'; }, 800);
     }
 }
 
-// Helper: Generate visual graph based solely on the defined type (No randomness)
-function generateVisualGraph(type) {
-    let html = '';
-    const classes = getTypeClasses(type);
-    
-    for(let i = 0; i < 30; i++) {
-        // If it's migrating/maintenance (4) or degraded (2), we visually represent 
-        // the last few days in that state, otherwise it's fully up.
-        let dayClass = 'day-up'; 
-        if (type !== 1 && i > 25) {
-            dayClass = classes.day;
-        }
-        html += `<div class="uptime-day ${dayClass}"></div>`;
+// --------------------------------------------------------
+// TRIGGER THE PRINT WITH A NEW ID EVERY TIME
+// --------------------------------------------------------
+function generateAndPrintReport() {
+    if (!cachedConfig) {
+        alert("System not connected yet. Please wait for connection.");
+        return;
     }
-    return html;
+    buildPrintReport(cachedConfig);
+    window.print();
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-    
-    // 1. Clock Updates Real Time
-    const updateTime = () => {
-        const now = new Date();
-        document.getElementById('last-updated').innerText = 
-            `Status verified: ${now.toLocaleDateString()} at ${now.toLocaleTimeString()} local time`;
-    };
-    updateTime();
-    setInterval(updateTime, 1000);
-
-    // 2. Set Global Banner
-    const banner = document.getElementById('status-banner');
-    const bannerText = document.getElementById('status-text');
-    banner.className = `overall-status ${CONFIG.globalBannerState}`;
-    bannerText.innerText = CONFIG.globalBannerText;
-
-    // 3. Set Progress Bar
-    setTimeout(() => {
-        const bar = document.getElementById('site-progress-bar');
-        const text = document.getElementById('site-percentage');
-        if(bar && text) {
-            bar.style.width = CONFIG.newSiteProgress + "%";
-            text.innerText = CONFIG.newSiteProgress + "%";
-        }
-    }, 200);
-
-    // 4. Build Interfaces
-    const webContainer = document.getElementById('services-container');
+// --------------------------------------------------------
+// THE FORMAL PRINT GENERATOR
+// --------------------------------------------------------
+function buildPrintReport(config) {
     const printContainer = document.getElementById('print-ui');
-    const timestamp = new Date().toISOString();
+    let html = '';
 
-    let printHTML = `
-        <div class="print-cover">
-            <h1>Infrastructure Status Report</h1>
-            <h2>Global Systems & Partner Integration Audit</h2>
-            <p><strong>Generated:</strong> ${new Date().toLocaleString()}</p>
-            <p><strong>Report ID:</strong> SYS-AUDIT-${Date.now().toString().slice(-6)}</p>
-            <div class="confidential-stamp">OFFICIAL SYSTEM RECORD</div>
-            
-            <div style="margin-top: 80px; text-align: left; width: 80%; border-top: 1px solid black; padding-top: 20px;">
-                <h3>Executive Summary</h3>
-                <p style="font-size: 12pt; text-align: justify;">This document serves as the official, digitally validated record of the IT infrastructure. It details the operational status, latency metrics, cryptographic protocols, and administrative notes for all connected systems. All metrics are accurate as of the timestamp indicated above and reflect direct manual verification by network engineers.</p>
+    const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    const reportID = "EA-SYS-" + Math.random().toString(36).substring(2, 6).toUpperCase() + "-" + Date.now().toString().slice(-4);
+
+    html += `
+        <div class="print-title-page page-break">
+        <p></p><p></p><p></p>
+            <div class="print-stamp">DECLASSIFIED - Level 0 Clearance</div>
+            <h1>INFRASTRUCTURE AUDIT REPORT</h1>
+            <h2>${config.Main_Headline}</h2>
+            <div class="print-meta-box">
+                <p><strong>REPORT ID:</strong> ${reportID}</p>
+                <p><strong>DATE GENERATED:</strong> ${today}</p>
+                <p><strong>AUTHORITY:</strong> Sovereign Systems Division</p>
+                <p><strong>SUBJECT:</strong> Global Manifest Synchronization & SLA Compliance</p>
+                <br>
+                <p style="text-align: justify;"><strong>EXECUTIVE SUMMARY:</strong> This formal audit document provides a comprehensive analysis of the Express Airways global infrastructure. It includes detailed metrics for latency, communication protocols, and node redundancy. All data points have been cryptographically verified against the Sovereign distributed ledger. This document is highly confidential and intended for internal administrative review only.</p>
             </div>
         </div>
     `;
 
-    CONFIG.categories.forEach(category => {
-        
-        // Build Web Category Header
-        const webTitle = document.createElement('h2');
-        webTitle.className = 'category-title';
-        webTitle.innerText = category.title;
-        webContainer.appendChild(webTitle);
+    // Numeric Sort Fix: (a, b) => parseInt(a) - parseInt(b)
+    const indices = [...new Set(Object.keys(config).filter(k => k.match(/\d+$/)).map(k => k.match(/\d+$/)[0]))].sort((a, b) => parseInt(a) - parseInt(b));
+    const categories = {};
+    
+    indices.forEach(i => {
+        const cat = config[`Category${i}`];
+        if (!cat) return;
+        if (!categories[cat]) categories[cat] = [];
+        categories[cat].push(i);
+    });
 
-        // Build Print Category Header
-        printHTML += `<div class="print-chapter"><h2 class="print-chapter-title">${category.title}</h2>`;
+    for (const [catName, items] of Object.entries(categories)) {
+        html += `
+            <div class="print-chapter-page page-break">
+                <h1>${catName.toUpperCase()}</h1>
+            </div>
+        `;
 
-        category.services.forEach(service => {
-            const classes = getTypeClasses(service.type);
-            const graphHtml = generateVisualGraph(service.type);
+        html += `<div class="print-section-header"><h2>${catName} - Technical Analysis</h2></div>`;
 
-            // --- Construct Web Card ---
-            const card = document.createElement('div');
-            card.className = 'card';
-            card.innerHTML = `
-                <div class="service-header">
-                    <h3>${service.name}</h3>
-                    <span class="badge ${classes.badge}">${service.statusText}</span>
-                </div>
-                <div class="service-meta">
-                    <span class="latency-indicator">[LATENCY: ${service.latency}]</span>
-                    <span><strong>${service.uptimePct}% SLA Compliance</strong></span>
-                </div>
-                <div class="uptime-graph">${graphHtml}</div>
-            `;
-            webContainer.appendChild(card);
+        items.forEach(i => {
+            const historyStr = config[`History${i}`] || "";
+            
+            // Auto-Calculate Uptime Percentage from History String
+            const totalTicks = historyStr.length;
+            const upTicks = historyStr.split('').filter(val => val === '5').length;
+            const calculatedUptime = totalTicks > 0 ? ((upTicks / totalTicks) * 100).toFixed(2) : "0.00";
 
-            // --- Construct Print Block (Using Custom Description) ---
-            printHTML += `
+            const historyHtml = historyStr.split('').map(val => {
+                let color = 'day-up'; 
+                if (val === '0' || val === '1') color = 'day-down'; 
+                if (val === '2') color = 'day-warning'; 
+                if (val === '3' || val === '4') color = 'day-maintenance'; 
+                return `<div class="uptime-day ${color}"></div>`;
+            }).join('');
+
+            html += `
                 <div class="print-service-block">
-                    <div class="print-service-header">
-                        <h3>${service.name}</h3>
-                        <span class="print-service-status" style="color: #333;">STATUS: ${service.statusText}</span>
+                    <h3>System Node: ${config[`Service${i}`]}</h3>
+                    <div class="print-grid">
+                        <div class="print-grid-item"><strong>Current Status:</strong> ${config[`StatusText${i}`]}</div>
+                        <div class="print-grid-item"><strong>Compliance Rating:</strong> ${calculatedUptime}% SLA</div>
                     </div>
-                    <div class="print-fact-grid">
-                        <div><strong>Communication Protocol:</strong> ${service.protocol}</div>
-                        <div><strong>SLA Compliance:</strong> ${service.uptimePct}%</div>
-                        <div><strong>Primary Data Node:</strong> ${service.dataCenter}</div>
-                        <div><strong>Avg Network Latency:</strong> ${service.latency}</div>
+                    <div class="print-grid">
+                        <div class="print-grid-item"><strong>System Type:</strong> ${config[`Type${i}`]}</div>
+                        <div class="print-grid-item"><strong>Routing Protocol:</strong> ${config[`Protocol${i}`]}</div>
                     </div>
-                    <p class="print-desc">${service.description}</p>
+                    <div class="print-grid" style="margin-bottom: 0;">
+                        <div class="print-grid-item"><strong>Geolocation:</strong> ${config[`DataCenter${i}`]}</div>
+                        <div class="print-grid-item"><strong>Average Response Latency:</strong> ${config[`Latency${i}`]}</div>
+                    </div>
+                    <div class="print-desc">
+                        <strong>Administrative Notes:</strong> ${config[`Description${i}`]}
+                    </div>
+                    <div class="print-history-title">CRYPTOGRAPHIC UPTIME LOG (PAST 48H)</div>
+                    <div class="print-uptime-graph">${historyHtml}</div>
                 </div>
             `;
         });
+        
+        html += `<div class="page-break"></div>`;
+    }
 
-        // Add cryptographic stamp to end of printed chapter
-        printHTML += `
-            <div class="print-validation">
-                [END OF CHAPTER] // SECURE HASH: ${btoa(category.title).substring(0, 20)}... // TIMESTAMP: ${timestamp}
-            </div></div>`;
+    printContainer.innerHTML = html;
+}
+
+// --------------------------------------------------------
+// THE WEB UI GENERATOR
+// --------------------------------------------------------
+function renderUI(config) {
+    document.getElementById('main-headline').innerText = config.Main_Headline;
+    document.getElementById('sub-header').innerText = config.Sub_Header;
+    document.getElementById('hero-bg').style.backgroundImage = `url('${config.Hero_Image}')`;
+
+    const banner = document.getElementById('status-banner');
+    const state = parseInt(config.globalBannerState);
+    const text = document.getElementById('status-text');
+    
+    const bannerConfig = {
+        0: { class: 'status-down', msg: 'Critical Outage' },
+        1: { class: 'status-down', msg: 'Partial Outage' },
+        2: { class: 'status-warning', msg: 'Error Identified' },
+        3: { class: 'status-warning', msg: 'Investigating Errors' },
+        4: { class: 'status-maintenance', msg: 'Scheduled Maintenance in Progress' },
+        5: { class: 'status-operational', msg: 'All Systems Fully Operational' }
+    };
+    const current = bannerConfig[state] || bannerConfig[4];
+    banner.className = `overall-status ${current.class}`;
+    text.innerText = current.msg;
+    document.getElementById('last-updated').innerText = `Synced: ${new Date().toLocaleTimeString()}`;
+
+    const percentBadge = document.getElementById('site-percentage');
+    if (percentBadge) {
+        percentBadge.innerText = (config.progress || 0) + "% Complete";
+    }
+
+    const container = document.getElementById('services-container');
+    container.innerHTML = '';
+
+    // Numeric Sort Fix: (a, b) => parseInt(a) - parseInt(b)
+    const indices = [...new Set(Object.keys(config).filter(k => k.match(/\d+$/)).map(k => k.match(/\d+$/)[0]))].sort((a, b) => parseInt(a) - parseInt(b));
+    
+    const categories = {};
+    indices.forEach(i => {
+        const cat = config[`Category${i}`];
+        if (!cat) return;
+        if (!categories[cat]) categories[cat] = [];
+        categories[cat].push(i);
     });
 
-    // Inject the final compiled print HTML into the hidden print div
-    printContainer.innerHTML = printHTML;
-});
+    let cardCount = 0;
+    for (const [catName, items] of Object.entries(categories)) {
+        const title = document.createElement('h2');
+        title.className = 'category-title';
+        title.innerText = catName;
+        container.appendChild(title);
+
+        items.forEach(index => {
+            const historyStr = config[`History${index}`] || "";
+            
+            // Auto-Calculate Uptime Percentage from History String
+            const totalTicks = historyStr.length;
+            const upTicks = historyStr.split('').filter(val => val === '5').length;
+            const calculatedUptime = totalTicks > 0 ? ((upTicks / totalTicks) * 100).toFixed(2) : "0.00";
+
+            const historyHtml = historyStr.split('').map(val => {
+                let color = 'day-up';
+                if (val === '0' || val === '1') color = 'day-down';
+                if (val === '2') color = 'day-warning';
+                if (val === '3' || val === '4') color = 'day-maintenance';
+                return `<div class="uptime-day ${color}"></div>`;
+            }).join('');
+
+            const card = document.createElement('div');
+            card.className = "card";
+            card.id = `card-${index}`;
+            card.innerHTML = `
+                <div class="service-header">
+                    <h3>${config[`Service${index}`]}</h3>
+                    <span class="badge">${config[`StatusText${index}`]}</span>
+                </div>
+                <div class="service-meta">
+                    <div class="meta-item"><b>System Type</b> ${config[`Type${index}`]}</div>
+                    <div class="meta-item"><b>Connection Type</b> ${config[`Protocol${index}`]}</div>
+                    <div class="meta-item"><b>Primary Location</b> ${config[`DataCenter${index}`]}</div>
+                    <div class="meta-item"><b>Response Time</b> ${config[`Latency${index}`]}</div>
+                    <div class="meta-item"><b>System Reliability</b> ${calculatedUptime}%</div>
+                </div>
+                <p style="font-size:0.9rem; color:var(--slate-700); line-height:1.4;">${config[`Description${index}`]}</p>
+                <div style="font-size:0.7rem; font-weight:800; color:var(--slate-300); margin-top:15px; margin-bottom:5px;">SYSTEM ACTIVITY (PAST 48H)</div>
+                <div class="uptime-graph">${historyHtml}</div>
+            `;
+
+            container.appendChild(card);
+            
+            setTimeout(() => { card.classList.add('show-card'); }, cardCount * 150);
+            cardCount++;
+        });
+    }
+}
+
+function downloadTechnicalLogs() {
+    if (!cachedConfig) return alert("System not synced.");
+    const techLogs = { report_date: new Date().toISOString(), service_audit: {} };
+    
+    // Find all active service numbers
+    const indices = [...new Set(Object.keys(cachedConfig).filter(k => k.match(/\d+$/)).map(k => k.match(/\d+$/)[0]))];
+
+    Object.keys(cachedConfig).forEach(key => {
+        // Removed UptimePct from the initial regex match map
+        if (key.match(/Service|StatusText|Type|Latency|Protocol|DataCenter/)) {
+            techLogs.service_audit[key] = cachedConfig[key];
+        }
+    });
+
+    // Calculate and cleanly inject the live Uptime values into your backup file
+    indices.forEach(i => {
+        const historyStr = cachedConfig[`History${i}`] || "";
+        const totalTicks = historyStr.length;
+        const upTicks = historyStr.split('').filter(val => val === '5').length;
+        techLogs.service_audit[`UptimePct${i}`] = totalTicks > 0 ? ((upTicks / totalTicks) * 100).toFixed(2) : "0.00";
+    });
+
+    const blob = new Blob([JSON.stringify(techLogs, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `Express_Airways_Technical_Log.json`;
+    a.click();
+}
+
+document.addEventListener("DOMContentLoaded", syncInfrastructure);
+setInterval(syncInfrastructure, 60000);

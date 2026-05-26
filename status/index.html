@@ -3,55 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sovereign Status & Audit Report</title>
+    <title>Infrastructure Status | Express Airways</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
 
+    <div id="loading-overlay">
+        <div class="loader-modal">
+            <div class="loading-circle"></div>
+            <p>Syncing Infrastructure...</p>
+        </div>
+    </div>
+
     <div id="web-ui">
-        <header class="hero">
+        <header class="hero no-print" id="hero-bg">
             <div class="hero-content">
-                <h1>System Status</h1>
-                <p>Global Infrastructure & Integration Status</p>
+                <h1 id="main-headline">Reliable. Sovereign. Global.</h1>
+                <p id="sub-header">Express Airways</p>
                 <div class="action-buttons">
-                    <button onclick="window.print()" class="print-btn primary-btn">
-                        <i class="fa-solid fa-file-pdf"></i> Generate Formal Audit Report
+                    <button onclick="generateAndPrintReport()" class="btn btn-primary">
+                        <i class="fa-solid fa-file-pdf"></i> Generate Audit Report
                     </button>
-                    <button onclick="alert('Audit logs are restricted to Level 4 Clearance.')" class="print-btn secondary-btn">
-                        <i class="fa-solid fa-shield-halved"></i> Request Raw Logs
+                    <button onclick="downloadTechnicalLogs()" class="btn btn-secondary">
+                        <i class="fa-solid fa-terminal"></i> Request Status Logs
                     </button>
                 </div>
             </div>
         </header>
 
-        <main class="container">
-            <div id="status-banner" class="overall-status status-maintenance">
-                <h2 id="status-text">Scheduled Maintenance in Progress</h2>
-                <p id="last-updated">Synchronizing manifest...</p>
+        <main class="container no-print">
+            <div id="status-banner" class="overall-status">
+                <h2 id="status-text">Analyzing Systems...</h2>
+                <p id="last-updated">Awaiting synchronization...</p>
             </div>
 
-            <div class="card new-site-card">
-                <div class="card-header">
-                    <h3><i class="fa-solid fa-laptop-code"></i> Platform Infrastructure Build</h3>
-                    <span class="percentage-text" id="site-percentage">0%</span>
-                </div>
-                <p class="desc">Actively deploying core infrastructure to the Cloud environment. ISO 27001 compliance checks ongoing. Beta testing registration is open.</p>
-                <div class="progress-container">
-                    <div class="progress-bar" id="site-progress-bar"></div>
-                </div>
-            </div>
+<div class="card show-card" style="margin-top: 20px;">
+    <div class="service-header">
+        <h3><i class="fa-solid fa-microchip"></i> Infrastructure Build Progress</h3>
+        <span class="badge" id="site-percentage" style="background: var(--blue-500); color: white;">0%</span>
+    </div>
+    <p style="font-size:0.9rem; color:var(--slate-700); line-height:1.4;">
+        Executing global ISO compliance checks and verifying infrastructure node synchronization. Awaiting final validation.
+    </p>
+</div>
 
             <div id="services-container"></div>
         </main>
         
-        <footer class="web-footer">
-            <p>&copy; 2026 System Operations. All rights reserved.</p>
+        <footer class="footer no-print">
+            <p>&copy; 2026 Express Airways. All rights reserved. Any data associated with this website is not to be used without written permission from Express Airways.</p>
         </footer>
     </div>
 
-    <div id="print-ui" class="print-only">
-        </div>
+    <div id="print-ui" class="print-only"></div>
 
     <script src="script.js"></script>
 </body>

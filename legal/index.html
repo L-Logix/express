@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Express Airways Judicial OS</title>
+  <style><?!= include('style') ?></style>
+</head>
+<body>
+  <div class="page-shell">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-name">Express Airways</span>
+        <span class="brand-tag">Judicial & Litigation Management System</span>
+      </div>
+      <div class="status-group">
+        <span id="session-status" class="status-pill status-neutral">Unauthenticated</span>
+        <span id="case-count" class="status-pill status-info">Cases 0</span>
+      </div>
+    </header>
+
+    <section class="hero-panel">
+      <div>
+        <h1>Judicial Command Center</h1>
+        <p>Secure internal tribunal portal for litigation records, evidentiary management, verdict issuance, sanctions, and procedural compliance.</p>
+      </div>
+      <button id="toggle-auth" class="btn btn-secondary">Sign In / Register</button>
+    </section>
+
+    <section class="app-grid">
+      <aside class="panel sidebar-panel">
+        <div class="panel-header">
+          <h2>Access Control</h2>
+        </div>
+        <div id="auth-panel" class="card auth-card">
+          <div class="auth-tabs">
+            <button id="login-tab" class="auth-tab active">Login</button>
+            <button id="signup-tab" class="auth-tab">Register</button>
+          </div>
+          <form id="login-form" class="auth-form active">
+            <label>Email</label>
+            <input type="email" id="login-email" required placeholder="judge@expressairways.com" />
+            <label>Password</label>
+            <input type="password" id="login-password" required placeholder="Secure passphrase" />
+            <button type="submit" class="btn btn-primary">Authenticate</button>
+          </form>
+          <form id="signup-form" class="auth-form">
+            <label>Full Legal Name</label>
+            <input type="text" id="signup-name" required placeholder="Hon. Arnav Bhat" />
+            <label>Email</label>
+            <input type="email" id="signup-email" required placeholder="user@expressairways.com" />
+            <label>Password</label>
+            <input type="password" id="signup-password" required placeholder="Secure passphrase" />
+            <button type="submit" class="btn btn-primary">Create Account</button>
+          </form>
+        </div>
+
+        <div class="panel-divider"></div>
+
+        <div class="card info-card">
+          <h3>Judicial Platform Brief</h3>
+          <ul class="checklist">
+            <li>Role-based case dashboards</li>
+            <li>Mandatory verdict compliance</li>
+            <li>Evidence tracking and audit logs</li>
+            <li>Google Sheets / Drive synchronization</li>
+            <li>Administrative control & notifications</li>
+          </ul>
+        </div>
+      </aside>
+
+      <section class="panel content-panel">
+        <div class="panel-header panel-header-wide">
+          <div>
+            <h2>Active Cases</h2>
+            <p class="subtitle">Secure registry for each case file, status update, assigned judge, and core claim.</p>
+          </div>
+          <button id="refresh-cases" class="btn btn-secondary btn-sm">Refresh Cases</button>
+        </div>
+
+        <div id="case-cards" class="case-grid"></div>
+
+        <div id="case-detail" class="card detail-card hidden">
+          <div class="detail-header">
+            <div>
+              <h3 id="case-title">Select a case to open the tribunal file</h3>
+              <p id="case-meta">Digital case file, charges, participants, and procedural state.</p>
+            </div>
+            <span id="case-status-badge" class="badge status-blue">Active Trial</span>
+          </div>
+
+          <section class="detail-block">
+            <h4>Case Metadata</h4>
+            <div id="case-description">When a case is selected the full dossier displays here.</div>
+            <div class="case-summary-grid">
+              <div><strong>Docket</strong><span id="case-docket">—</span></div>
+              <div><strong>Classification</strong><span id="case-classification">—</span></div>
+              <div><strong>Plaintiff / Prosecutor</strong><span id="case-plaintiff">—</span></div>
+              <div><strong>Defendant</strong><span id="case-defendant">—</span></div>
+              <div><strong>Assigned Judge</strong><span id="case-judge">—</span></div>
+              <div><strong>Filing Date</strong><span id="case-filing-date">—</span></div>
+            </div>
+          </section>
+
+          <section class="detail-block">
+            <h4>Evidence & Exhibits</h4>
+            <div id="evidence-list" class="evidence-list"></div>
+            <button id="show-evidence-upload" class="btn btn-secondary btn-sm">Register Evidence</button>
+          </section>
+
+          <section id="judge-workflow" class="detail-block hidden">
+            <h4>Judge Compliance Workflow</h4>
+            <div class="workflow-grid">
+              <label><input type="checkbox" id="declaration-neutrality" /> I affirm judicial neutrality.</label>
+              <label><input type="checkbox" id="declaration-evidence" /> I certify all evidence was reviewed.</label>
+              <label><input type="checkbox" id="declaration-recording" /> Audio recording link is provided.</label>
+              <label><input type="checkbox" id="declaration-communication" /> No unauthorized ex parte communications occurred.</label>
+            </div>
+
+            <div class="input-group">
+              <label>Audio Recording Link</label>
+              <input type="url" id="audio-link" placeholder="https://drive.google.com/..." />
+              <label>Video Recording Link (optional)</label>
+              <input type="url" id="video-link" placeholder="https://drive.google.com/..." />
+            </div>
+
+            <h4>Verdict Submission</h4>
+            <div class="input-group">
+              <label>Outcome</label>
+              <select id="verdict-outcome">
+                <optgroup label="Criminal-Style Outcomes">
+                  <option>Guilty</option>
+                  <option>Not Guilty</option>
+                  <option>Dismissed</option>
+                  <option>Hung Tribunal</option>
+                  <option>Deferred Judgment</option>
+                </optgroup>
+                <optgroup label="Civil-Style Outcomes">
+                  <option>Liable</option>
+                  <option>Not Liable</option>
+                  <option>Partial Liability</option>
+                  <option>Settlement Accepted</option>
+                </optgroup>
+              </select>
+            </div>
+            <div class="input-group">
+              <label>Sentencing / Punishment Summary</label>
+              <textarea id="sentence-summary" rows="3" placeholder="Describe sanctions, fines, directives, appeal eligibility."></textarea>
+            </div>
+            <div class="input-group">
+              <label>Judicial Rationale</label>
+              <textarea id="verdict-reasoning" rows="5" placeholder="Explain why evidence met or failed burden of proof, credibility findings, legal reasoning and procedural compliance."></textarea>
+            </div>
+            <div class="input-group">
+              <label>Evidence Cited</label>
+              <input type="text" id="evidence-cited" placeholder="EVID-001, EVID-005" />
+              <label>Rejected Evidence</label>
+              <input type="text" id="rejected-evidence" placeholder="EVID-002" />
+            </div>
+            <button id="submit-verdict" class="btn btn-primary">Submit Verdict</button>
+          </section>
+        </div>
+
+        <div class="panel-divider"></div>
+
+        <div class="card audit-card">
+          <div class="panel-header panel-header-wide">
+            <div>
+              <h3>Procedural Audit</h3>
+              <p class="subtitle">Every login, upload, notice, verdict and sanction is recorded.</p>
+            </div>
+          </div>
+          <div id="audit-log" class="audit-log"></div>
+        </div>
+      </section>
+    </section>
+
+    <div id="feedback-line" class="feedback-line">Use the login panel to access case dashboards and tribunal controls.</div>
+
+    <div id="loading-overlay" class="loading-overlay hidden">
+      <div class="loading-modal">
+        <div class="spinner"></div>
+        <p>Processing Judicial Action…</p>
+      </div>
+    </div>
+  </div>
+
+  <script><?!= include('script') ?></script>
+</body>
+</html>
