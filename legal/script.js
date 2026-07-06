@@ -1,340 +1,203 @@
-const STORAGE_KEY = 'express_judicial_token';
+const API = 'https://script.google.com/macros/s/AKfycbyfr1k04IqvPSHND5I47ZowM8EAUmBuFR4pKJVWDdsB0ZCr4pMrCLxFME1v70aLbyWo/exec';
+const STORAGE_KEY = 'ea_legal_token';
+
 let currentUser = null;
 let currentToken = null;
 let currentCase = null;
-const demoCases = [
-  {
-    CaseID: 'MWA-2026-05',
-    Title: 'Meaillwood Air v. Express Airways Group',
-    InternalRef: 'MWA-2026-05',
-    ExternalDocket: 'MWA-EAG-518B',
-    Classification: 'Civil Litigation',
-    Status: 'Active Trial',
-    AssignedJudge: 'Hon. Arnav Bhat',
-    Charges: 'Procedural misconduct; contractual violations; operational damages',
-    Plaintiff: 'Meaillwood Air',
-    Defendant: 'Express Airways Group',
-    FilingDate: '2026-05-10',
-    isJudge: false,
-    userRole: 'Observer'
-  },
-  {
-    CaseID: 'EAG-CR-302',
-    Title: 'State v. Express Airways Security',
-    InternalRef: 'EAG-CR-302',
-    ExternalDocket: 'CR-EAG-302A',
-    Classification: 'Criminal-Style',
-    Status: 'Awaiting Verdict',
-    AssignedJudge: 'Hon. Lara Monroe',
-    Charges: 'Unauthorized access, evidence tampering',
-    Plaintiff: 'State Prosecution',
-    Defendant: 'Express Airways Security',
-    FilingDate: '2026-04-06',
-    isJudge: false,
-    userRole: 'Observer'
-  }
-];
 
-function init() {
-  bindAuthControls();
-  restoreSession();
-  refreshCases();
-  loadAuditLog();
+EA_TRACKER.API_URL = API;
+EA_TRACKER.init('/legal/');
+
+function toast(msg, type) {
+  const container = document.getElementById('toastContainer');
+  const icons = { success: '\u2713', error: '\u2715', warning: '\u26A0', info: '\u2139' };
+  const t = document.createElement('div');
+  t.className = 'toast ' + (type || 'info');
+  t.innerHTML = '<span>' + (icons[type] || '') + '</span><span>' + msg + '</span>';
+  container.appendChild(t);
+  setTimeout(() => { t.style.animation = 'toastOut 0.3s ease forwards'; setTimeout(() => t.remove(), 300); }, 6000);
 }
 
-document.addEventListener('DOMContentLoaded', init);
+function showLoading(on) { document.getElementById('loadingOverlay')?.classList.toggle('hidden', !on); }
 
-function bindAuthControls() {
-  document.getElementById('toggle-auth').addEventListener('click', () => {
-    document.getElementById('auth-panel').classList.toggle('active');
-  });
-  document.getElementById('login-tab').addEventListener('click', () => switchAuthTab('login'));
-  document.getElementById('signup-tab').addEventListener('click', () => switchAuthTab('signup'));
-  document.getElementById('login-form').addEventListener('submit', handleLogin);
-  document.getElementById('signup-form').addEventListener('submit', handleSignup);
-  document.getElementById('refresh-cases').addEventListener('click', refreshCases);
-  document.getElementById('submit-verdict').addEventListener('click', submitVerdict);
+async function api(action, payload) {
+  const params = new URLSearchParams({ action, ...payload });
+  showLoading(true);
+  try {
+    const r = await fetch(API + '?' + params.toString() + '&t=' + Date.now(), { cache: 'no-store' });
+    const d = await r.json();
+    if (!d.success && d.message) toast(d.message, 'error');
+    return d;
+  } catch(e) { toast('Connection error', 'error'); return { success: false }; }
+  finally { showLoading(false); }
 }
 
-function switchAuthTab(tab) {
-  const loginTab = document.getElementById('login-tab');
-  const signupTab = document.getElementById('signup-tab');
-  const loginForm = document.getElementById('login-form');
-  const signupForm = document.getElementById('signup-form');
-  if (tab === 'login') {
-    loginTab.classList.add('active');
-    signupTab.classList.remove('active');
-    loginForm.classList.add('active');
-    signupForm.classList.remove('active');
+function updateSession(isAuth) {
+  const el = document.getElementById('sessionStatus');
+  if (isAuth && currentUser) {
+    el.textContent = currentUser.FullName + ' authenticated';
+    el.className = 'session-badge authenticated';
   } else {
-    signupTab.classList.add('active');
-    loginTab.classList.remove('active');
-    signupForm.classList.add('active');
-    loginForm.classList.remove('active');
+    el.textContent = 'Unauthenticated';
+    el.className = 'session-badge';
   }
 }
 
-function restoreSession() {
+async function restoreSession() {
   const token = localStorage.getItem(STORAGE_KEY);
-  if (!token) {
-    updateSessionStatus(false);
-    return;
-  }
+  if (!token) return;
   currentToken = token;
-  fetchApi('sessionInfo', {}).then(result => {
-    if (result.success && result.user) {
-      currentUser = result.user;
-      updateSessionStatus(true);
-      refreshCases();
-    } else {
-      clearSession();
-    }
-  });
-}
-
-function handleLogin(event) {
-  event.preventDefault();
-  const email = document.getElementById('login-email').value.trim();
-  const password = document.getElementById('login-password').value;
-  if (!email || !password) return showFeedback('Email and password are required.', 'danger');
-  fetchApi('login', { email, password }).then(result => {
-    if (!result.success) return;
-    currentToken = result.token;
+  const result = await api('sessionInfo', { token });
+  if (result.success && result.user) {
     currentUser = result.user;
-    localStorage.setItem(STORAGE_KEY, currentToken);
-    updateSessionStatus(true);
-    showFeedback('Authentication successful. Case registry loading.', 'success');
-    refreshCases();
-  });
-}
-
-function handleSignup(event) {
-  event.preventDefault();
-  const fullName = document.getElementById('signup-name').value.trim();
-  const email = document.getElementById('signup-email').value.trim();
-  const password = document.getElementById('signup-password').value;
-  if (!fullName || !email || !password) return showFeedback('All registration fields are required.', 'danger');
-  fetchApi('register', { fullName, email, password }).then(result => {
-    if (!result.success) return;
-    showFeedback('Account created. Sign in to proceed.', 'success');
-    switchAuthTab('login');
-  });
+    updateSession(true);
+    loadCases();
+    loadAudit();
+  } else { clearSession(); }
 }
 
 function clearSession() {
   localStorage.removeItem(STORAGE_KEY);
   currentToken = null;
   currentUser = null;
-  updateSessionStatus(false);
+  updateSession(false);
 }
 
-function updateSessionStatus(isAuth) {
-  const status = document.getElementById('session-status');
-  if (isAuth && currentUser) {
-    status.textContent = `${currentUser.FullName || currentUser.Email} authenticated`;
-    status.className = 'status-pill status-success';
-  } else {
-    status.textContent = 'Unauthenticated';
-    status.className = 'status-pill status-neutral';
-  }
-}
-
-function refreshCases() {
+async function loadCases() {
   if (!currentToken) {
-    renderCaseCards(demoCases);
-    showFeedback('Use a registered account for full Google Sheets integration.', 'info');
+    renderCases([]);
     return;
   }
-  fetchApi('getActiveCases', {}).then(result => {
-    if (!result.success) return;
-    if (result.user) {
-      currentUser = result.user;
-      updateSessionStatus(true);
-    }
-    if (Array.isArray(result.cases) && result.cases.length) {
-      renderCaseCards(result.cases);
-      showFeedback('Active cases loaded from Google Sheets.', 'success');
-    } else {
-      renderCaseCards([]);
-      showFeedback('No accessible cases were found in the sheet.', 'warning');
-    }
-  });
+  const result = await api('getActiveCases', { token: currentToken });
+  if (result.success) {
+    if (result.user) { currentUser = result.user; updateSession(true); }
+    renderCases(result.cases || []);
+  } else renderCases([]);
 }
 
-function renderCaseCards(items) {
-  const container = document.getElementById('case-cards');
+function renderCases(items) {
+  const container = document.getElementById('caseCards');
   container.innerHTML = '';
-  document.getElementById('case-count').textContent = `Cases ${items.length}`;
-  if (!items.length) {
-    container.innerHTML = '<div class="info-callout">No cases are available for the current session.</div>';
-    return;
-  }
-  items.forEach(item => {
-    const card = document.createElement('article');
-    card.className = 'case-card';
-    card.innerHTML = `
-      <h4>${item.Title}</h4>
-      <p>${item.Charges || item.ChargesClaims || 'No summary available.'}</p>
-      <div class="metadata">
-        <span><strong>Docket</strong> ${item.ExternalDocket || item.InternalRef || item.CaseID || '—'}</span>
-        <span><strong>Status</strong> ${item.Status || 'Filed'}</span>
-        <span><strong>Judge</strong> ${item.AssignedJudge || 'TBD'}</span>
-      </div>
-      <div class="metadata">
-        <span><strong>Plaintiff</strong> ${item.Plaintiff || item.Prosecution || '—'}</span>
-        <span><strong>Defendant</strong> ${item.Defendant || '—'}</span>
-      </div>
-    `;
-    card.addEventListener('click', () => openCaseDetail(item));
+  document.getElementById('caseCount').textContent = 'Cases ' + items.length;
+  if (!items.length) { container.innerHTML = '<div class="card" style="text-align:center;padding:40px;color:var(--text-muted)">No cases available</div>'; return; }
+  items.forEach((item, idx) => {
+    const card = document.createElement('div');
+    card.className = 'case-card animate-in';
+    card.style.animationDelay = (idx * 0.05) + 's';
+    card.innerHTML = '<div class="case-card-title">' + esc(item.Title || 'Case') + '</div>' +
+      '<p style="color:var(--text-secondary);font-size:0.9rem;margin-bottom:12px">' + esc(item.Charges || item.Description || '') + '</p>' +
+      '<div class="case-card-meta"><span><b>Docket</b> ' + esc(item.ExternalDocket || item.CaseID || '—') + '</span><span><b>Status</b> ' + esc(item.Status || 'Filed') + '</span></div>';
+    card.onclick = () => openCase(item);
     container.appendChild(card);
   });
 }
 
-function openCaseDetail(item) {
+function openCase(item) {
   currentCase = item;
-  document.getElementById('case-detail').classList.remove('hidden');
-  document.getElementById('case-title').textContent = item.Title || 'Case file';
-  document.getElementById('case-meta').textContent = `${item.Classification || 'Classification unavailable'} · ${item.Status || 'Filed'}`;
-  document.getElementById('case-status-badge').textContent = item.Status || 'Filed';
-  document.getElementById('case-docket').textContent = item.ExternalDocket || item.InternalRef || item.CaseID || '—';
-  document.getElementById('case-classification').textContent = item.Classification || '—';
-  document.getElementById('case-plaintiff').textContent = item.Plaintiff || item.Prosecution || '—';
-  document.getElementById('case-defendant').textContent = item.Defendant || '—';
-  document.getElementById('case-judge').textContent = item.AssignedJudge || '—';
-  document.getElementById('case-filing-date').textContent = item.FilingDate || '—';
-  document.getElementById('case-description').textContent = item.Charges || item.Description || 'The tribunal file includes claims, evidence, participants, and procedural directives.';
-  renderEvidenceSection(item.Evidence || []);
-  toggleJudgeWorkflow(item);
-  loadAuditLog(item.CaseID);
-}
+  document.getElementById('caseDetail').classList.remove('hidden');
+  document.getElementById('caseTitle').textContent = item.Title || 'Case file';
+  document.getElementById('caseMeta').textContent = (item.Classification || '') + ' \u00B7 ' + (item.Status || 'Filed');
+  document.getElementById('caseStatusBadge').textContent = item.Status || 'Filed';
+  document.getElementById('caseDocket').textContent = item.ExternalDocket || item.InternalRef || item.CaseID || '—';
+  document.getElementById('caseClassification').textContent = item.Classification || '—';
+  document.getElementById('casePlaintiff').textContent = item.Plaintiff || item.Prosecution || '—';
+  document.getElementById('caseDefendant').textContent = item.Defendant || '—';
+  document.getElementById('caseJudge').textContent = item.AssignedJudge || '—';
+  document.getElementById('caseFilingDate').textContent = item.FilingDate || '—';
+  document.getElementById('caseDescription').textContent = item.Charges || item.Description || 'The tribunal file includes claims, evidence, participants, and procedural directives.';
 
-function renderEvidenceSection(items) {
-  const container = document.getElementById('evidence-list');
-  container.innerHTML = '';
-  const evidence = Array.isArray(items) && items.length ? items : [
-    { id: 'EVID-001', title: 'Contract breach dossier', type: 'PDF', link: 'https://drive.google.com/preview' }
-  ];
-  evidence.forEach(entry => {
-    const item = document.createElement('div');
-    item.className = 'evidence-item';
-    item.innerHTML = `
-      <div><strong>${entry.id || entry.EvidenceID || 'Evidence'}</strong></div>
-      <div>${entry.title || entry.Title || entry.Type || 'Exhibit record'}</div>
-      <div style="margin-top:10px; color: var(--muted);">${entry.type || entry.Type || 'Unknown format'} · ${entry.link ? `<a href="${entry.link}" target="_blank">Open file</a>` : 'Link unavailable'}</div>
-    `;
-    container.appendChild(item);
-  });
-}
-
-function toggleJudgeWorkflow(caseItem) {
-  const workflow = document.getElementById('judge-workflow');
-  const judgeRole = caseItem.userRole || (currentUser ? currentUser.SystemRole : '') || '';
-  const isJudge = /judge/i.test(judgeRole) || (currentUser && currentUser.FullName === caseItem.AssignedJudge);
-  if (isJudge) {
-    workflow.classList.remove('hidden');
+  const evidence = item.Evidence || [];
+  const el = document.getElementById('evidenceList');
+  if (evidence.length) {
+    el.innerHTML = evidence.map(e => '<div class="evidence-item"><strong>' + esc(e.id || e.EvidenceID || 'Evidence') + '</strong><p style="color:var(--text-secondary);font-size:0.85rem;margin-top:4px">' + esc(e.title || e.Title || e.Type || '') + '</p></div>').join('');
   } else {
-    workflow.classList.add('hidden');
+    el.innerHTML = '<div style="color:var(--text-muted);font-size:0.85rem">No evidence records</div>';
+  }
+
+  const isJudge = item.isJudge || (currentUser && currentUser.FullName === item.AssignedJudge) || (currentUser && /judge/i.test(currentUser.SystemRole || ''));
+  document.getElementById('verdictSection').classList.toggle('hidden', !isJudge);
+  loadAudit(item.CaseID);
+}
+
+async function loadAudit(caseId) {
+  if (!currentToken) { document.getElementById('auditLog').innerHTML = '<div style="padding:12px;color:var(--text-muted)">Authenticate to view audit logs</div>'; return; }
+  const result = await api('fetchAudit', { token: currentToken, caseId });
+  if (result.success) {
+    const log = document.getElementById('auditLog');
+    if (!result.audit || !result.audit.length) { log.innerHTML = '<div style="padding:12px;color:var(--text-muted)">No audit events</div>'; return; }
+    log.innerHTML = result.audit.slice(0, 15).map(a =>
+      '<div class="audit-item"><strong>' + esc(a.Action || 'Audit') + '</strong> \u2014 ' + esc(a.User || a.UserName || 'System') + (a.CaseID ? ' \u00B7 ' + esc(a.CaseID) : '') + '<div style="color:var(--text-muted);font-size:0.8rem;margin-top:4px">' + esc(a.Details || a.Message || '') + '</div><time style="color:var(--text-muted);font-size:0.75rem;display:block;margin-top:4px">' + esc(a.Timestamp || a.CreatedAt || '') + '</time></div>'
+    ).join('');
   }
 }
 
-function collectJudicialPayload() {
-  return {
-    caseId: currentCase ? currentCase.CaseID : null,
-    verdictOutcome: document.getElementById('verdict-outcome').value,
-    sentenceSummary: document.getElementById('sentence-summary').value.trim(),
-    verdictReasoning: document.getElementById('verdict-reasoning').value.trim(),
-    evidenceCited: document.getElementById('evidence-cited').value.trim(),
-    rejectedEvidence: document.getElementById('rejected-evidence').value.trim(),
-    audioLink: document.getElementById('audio-link').value.trim(),
-    videoLink: document.getElementById('video-link').value.trim(),
-    declarations: {
-      neutrality: document.getElementById('declaration-neutrality').checked,
-      evidence: document.getElementById('declaration-evidence').checked,
-      recording: document.getElementById('declaration-recording').checked,
-      exParte: document.getElementById('declaration-communication').checked
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+document.addEventListener('DOMContentLoaded', () => {
+  restoreSession();
+
+  document.getElementById('heroSignIn').onclick = () => { switchTab('login'); document.querySelector('aside .card')?.scrollIntoView({ behavior: 'smooth' }); setTimeout(() => document.getElementById('loginEmail')?.focus(), 500); };
+  document.getElementById('heroRegister').onclick = () => { switchTab('signup'); document.querySelector('aside .card')?.scrollIntoView({ behavior: 'smooth' }); setTimeout(() => document.getElementById('signupName')?.focus(), 500); };
+
+  document.querySelectorAll('.auth-tab').forEach(tab => {
+    tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+  });
+
+  document.getElementById('loginForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    if (!email || !password) return toast('Email and password required', 'error');
+    const result = await api('login', { email, password });
+    if (result.success) {
+      currentToken = result.token || '';
+      currentUser = result.user;
+      localStorage.setItem(STORAGE_KEY, currentToken);
+      updateSession(true);
+      toast('Authentication successful', 'success');
+      loadCases();
+      loadAudit();
     }
-  };
-}
-
-function submitVerdict() {
-  if (!currentCase) return showFeedback('Select a case before submitting a verdict.', 'danger');
-  const payload = collectJudicialPayload();
-  const missing = [];
-  if (!payload.declarations.neutrality) missing.push('judicial neutrality');
-  if (!payload.declarations.evidence) missing.push('evidence review');
-  if (!payload.declarations.recording) missing.push('recording confirmation');
-  if (!payload.declarations.exParte) missing.push('ex parte declaration');
-  if (!payload.audioLink) missing.push('audio recording link');
-  if (!payload.verdictReasoning) missing.push('judicial reasoning');
-  if (missing.length) return showFeedback(`Cannot submit verdict until: ${missing.join(', ')}.`, 'danger');
-
-  fetchApi('submitVerdict', payload).then(result => {
-    if (!result.success) return;
-    showFeedback('Verdict recorded and notifications dispatched.', 'success');
-    refreshCases();
   });
-}
 
-async function loadAuditLog(caseId = null) {
-  if (!currentToken) {
-    const placeholder = document.getElementById('audit-log');
-    placeholder.innerHTML = '<div class="audit-row">Audit logs are available after authentication and Google Sheets setup.</div>';
-    return;
-  }
-  const payload = caseId ? { caseId } : {};
-  const result = await fetchApi('fetchAudit', payload);
-  if (!result.success) return;
-  renderAuditLog(result.audit || []);
-}
-
-function renderAuditLog(entries) {
-  const container = document.getElementById('audit-log');
-  container.innerHTML = '';
-  if (!entries || !entries.length) {
-    container.innerHTML = '<div class="audit-row">No audit events are available for the current filter.</div>';
-    return;
-  }
-  entries.slice(0, 12).forEach(entry => {
-    const row = document.createElement('div');
-    row.className = 'audit-row';
-    row.innerHTML = `
-      <div><strong>${entry.Action || 'Audit'}</strong> — ${entry.UserName || entry.User || 'System'}${entry.CaseID ? ` · ${entry.CaseID}` : ''}</div>
-      <div>${entry.Details || entry.Message || 'Recorded procedural action.'}</div>
-      <time>${entry.Timestamp || entry.CreatedAt || new Date().toISOString()}</time>
-    `;
-    container.appendChild(row);
+  document.getElementById('signupForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const name = document.getElementById('signupName').value.trim();
+    const email = document.getElementById('signupEmail').value.trim();
+    const password = document.getElementById('signupPassword').value;
+    if (!name || !email || !password) return toast('All fields required', 'error');
+    const result = await api('register', { fullName: name, email, password });
+    if (result.success) {
+      toast('Account created. Sign in to proceed.', 'success');
+      switchTab('login');
+    }
   });
-}
 
-function showFeedback(message, type = 'info') {
-  const feedback = document.getElementById('feedback-line');
-  feedback.textContent = message;
-  feedback.style.borderColor = type === 'danger' ? '#ef5750' : type === 'success' ? '#3fcf8e' : type === 'warning' ? '#f3ae4b' : 'rgba(145, 173, 203, 0.12)';
-  feedback.style.color = type === 'danger' ? '#ffd7d5' : type === 'success' ? '#d4f7e0' : type === 'warning' ? '#ffe7c2' : '#9bb8d4';
-}
+  document.getElementById('refreshCases').onclick = loadCases;
 
-async function fetchApi(action, payload = {}) {
-  const request = { action, payload: { ...payload, token: currentToken } };
-  showLoading(true);
-  try {
-    const response = await fetch(window.location.href, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(request)
+  document.getElementById('submitVerdict').addEventListener('click', async () => {
+    if (!currentCase) return toast('Select a case first', 'error');
+    const reasoning = document.getElementById('verdictReasoning').value.trim();
+    if (!reasoning) return toast('Judicial reasoning required', 'error');
+    const result = await api('submitVerdict', {
+      token: currentToken,
+      caseId: currentCase.CaseID,
+      verdictOutcome: document.getElementById('verdictOutcome').value,
+      sentenceSummary: document.getElementById('sentenceSummary').value.trim(),
+      verdictReasoning: reasoning,
+      audioLink: document.getElementById('audioLink').value.trim()
     });
-    const result = await response.json();
-    if (!result.success) {
-      showFeedback(result.error || 'Action failed. Check deployment logs.', 'danger');
+    if (result.success) {
+      toast('Verdict recorded', 'success');
+      loadCases();
     }
-    return result;
-  } catch (error) {
-    showFeedback(error.message || 'Unable to communicate with the judicial backend.', 'danger');
-    return { success: false, error: error.message };
-  } finally {
-    showLoading(false);
-  }
-}
+  });
+});
 
-function showLoading(enabled) {
-  document.getElementById('loading-overlay').classList.toggle('hidden', !enabled);
+function switchTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+  document.getElementById('loginForm').classList.toggle('hidden', tab !== 'login');
+  document.getElementById('signupForm').classList.toggle('hidden', tab !== 'signup');
+  document.getElementById('loginForm').classList.toggle('active', tab === 'login');
+  document.getElementById('signupForm').classList.toggle('active', tab === 'signup');
 }

@@ -1,2251 +1,366 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Express Airways - Global Flight Services</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        :root {
-            --primary: #1e293b;
-            --primary-light: #334155;
-            --secondary: #2563eb;
-            --accent: #1d4ed8;
-            --light-grey: #f0f4f8;
-            --grey-blue: #475569;
-            --dark-grey: #1e293b;
-            --border: #cbd5e1;
-            --success: #10b981;
-            --danger: #ef4444;
-            --warning: #f59e0b;
-            --glass-bg: rgba(255, 255, 255, 0.95);
-            --glass-border: rgba(203, 213, 225, 0.8);
-        }
-
-        html, body {
-            width: 100%;
-            height: 100%;
-            margin: 0;
-            padding: 0;
-            overflow-x: hidden;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            color: var(--dark-grey);
-            line-height: 1.6;
-            background: linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 100%);
-            min-height: 100vh;
-        }
-
-        /* ========== LOADING SCREEN ========== */
-        #loadingOverlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(71, 85, 105, 0.9);
-            backdrop-filter: blur(10px);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 10000;
-            transition: opacity 0.5s ease-out;
-        }
-
-        #loadingOverlay.hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .loading-container {
-            text-align: center;
-            position: relative;
-        }
-
-        .spinner {
-            width: 80px;
-            height: 80px;
-            border: 8px solid rgba(255,255,255,0.12);
-            border-top-color: rgba(255,255,255,0.95);
-            border-radius: 50%;
-            margin: 0 auto 1rem;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        .loading-text {
-            color: white;
-            font-size: 1.2rem;
-            font-weight: 500;
-            margin-top: 1rem;
-            letter-spacing: 2px;
-        }
-
-        .loading-dot {
-            display: inline-block;
-            animation: dotAnimation 1.5s infinite;
-        }
-
-        .loading-dot:nth-child(2) { animation-delay: 0.2s; }
-        .loading-dot:nth-child(3) { animation-delay: 0.4s; }
-
-        @keyframes dotAnimation {
-            0%, 60%, 100% { opacity: 0.3; }
-            30% { opacity: 1; }
-        }
-
-        /* ========== ANIMATIONS ========== */
-        @keyframes slideInDown {
-            from { transform: translateY(-30px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-
-        @keyframes slideInUp {
-            from { transform: translateY(30px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        /* ========== NAVIGATION ========== */
-        nav {
-            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-            backdrop-filter: blur(10px);
-            color: white;
-            padding: 1rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-
-        nav .logo {
-            font-size: 1.6rem;
-            font-weight: bold;
-            letter-spacing: 2px;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        nav .nav-items {
-            display: flex;
-            gap: 1.5rem;
-            align-items: center;
-        }
-
-        nav button, nav a {
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            cursor: pointer;
-            font-size: 0.9rem;
-            padding: 0.6rem 1rem;
-            border-radius: 8px;
-            transition: all 0.3s ease;
-            text-decoration: none;
-        }
-
-        nav button:hover, nav a:hover {
-            background: rgba(255, 255, 255, 0.2);
-            border-color: rgba(255, 255, 255, 0.5);
-            transform: translateY(-2px);
-        }
-
-        .user-info {
-            color: #b0c4de;
-            font-size: 0.9rem;
-        }
-
-        /* ========== MAIN CONTAINER ========== */
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 2rem 1rem;
-        }
-
-        /* ========== HERO SECTION ========== */
-        .hero {
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 55%, #2563eb 100%);
-            color: white;
-            padding: 4rem 2rem;
-            border-radius: 16px;
-            margin-bottom: 3rem;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-            animation: slideInDown 0.8s ease-out;
-        }
-
-        .hero::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            right: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
-            animation: pulse 15s ease-in-out infinite;
-        }
-
-        .hero h1 {
-            font-size: 3rem;
-            margin-bottom: 0.5rem;
-            position: relative;
-            z-index: 1;
-        }
-
-        .hero p {
-            font-size: 1.3rem;
-            opacity: 0.95;
-            position: relative;
-            z-index: 1;
-        }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-        }
-
-        /* ========== FORMS ========== */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            z-index: 2000;
-            overflow-y: auto;
-        }
-
-        .modal.active {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .modal-content {
-            background: white;
-            border-radius: 16px;
-            padding: 2rem;
-            max-width: 600px;
-            width: 90%;
-            max-height: 90vh;
-            overflow-y: auto;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            animation: slideInUp 0.3s ease-out;
-        }
-
-        .modal-header {
-            font-size: 1.5rem;
-            font-weight: bold;
-            margin-bottom: 1rem;
-            color: var(--primary);
-        }
-
-        .modal-close {
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: #999;
-            padding: 0;
-            width: 30px;
-            height: 30px;
-        }
-
-        .form-group {
-            margin-bottom: 1rem;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .form-group label {
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            color: var(--primary);
-            font-size: 0.9rem;
-        }
-
-        .form-group input,
-        .form-group select,
-        .form-group textarea {
-            padding: 0.85rem;
-            border: 2px solid var(--border);
-            border-radius: 8px;
-            font-size: 0.95rem;
-            transition: all 0.3s ease;
-            font-family: inherit;
-        }
-
-        .form-group input:focus,
-        .form-group select:focus,
-        .form-group textarea:focus {
-            outline: none;
-            border-color: var(--secondary);
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-        }
-
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-        }
-
-        .checkbox-group {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin: 1rem 0;
-        }
-
-        .checkbox-group input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
-            cursor: pointer;
-        }
-
-        .checkbox-group label {
-            margin: 0;
-            cursor: pointer;
-            font-weight: 400;
-        }
-
-        /* ========== BUTTONS ========== */
-        button {
-            padding: 0.85rem 2rem;
-            border: none;
-            border-radius: 8px;
-            font-size: 0.95rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-weight: 600;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-            color: white;
-            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.35);
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.45);
-        }
-
-        .btn-secondary {
-            background: white;
-            color: var(--primary);
-            border: 2px solid var(--border);
-        }
-
-        .btn-secondary:hover {
-            background: var(--light-grey);
-        }
-
-        .btn-danger {
-            background: #ef4444;
-            color: white;
-        }
-
-        .btn-danger:hover {
-            background: #dc2626;
-        }
-
-        .btn-small {
-            padding: 0.5rem 1rem;
-            font-size: 0.85rem;
-        }
-
-        .button-group {
-            display: flex;
-            gap: 1rem;
-            margin-top: 1.5rem;
-        }
-
-        /* ========== TABS ========== */
-        .tabs {
-            display: flex;
-            gap: 0;
-            border-bottom: 2px solid var(--border);
-            margin-bottom: 2rem;
-        }
-
-        .tab-button {
-            padding: 1rem 2rem;
-            background: none;
-            border: none;
-            border-bottom: 3px solid transparent;
-            cursor: pointer;
-            font-weight: 600;
-            color: var(--grey-blue);
-            transition: all 0.3s ease;
-        }
-
-        .tab-button.active {
-            color: var(--secondary);
-            border-bottom-color: var(--secondary);
-        }
-
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-            animation: fadeIn 0.3s ease-out;
-        }
-
-        /* ========== CARDS ========== */
-        .card {
-            background: white;
-            border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s ease;
-            margin-bottom: 1rem;
-        }
-
-        .card:hover {
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-            transform: translateY(-2px);
-        }
-
-        .card-header {
-            font-size: 1.1rem;
-            font-weight: bold;
-            color: var(--primary);
-            margin-bottom: 1rem;
-            border-bottom: 2px solid var(--light-grey);
-            padding-bottom: 0.5rem;
-        }
-
-        .card-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        /* ========== BOOKING DISPLAY ========== */
-        .booking-card {
-            background: white;
-            border-left: 5px solid var(--secondary);
-            border-radius: 12px;
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .booking-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-            flex-wrap: wrap;
-        }
-
-        .booking-ref {
-            font-weight: bold;
-            color: var(--primary);
-            font-size: 1.1rem;
-        }
-
-        .booking-status {
-            padding: 0.5rem 1rem;
-            border-radius: 20px;
-            font-weight: 600;
-            font-size: 0.85rem;
-        }
-
-        .status-confirmed {
-            background: rgba(16, 185, 129, 0.1);
-            color: #047857;
-        }
-
-        .status-pending {
-            background: rgba(245, 158, 11, 0.1);
-            color: #92400e;
-        }
-
-        .status-cancelled {
-            background: rgba(239, 68, 68, 0.1);
-            color: #991b1b;
-        }
-
-        .booking-details {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 1rem;
-            margin-bottom: 1rem;
-        }
-
-        .detail-item {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .detail-label {
-            font-size: 0.85rem;
-            color: var(--grey-blue);
-            font-weight: 600;
-        }
-
-        .detail-value {
-            font-size: 1rem;
-            color: var(--primary);
-            font-weight: 500;
-        }
-
-        .booking-actions {
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-        }
-
-        /* ========== NOTIFICATIONS ========== */
-        .notification {
-            position: fixed;
-            top: 80px;
-            right: 20px;
-            max-width: 400px;
-            padding: 1.5rem;
-            border-radius: 12px;
-            background: white;
-            border-left: 4px solid var(--secondary);
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-            z-index: 3000;
-            animation: slideInUp 0.3s ease-out;
-        }
-
-        .notification.success { border-left-color: var(--success); }
-        .notification.error { border-left-color: var(--danger); }
-        .notification.warning { border-left-color: var(--warning); }
-
-        /* ========== RESPONSIVE ========== */
-        @media (max-width: 768px) {
-            .hero h1 { font-size: 2rem; }
-            .form-row { grid-template-columns: 1fr; }
-            nav .nav-items { gap: 0.5rem; }
-            nav button, nav a { padding: 0.5rem 0.75rem; font-size: 0.8rem; }
-        }
-
-        /* ========== ADMIN PORTAL ========== */
-        .admin-dashboard {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 2rem;
-        }
-
-        .stat-card {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 12px;
-            text-align: center;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .stat-number {
-            font-size: 2.5rem;
-            font-weight: bold;
-            color: var(--secondary);
-        }
-
-        .stat-label {
-            color: var(--grey-blue);
-            margin-top: 0.5rem;
-        }
-
-        /* ========== TABLE ========== */
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background: white;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        th {
-            background: var(--light-grey);
-            padding: 1rem;
-            text-align: left;
-            font-weight: 600;
-            color: var(--primary);
-        }
-
-        td {
-            padding: 1rem;
-            border-bottom: 1px solid var(--light-grey);
-        }
-
-        tr:hover {
-            background: #f8fafc;
-        }
-
-        .section-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 2rem;
-            margin-bottom: 3rem;
-        }
-
-        .section-card {
-            background: white;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s ease;
-            cursor: pointer;
-        }
-
-        .section-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-        }
-
-        .section-image {
-            width: 100%;
-            height: 200px;
-            background: var(--light-grey);
-            overflow: hidden;
-        }
-
-        .section-image img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .section-content {
-            padding: 1.5rem;
-        }
-
-        .section-title {
-            font-size: 1.1rem;
-            font-weight: bold;
-            margin-bottom: 0.5rem;
-            color: var(--primary);
-        }
-
-        .section-description {
-            color: var(--grey-blue);
-            font-size: 0.9rem;
-            margin-bottom: 1rem;
-            line-height: 1.4;
-        }
-
-        .document-card {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 12px;
-            margin-bottom: 1rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .document-info {
-            flex: 1;
-        }
-
-        .document-title {
-            font-weight: bold;
-            color: var(--primary);
-            margin-bottom: 0.25rem;
-        }
-
-        .document-confidential {
-            color: var(--danger);
-            font-size: 0.85rem;
-            font-weight: 600;
-        }
-
-        .lock-icon {
-            position: relative;
-            margin-left: 0.5rem;
-            color: var(--danger);
-            font-size: 1.2rem;
-        }
-
-        .event-card {
-            background: white;
-            border-radius: 12px;
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-            border-left: 5px solid var(--secondary);
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .event-date {
-            font-size: 0.9rem;
-            color: var(--grey-blue);
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
-
-        .event-title {
-            font-size: 1.1rem;
-            font-weight: bold;
-            color: var(--primary);
-            margin-bottom: 0.5rem;
-        }
-
-        .alert {
-            padding: 1rem;
-            border-radius: 8px;
-            margin-bottom: 1rem;
-        }
-
-        .alert-info {
-            background: rgba(37, 99, 235, 0.1);
-            border-left: 4px solid var(--secondary);
-            color: #1e40af;
-        }
-
-        .alert-success {
-            background: rgba(16, 185, 129, 0.1);
-            border-left: 4px solid var(--success);
-            color: #065f46;
-        }
-
-        .alert-danger {
-            background: rgba(239, 68, 68, 0.1);
-            border-left: 4px solid var(--danger);
-            color: #7f1d1d;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Express Airways - Sovereign. Global. Reliable.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<style>:root{--bg-primary:#080c1a;--bg-secondary:#0d1230;--bg-card:rgba(13,18,48,0.7);--bg-glass:rgba(255,255,255,0.04);--bg-glass-hover:rgba(255,255,255,0.08);--text-primary:#f0f4ff;--text-secondary:#8892b0;--text-muted:#555d7a;--accent:#4f8cff;--accent-glow:rgba(79,140,255,0.3);--accent-gradient:linear-gradient(135deg,#4f8cff,#00d4aa);--success:#00d4aa;--warning:#fbbf24;--danger:#ef4444;--danger-glow:rgba(239,68,68,0.3);--border:rgba(255,255,255,0.06);--border-active:rgba(79,140,255,0.3);--radius-sm:8px;--radius-md:12px;--radius-lg:20px;--radius-xl:28px;--shadow-sm:0 2px 8px rgba(0,0,0,0.3);--shadow-md:0 8px 32px rgba(0,0,0,0.4);--shadow-lg:0 16px 48px rgba(0,0,0,0.5);--font-sans:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;--font-mono:'JetBrains Mono',monospace;--transition:0.3s cubic-bezier(0.4,0,0.2,1);--nav-height:72px}*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}*:focus-visible{outline:2px solid var(--accent);outline-offset:2px}html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}body{font-family:var(--font-sans);background:var(--bg-primary);color:var(--text-primary);line-height:1.6;overflow-x:hidden;min-height:100vh;-webkit-tap-highlight-color:transparent}a{color:var(--accent);text-decoration:none}a:hover{color:#7ab7ff}::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08);border-radius:3px}::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.15)}.hidden{display:none!important}.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border:none;border-radius:var(--radius-sm);font-size:14px;font-weight:600;cursor:pointer;transition:var(--transition);white-space:nowrap;font-family:var(--font-sans)}.btn-sm{padding:7px 14px;font-size:13px}.btn-lg{padding:14px 28px;font-size:16px;border-radius:var(--radius-md)}.btn-full{width:100%;justify-content:center}.btn-primary{background:var(--accent-gradient);color:#fff;box-shadow:0 0 20px var(--accent-glow)}.btn-primary:hover{transform:translateY(-1px);box-shadow:0 0 30px var(--accent-glow)}.btn-outline{background:transparent;color:var(--text-primary);border:1px solid var(--border)}.btn-outline:hover{background:var(--bg-glass);border-color:var(--accent)}.btn-glass{background:var(--bg-glass);color:var(--text-primary);backdrop-filter:blur(10px);border:1px solid var(--border)}.btn-glass:hover{background:var(--bg-glass-hover);transform:translateY(-1px)}.btn-ghost{background:transparent;color:var(--text-secondary);padding:8px;border-radius:var(--radius-sm)}.btn-ghost:hover{background:var(--bg-glass);color:var(--text-primary)}.btn:disabled{opacity:.4;cursor:not-allowed;transform:none}.card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem;backdrop-filter:blur(10px);transition:var(--transition)}.card:hover{border-color:var(--border-active);box-shadow:var(--shadow-md)}.toast-container{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}.toast{display:flex;align-items:center;gap:10px;padding:14px 20px;border-radius:var(--radius-md);background:var(--bg-secondary);border:1px solid var(--border);box-shadow:var(--shadow-md);font-size:13px;font-weight:500;pointer-events:auto;animation:toastIn .35s ease forwards;max-width:400px;min-width:280px}@keyframes toastIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}@keyframes toastOut{from{opacity:1}to{opacity:0;transform:translateX(100%)}}.toast.success{border-left:3px solid var(--success)}.toast.error{border-left:3px solid var(--danger)}.toast.warning{border-left:3px solid var(--warning)}.toast.info{border-left:3px solid var(--accent)}.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn .2s ease}@keyframes fadeIn{from{opacity:0}to{opacity:1}}.modal{background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-xl);width:100%;max-height:90vh;overflow-y:auto;position:relative;animation:slideUp .3s ease}@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}.modal-sm{max-width:480px;padding:32px}.modal-lg{max-width:700px;padding:32px}.modal-close{position:absolute;top:16px;right:16px;background:none;border:none;color:var(--text-muted);font-size:28px;cursor:pointer;width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:var(--radius-sm);transition:var(--transition);z-index:1}.modal-close:hover{background:var(--bg-glass);color:var(--text-primary)}.modal-header{text-align:center;margin-bottom:24px}.modal-header h3{font-size:22px;font-weight:700;margin-bottom:8px}.modal-header p{font-size:14px;color:var(--text-secondary)}.form-group{margin-bottom:16px}.form-label{display:block;font-size:13px;font-weight:600;color:var(--text-secondary);margin-bottom:6px}.form-input{width:100%;padding:11px 14px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg-primary);color:var(--text-primary);font-size:14px;transition:var(--transition)}.form-input::placeholder{color:var(--text-muted)}.form-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 20px var(--accent-glow)}.spinner{width:32px;height:32px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}.navbar{position:fixed;top:0;left:0;right:0;height:var(--nav-height);display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:rgba(8,12,26,0.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);z-index:100}.nav-brand{display:flex;align-items:center;gap:10px}.nav-title{font-size:18px;font-weight:700;letter-spacing:-.3px}.nav-badge{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;padding:2px 8px;border-radius:4px;background:var(--accent-gradient);color:#fff;line-height:1.4}.nav-links{display:flex;align-items:center;gap:4px}.nav-link{font-size:14px;font-weight:500;color:var(--text-secondary);padding:8px 16px;border-radius:var(--radius-sm);transition:var(--transition);cursor:pointer}.nav-link:hover,.nav-link.active{color:var(--text-primary);background:var(--bg-glass)}.nav-actions{display:flex;align-items:center;gap:8px}.hero{position:relative;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:var(--nav-height) 24px 40px;overflow:hidden}.hero-bg{position:absolute;inset:0;z-index:0}.hero-gradient{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(79,140,255,0.15),transparent),radial-gradient(ellipse 60% 50% at 80% 100%,rgba(0,212,170,0.1),transparent),radial-gradient(ellipse 50% 50% at 20% 100%,rgba(79,140,255,0.08),transparent)}.hero-content{position:relative;z-index:1;text-align:center;max-width:800px}.hero-title{font-size:clamp(36px,7vw,72px);font-weight:800;letter-spacing:-2px;line-height:1.1;margin-bottom:20px}.hero-title-accent{background:var(--accent-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}.hero-subtitle{font-size:18px;color:var(--text-secondary);max-width:600px;margin:0 auto 32px;line-height:1.7}.hero-actions{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;margin-bottom:48px}.hero-stats{display:flex;align-items:center;justify-content:center;gap:48px}.hero-stat{text-align:center}.hero-stat-number{font-size:36px;font-weight:800;letter-spacing:-1px;background:var(--accent-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}.hero-stat-label{display:block;font-size:13px;color:var(--text-muted);margin-top:4px;font-weight:500}.section-header{text-align:center;margin-bottom:56px}.section-tag{display:inline-block;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:12px}.section-title{font-size:36px;font-weight:700;letter-spacing:-1px;margin-bottom:12px}.section-desc{font-size:16px;color:var(--text-secondary);max-width:500px;margin:0 auto}.footer{border-top:1px solid var(--border);padding:60px 24px 24px}.footer-content{max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;gap:48px;flex-wrap:wrap}.footer-brand{max-width:280px}.footer-logo{display:flex;align-items:center;gap:10px;font-size:18px;font-weight:700;margin-bottom:12px}.footer-desc{font-size:13px;color:var(--text-muted);line-height:1.7}.footer-links{display:flex;gap:48px}.footer-col h4{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:16px}.footer-col a{display:block;font-size:14px;color:var(--text-secondary);margin-bottom:10px;transition:var(--transition);cursor:pointer}.footer-col a:hover{color:var(--text-primary)}.footer-bottom{max-width:1200px;margin:40px auto 0;padding-top:20px;border-top:1px solid var(--border);text-align:center;font-size:12px;color:var(--text-muted)}@media(max-width:768px){:root{--nav-height:60px}.nav-links{display:none}.hero-title{font-size:32px}.hero-stats{flex-direction:column;gap:24px}.footer-content{flex-direction:column;gap:32px}.footer-links{flex-wrap:wrap;gap:24px}}</style>
 </head>
 <body>
-    <!-- Loading Overlay -->
-    <div id="loadingOverlay">
-        <div class="loading-container">
-            <div class="spinner" role="status" aria-hidden="true"></div>
-            <div class="loading-text">
-                Loading<span class="loading-dot">.</span><span class="loading-dot">.</span><span class="loading-dot">.</span>
-            </div>
+
+<nav class="navbar">
+  <a href="#" class="nav-brand" data-section="home" style="text-decoration:none;color:inherit;cursor:pointer">
+    <img src="OIG3.jpg" alt="Express Airways" style="height:32px;width:32px;border-radius:50%;object-fit:cover">
+    <span class="nav-title">Express Airways</span>
+  </a>
+  <div class="nav-links">
+    <a class="nav-link active" data-section="home">Home</a>
+    <a class="nav-link" data-section="portal">My Portal</a>
+    <a class="nav-link" data-section="contact">Contact</a>
+    <a class="nav-link" data-section="travelAgent">Travel Agents</a>
+    <a class="nav-link" href="docs/index.html">Ops Hub</a>
+    <a class="nav-link" href="status/index.html">Status</a>
+    <a class="nav-link" href="legal/index.html">Legal</a>
+    <a class="nav-link" href="admin/index.html">Admin</a>
+    <a class="nav-link" href="developer/index.html">Dev</a>
+  </div>
+  <div class="nav-actions">
+    <div class="miles-badge hidden" id="milesDisplay">0 miles</div>
+    <div class="user-menu hidden" id="userMenu">
+      <div class="user-avatar">
+        <div class="avatar-initials" id="avatarInitials">U</div>
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+      </div>
+      <div class="user-dropdown hidden">
+        <div class="dropdown-header">
+          <span class="dropdown-name" id="dropdownName">User</span>
+          <span class="dropdown-email" id="dropdownEmail">user@email.com</span>
+          <span style="display:block;font-size:11px;color:var(--accent);margin-top:4px" id="tierDisplay">Basic</span>
         </div>
+        <div class="dropdown-divider"></div>
+        <a class="dropdown-item" data-section="portal">My Bookings</a>
+        <a class="dropdown-item" data-section="settings">Account Settings</a>
+        <div class="dropdown-divider"></div>
+        <a class="dropdown-item" id="logoutBtn" style="color:var(--danger)">Sign Out</a>
+      </div>
     </div>
+    <button class="btn btn-primary btn-sm" id="loginBtn">Sign In</button>
+    <button class="btn btn-outline btn-sm" id="signupBtn">Register</button>
+  </div>
+</nav>
 
-    <!-- Navigation -->
-    <nav>
-        <div class="logo">✈️ EXPRESS AIRWAYS</div>
-        <div class="nav-items">
-            <button id="navHome" onclick="showHome()">Home</button>
-            <button id="navPortal" onclick="showPortal()" style="display: none;">My Portal</button>
-            <button id="navAdmin" onclick="showAdminPortal()" style="display: none;">Admin</button>
-            <button id="loginBtn" onclick="showLoginModal()">Login</button>
-            <button id="signupBtn" onclick="showSignupModal()">Sign Up</button>
-            <button id="logoutBtn" onclick="logout()" style="display: none;">Logout</button>
-            <div id="userInfo" class="user-info" style="display: none;"></div>
-        </div>
-    </nav>
-
-    <!-- Main Content -->
-    <div id="systemStatusBar" class="card" style="margin: 1rem auto; max-width: 1400px; display: none;">
-        <div id="systemStatusContent" style="display:flex; gap:1rem; flex-wrap:wrap; align-items:center;"></div>
+<section class="hero" id="heroSection">
+  <div class="hero-bg" id="heroBg"></div>
+  <div class="hero-gradient"></div>
+  <div class="hero-particles"></div>
+  <div class="hero-content">
+    <div class="hero-text-area">
+      <div class="hero-badge">
+        <span class="pulse-dot" style="width:6px;height:6px;border-radius:50%;background:var(--success);display:inline-block;animation:pulse 2s infinite"></span>
+        Express Airways NextGen
+      </div>
+      <h1 class="hero-headline">
+        <span id="heroLine1">Reliable. Sovereign.</span><br>
+        <span class="hero-accent" id="heroLine2">Global.</span>
+      </h1>
+      <p class="hero-desc" id="heroSub">Professional flight services worldwide. Book, manage, and fly with confidence.</p>
     </div>
-    <div class="container" id="mainContent">
-        <!-- Home Page -->
-        <div id="homePage">
-            <!-- Hero Section -->
-            <div class="hero" id="heroSection">
-                <h1>Reliable. Sovereign. Global.</h1>
-                <p>Express Airways - Your Global Flight Partner</p>
-            </div>
-
-            <!-- Booking Form -->
-            <div class="card" style="padding: 2rem; margin-bottom: 3rem;">
-                <h2 style="margin-bottom: 1.5rem; color: var(--primary);">✈️ Book Your Flight</h2>
-                <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-                    <div class="form-group">
-                        <label>Carrier Type</label>
-                        <select id="serviceType">
-                            <option value="EA">Express Airways (International)</option>
-                            <option value="EX">Explore Airways (Domestic)</option>
-                            <option value="EC">Express Charter (Custom Time)</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Currency</label>
-                        <select id="currencySelect" onchange="updateCurrency()">
-                            <option value="USD">USD ($)</option>
-                            <option value="EUR">EUR (€)</option>
-                            <option value="GBP">GBP (£)</option>
-                            <option value="JPY">JPY (¥)</option>
-                            <option value="AUD">AUD (A$)</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="form-row" style="display: grid; grid-template-columns: 1.5fr 1.5fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-                    <div class="form-group">
-                        <label>From</label>
-                        <input type="text" id="origin" placeholder="e.g., JFK" onchange="updateFlightInfo()">
-                    </div>
-                    <div class="form-group">
-                        <label>To</label>
-                        <input type="text" id="destination" placeholder="e.g., LAX" onchange="updateFlightInfo()">
-                    </div>
-                    <div class="form-group">
-                        <label>Depart</label>
-                        <input type="date" id="departDate" onchange="updateFlightInfo()">
-                    </div>
-                </div>
-
-                <div id="flightInfo" style="background: var(--light-grey); padding: 1rem; border-radius: 8px; margin-bottom: 1rem; display: none;">
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem;">
-                        <div>
-                            <div style="font-size: 0.85rem; color: var(--grey-blue); font-weight: 600;">Distance</div>
-                            <div id="flightDistance" style="font-size: 1.1rem; font-weight: bold; color: var(--primary);">--</div>
-                        </div>
-                        <div>
-                            <div style="font-size: 0.85rem; color: var(--grey-blue); font-weight: 600;">Flight Time</div>
-                            <div id="flightTime" style="font-size: 1.1rem; font-weight: bold; color: var(--primary);">--</div>
-                        </div>
-                        <div>
-                            <div style="font-size: 0.85rem; color: var(--grey-blue); font-weight: 600;">Base Fare</div>
-                            <div id="baseFare" style="font-size: 1.1rem; font-weight: bold; color: var(--secondary);">--</div>
-                        </div>
-                        <div>
-                            <div style="font-size: 0.85rem; color: var(--grey-blue); font-weight: 600;">Weather</div>
-                            <div id="weatherInfo" style="font-size: 1.1rem; font-weight: bold; color: var(--primary);">--</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-                    <div class="form-group">
-                        <label>Passengers</label>
-                        <input type="number" id="passengers" value="1" min="1" max="9">
-                    </div>
-                    <div class="form-group">
-                        <label>Cabin Class</label>
-                        <select id="cabin">
-                            <option value="Economy">Economy</option>
-                            <option value="Business">Business</option>
-                            <option value="FirstClass">First Class</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label>Promo Code (Optional)</label>
-                    <input type="text" id="promoCode" placeholder="Enter promo code">
-                </div>
-
-                <button class="btn-primary" onclick="startBooking()" style="width: 100%;">Search Flights</button>
-            </div>
-
-            <!-- Sections -->
-            <div id="sectionsContainer"></div>
-
-            <!-- Events -->
-            <div style="margin-bottom: 3rem;">
-                <h2 style="margin-bottom: 2rem; color: var(--primary);">Upcoming Events</h2>
-                <div id="eventsContainer"></div>
-            </div>
+    <div class="booking-step" id="step1">
+    <div class="booking-card" id="bookingCard">
+      <div class="trip-tabs">
+        <button class="trip-tab active" data-trip="round" onclick="setTripType('round')">Round Trip</button>
+        <button class="trip-tab" data-trip="oneway" onclick="setTripType('oneway')">One Way</button>
+      </div>
+      <div class="booking-fields">
+        <div class="bf-row">
+          <div class="bf-group bf-origin">
+            <label class="bf-label">From</label>
+            <input class="bf-input" id="originInput" placeholder="City or airport" list="originList" autocomplete="off">
+            <datalist id="originList"></datalist>
+          </div>
+          <button class="bf-swap" onclick="swapAirports()" title="Swap airports">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+          </button>
+          <div class="bf-group bf-dest">
+            <label class="bf-label">To</label>
+            <input class="bf-input" id="destInput" placeholder="City or airport" list="destList" autocomplete="off">
+            <datalist id="destList"></datalist>
+          </div>
         </div>
-
-        <!-- User Portal -->
-        <div id="portalPage" style="display: none;">
-            <div class="tabs">
-                <button class="tab-button active" onclick="switchPortalTab('dashboard')">Dashboard</button>
-                <button class="tab-button" onclick="switchPortalTab('bookings')">My Bookings</button>
-                <button class="tab-button" onclick="switchPortalTab('documents')">Documents</button>
-                <button class="tab-button" onclick="switchPortalTab('events')">Events</button>
-                <button class="tab-button" onclick="switchPortalTab('settings')">Account Settings</button>
-            </div>
-
-            <!-- Dashboard Tab -->
-            <div id="dashboardTab" class="tab-content active">
-                <div class="card-grid">
-                    <div class="stat-card">
-                        <div class="stat-number" id="totalMiles">0</div>
-                        <div class="stat-label">Total Miles</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number" id="memberTier">--</div>
-                        <div class="stat-label">Membership Tier</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number" id="totalBookings">0</div>
-                        <div class="stat-label">Total Bookings</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number" id="accountStatus">--</div>
-                        <div class="stat-label">Account Status</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Bookings Tab -->
-            <div id="bookingsTab" class="tab-content">
-                <div id="userBookingsContainer"></div>
-            </div>
-
-            <!-- Documents Tab -->
-            <div id="documentsTab" class="tab-content">
-                <h3>Important Documents</h3>
-                <div id="documentsContainer"></div>
-            </div>
-
-            <!-- Events Tab -->
-            <div id="eventsTab" class="tab-content">
-                <h3>My Events</h3>
-                <div id="portalEventsContainer"></div>
-            </div>
-
-            <!-- Settings Tab -->
-            <div id="settingsTab" class="tab-content">
-                <div class="card">
-                    <h3 style="margin-bottom: 1.5rem;">Account Settings</h3>
-                    <div class="form-group">
-                        <label>Full Name</label>
-                        <input type="text" id="settingName" />
-                    </div>
-                    <div class="form-group">
-                        <label>Email</label>
-                        <input type="email" id="settingEmail" disabled />
-                    </div>
-                    <div class="form-group">
-                        <label>Phone</label>
-                        <input type="tel" id="settingPhone" />
-                    </div>
-                    <div class="form-group">
-                        <label>Preferred Cabin</label>
-                        <select id="settingCabin">
-                            <option value="Economy">Economy</option>
-                            <option value="Business">Business</option>
-                            <option value="FirstClass">First Class</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <select id="paymentMethod" onchange="document.getElementById('milesPaymentInfo').style.display = this.value === 'miles' ? 'block' : 'none';">
-    <option value="cash">Credit Card / Debit Card</option>
-    <option value="miles">Pay with Miles</option>
-</select></div>
-                    </div>
-                    <button class="btn-primary" onclick="saveSettings()">Save Settings</button>
-                </div>
-            </div>
+        <div class="bf-row">
+          <div class="bf-group bf-date">
+            <label class="bf-label">Depart</label>
+            <input class="bf-input" type="date" id="dateInput">
+          </div>
+          <div class="bf-group bf-date" id="returnDateGroup">
+            <label class="bf-label">Return</label>
+            <input class="bf-input" type="date" id="returnDateInput">
+          </div>
         </div>
-
-        <!-- Admin Portal -->
-        <div id="adminPage" style="display: none;">
-            <h2 style="margin-bottom: 2rem;">Admin Dashboard</h2>
-
-            <div class="tabs">
-                <button class="tab-button active" onclick="switchAdminTab('overview')">Overview</button>
-                <button class="tab-button" onclick="switchAdminTab('bookings')">Bookings</button>
-                <button class="tab-button" onclick="switchAdminTab('users')">Users</button>
-                <button class="tab-button" onclick="switchAdminTab('documents')">Documents</button>
-                <button class="tab-button" onclick="switchAdminTab('promos')">Promo Codes</button>
-                <button class="tab-button" onclick="switchAdminTab('ancillaries')">Ancillaries</button>
-            </div>
-
-            <!-- Overview Tab -->
-            <div id="overviewTab" class="tab-content active">
-                <div class="admin-dashboard">
-                    <div class="stat-card">
-                        <div class="stat-number" id="adminTotalBookings">0</div>
-                        <div class="stat-label">Total Bookings</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number" id="adminTotalUsers">0</div>
-                        <div class="stat-label">Active Users</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number" id="adminTodayBookings">0</div>
-                        <div class="stat-label">Today's Bookings</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number" id="adminPendingRequests">0</div>
-                        <div class="stat-label">Pending Requests</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Bookings Tab -->
-            <div id="adminBookingsTab" class="tab-content">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Booking Ref</th>
-                            <th>Passenger Email</th>
-                            <th>Route</th>
-                            <th>Date</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="adminBookingsTable"></tbody>
-                </table>
-            </div>
-
-            <!-- Users Tab -->
-            <div id="adminUsersTab" class="tab-content">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Email</th>
-                            <th>Miles</th>
-                            <th>Tier</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="adminUsersTable"></tbody>
-                </table>
-            </div>
-
-            <!-- Documents Tab -->
-            <div id="adminDocumentsTab" class="tab-content">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Document Title</th>
-                            <th>Confidential</th>
-                            <th>Link</th>
-                        </tr>
-                    </thead>
-                    <tbody id="adminDocumentsTable"></tbody>
-                </table>
-            </div>
-            <!-- Promo Codes Tab -->
-            <div id="promosTab" class="tab-content">
-                <div style="display:flex; gap:1rem; align-items:flex-start; margin-bottom:1rem;">
-                    <div style="flex:1">
-                        <h3>Add Promo Code</h3>
-                        <div class="form-group">
-                            <label>Code</label>
-                            <input type="text" id="promoCodeInput">
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Discount %</label>
-                                <input type="number" id="promoPercent" value="0">
-                            </div>
-                            <div class="form-group">
-                                <label>Discount $</label>
-                                <input type="number" id="promoDollars" value="0">
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Max Uses</label>
-                                <input type="number" id="promoMaxUses" value="999">
-                            </div>
-                            <div class="form-group">
-                                <label>Expiry Date</label>
-                                <input type="date" id="promoExpiry">
-                            </div>
-                        </div>
-                        <button class="btn-primary" onclick="adminAddPromo()">Add Promo</button>
-                    </div>
-                    <div style="flex:2">
-                        <h3>Existing Promo Codes</h3>
-                        <table>
-                            <thead>
-                                <tr><th>Code</th><th>%</th><th>$</th><th>Max</th><th>Used</th><th>Expiry</th><th>Active</th></tr>
-                            </thead>
-                            <tbody id="adminPromoTable"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Ancillaries Tab -->
-            <div id="ancillariesTab" class="tab-content">
-                <div style="display:flex; gap:1rem; align-items:flex-start;">
-                    <div style="flex:1">
-                        <h3>Add Ancillary</h3>
-                        <div class="form-group">
-                            <label>Type</label>
-                            <input type="text" id="ancType">
-                        </div>
-                        <div class="form-group">
-                            <label>Description</label>
-                            <input type="text" id="ancDesc">
-                        </div>
-                        <div class="form-group">
-                            <label>Price</label>
-                            <input type="number" id="ancPrice" value="0">
-                        </div>
-                        <button class="btn-primary" onclick="adminAddAncillary()">Add Ancillary</button>
-                    </div>
-                    <div style="flex:2">
-                        <h3>Existing Ancillaries</h3>
-                        <table>
-                            <thead><tr><th>Type</th><th>Description</th><th>Price</th></tr></thead>
-                            <tbody id="adminAncillariesTable"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
+        <div class="bf-row">
+          <div class="bf-group bf-pax">
+            <label class="bf-label">Passengers</label>
+            <select class="bf-input" id="paxInput"><option value="1">1 Passenger</option><option value="2">2 Passengers</option><option value="3">3 Passengers</option><option value="4">4 Passengers</option><option value="5">5 Passengers</option><option value="6">6 Passengers</option><option value="7">7 Passengers</option><option value="8">8 Passengers</option><option value="9">9 Passengers</option><option value="10">10 Passengers</option></select>
+          </div>
+          <div class="bf-group bf-cabin">
+            <label class="bf-label">Cabin</label>
+            <select class="bf-input" id="cabinSelect"><option value="Economy">Economy</option><option value="Business">Business</option><option value="FirstClass">First Class</option></select>
+          </div>
+          <div class="bf-group bf-carrier">
+            <label class="bf-label">Carrier</label>
+            <select class="bf-input" id="carrierSelect">
+              <option value="EA">EA - Express Airways (International)</option>
+              <option value="EX">EX - Explore Airways (Domestic)</option>
+              <option value="EC">EC - Express Charter</option>
+            </select>
+          </div>
         </div>
+        <div class="bf-row" id="charterTimeRow" style="display:none">
+          <div class="bf-group bf-date">
+            <label class="bf-label">Departure Time</label>
+            <input class="bf-input" type="time" id="departTimeInput" value="08:00">
+          </div>
+        </div>
+        <div class="bf-row promo-row">
+          <div class="bf-group bf-full">
+            <label class="bf-label">Promo Code</label>
+            <input class="bf-input" id="promoInput" placeholder="Enter promo code">
+          </div>
+        </div>
+        <div class="bf-row bf-extra-row" id="extraFieldsRow" style="display:none">
+          <div class="bf-group bf-full">
+            <div id="flightPreview" style="display:flex;gap:16px;flex-wrap:wrap;padding:8px 0">
+              <span style="font-size:13px;color:var(--text-secondary)">Distance: <strong id="distanceDisplay" style="color:var(--text-primary)">—</strong></span>
+              <span style="font-size:13px;color:var(--text-secondary)">Flight time: <strong id="flightTimeDisplay" style="color:var(--text-primary)">—</strong></span>
+              <span style="font-size:13px;color:var(--text-secondary)">Weather: <strong id="weatherDisplay" style="color:var(--text-primary)">—</strong></span>
+              <span style="font-size:13px;color:var(--text-secondary)">Est. fare: <strong id="totalDisplay" style="color:var(--accent)">—</strong></span>
+              <span style="font-size:13px;color:var(--text-secondary)">Miles earn: <strong id="milesEarnedDisplay" style="color:#fbbf24">0</strong></span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <button class="bf-search" id="searchFlightsBtn">Search Flights</button>
+      <span id="promoStatus" style="font-size:12px;margin-top:6px;display:block;text-align:center"></span>
     </div>
-
-    <!-- Login Modal -->
-    <div id="loginModal" class="modal">
-        <div class="modal-content" style="position: relative;">
-            <button class="modal-close" onclick="closeLoginModal()">✕</button>
-            <div class="modal-header">Login to Your Account</div>
-            <div class="form-group">
-                <label>Email</label>
-                <input type="email" id="loginEmail" placeholder="your@email.com">
-            </div>
-            <div class="form-group">
-                <label>Password</label>
-                <input type="password" id="loginPassword" placeholder="Enter password">
-            </div>
-            <div class="button-group">
-                <button class="btn-primary" onclick="handleLogin()" style="flex: 1;">Login</button>
-                <button class="btn-secondary" onclick="closeLoginModal()" style="flex: 1;">Cancel</button>
-            </div>
-        </div>
     </div>
-
-    <!-- Signup Modal -->
-    <div id="signupModal" class="modal">
-        <div class="modal-content" style="position: relative;">
-            <button class="modal-close" onclick="closeSignupModal()">✕</button>
-            <div class="modal-header">Create Your Account</div>
-            <div class="form-group">
-                <label>Full Name</label>
-                <input type="text" id="signupName" placeholder="Your Name">
-            </div>
-            <div class="form-group">
-                <label>Email</label>
-                <input type="email" id="signupEmail" placeholder="your@email.com">
-            </div>
-            <div class="form-group">
-                <label>Password</label>
-                <input type="password" id="signupPassword" placeholder="Create password">
-            </div>
-            <div class="form-group">
-                <label>Confirm Password</label>
-                <input type="password" id="signupConfirm" placeholder="Confirm password">
-            </div>
-            <div class="checkbox-group">
-                <input type="checkbox" id="agreeTerms">
-                <label for="agreeTerms">I agree to Terms of Service & Privacy Policy</label>
-            </div>
-            <div class="button-group">
-                <button class="btn-primary" onclick="handleSignup()" style="flex: 1;">Sign Up</button>
-                <button class="btn-secondary" onclick="closeSignupModal()" style="flex: 1;">Cancel</button>
-            </div>
-        </div>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="hero-stat-number" id="statUsers">—</div>
+        <span class="hero-stat-label">Active Users</span>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-number" id="statBookings">—</div>
+        <span class="hero-stat-label">Bookings Completed</span>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-number" id="statDocuments">—</div>
+        <span class="hero-stat-label">Documents Available</span>
+      </div>
     </div>
+  </div>
+</section>
 
-    <!-- Booking Wizard Modal -->
-    <div id="bookingModal" class="modal">
-        <div class="modal-content" style="position: relative; max-width: 700px;">
-            <button class="modal-close" onclick="closeBookingModal()">✕</button>
-            <div class="modal-header">Complete Your Booking</div>
-
-            <div id="bookingStep1" class="booking-step">
-                <h3 style="margin-bottom: 1rem;">Step 1: Flight Details</h3>
-                <div class="alert alert-info">
-                    <strong id="flightSummary"></strong>
-                </div>
-                <button class="btn-primary" onclick="nextBookingStep()" style="width: 100%;">Next: Passenger Details</button>
-            </div>
-
-            <div id="bookingStep2" class="booking-step" style="display: none;">
-                <h3 style="margin-bottom: 1rem;">Step 2: Passenger Details</h3>
-                <div id="passengerFormsContainer"></div>
-                <button class="btn-primary" onclick="nextBookingStep()" style="width: 100% ; margin-bottom: 0.5rem;">Next: Payment</button>
-                <button class="btn-secondary" onclick="prevBookingStep()" style="width: 100%;">Back</button>
-            </div>
-
-            <div id="bookingStep3" class="booking-step" style="display: none;">
-                <h3 style="margin-bottom: 1rem;">Step 3: Payment & Review</h3>
-                <div class="card">
-                    <div style="margin-bottom: 1rem;">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                            <span>Subtotal:</span>
-                            <span id="subtotalPrice">$0</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 1rem; font-weight: bold; font-size: 1.1rem;">
-                            <span>Total:</span>
-                            <span id="totalPrice">$0</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div style="margin-bottom: 1rem;">
-                    <h4 style="margin-bottom: 0.5rem;">Payment Method</h4>
-                    <div class="form-group">
-                        <select id="paymentMethod">
-                            <option value="cash">Credit Card / Debit Card</option>
-                            <option value="miles">Pay with Miles</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div id="milesPaymentInfo" style="display: none; background: var(--light-grey); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
-                    <div style="margin-bottom: 0.5rem;">Your Miles: <span id="userMilesAvailable">0</span></div>
-                    <div>Miles Required: <span id="milesRequired">0</span></div>
-                </div>
-
-                <div class="checkbox-group">
-                    <input type="checkbox" id="agreeBookingTerms">
-                    <label for="agreeBookingTerms">I agree to the Terms of Service & Privacy Policy</label>
-                </div>
-
-                <button class="btn-primary" onclick="completeBooking()" style="width: 100%; margin-bottom: 0.5rem;">Confirm Booking</button>
-                <button class="btn-secondary" onclick="prevBookingStep()" style="width: 100%;">Back</button>
-            </div>
-        </div>
+<div id="bookingWizardSection" style="display:none;padding:60px 24px">
+  <div class="booking-wizard">
+    <div class="step-indicators" id="stepIndicators"></div>
+    <div class="booking-step" id="step2">
+      <h3 style="text-align:center;margin-bottom:24px;font-size:20px">Passenger Details</h3>
+      <div id="passengersContainer"></div>
+      <div class="carrier-select" id="carrierSelectWizard" style="margin-bottom:20px"></div>
+      <div style="display:flex;gap:12px;margin-top:20px">
+        <button class="btn btn-outline btn-lg" onclick="handleBookingNav(-1)">Back</button>
+        <button class="btn btn-primary btn-lg btn-full" onclick="handleBookingNav(2)">Continue to Payment</button>
+      </div>
     </div>
-
-    <!-- eTicket Modal -->
-    <div id="eticketModal" class="modal">
-        <div class="modal-content" style="position: relative; max-width: 800px;">
-            <button class="modal-close" onclick="closeEticketModal()">✕</button>
-            <div id="eticketContent"></div>
-            <button class="btn-primary" onclick="printEticket()" style="width: 100%; margin-top: 1rem;">Print</button>
+    <div class="booking-step" id="step3">
+      <h3 style="text-align:center;margin-bottom:24px;font-size:20px">Payment & Confirmation</h3>
+      <div class="flight-summary">
+        <div class="flight-summary-row"><span class="flight-summary-label">Total Price</span><span class="flight-summary-value" id="paySummaryTotal">—</span></div>
+        <div class="flight-summary-row"><span class="flight-summary-label">Miles You'll Earn</span><span class="flight-summary-value" id="paySummaryMiles">0</span></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Payment Method</label>
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <div class="carrier-option selected" data-payment="cash" onclick="selectPayment('cash')" style="flex:1;min-width:120px">
+            <div style="font-size:24px">\uD83D\uDCB5</div>
+            <div style="font-size:14px;font-weight:600;margin-top:4px">Pay with Cash</div>
+          </div>
+          <div class="carrier-option" data-payment="miles" onclick="selectPayment('miles')" style="flex:1;min-width:120px">
+            <div style="font-size:24px">\u2728</div>
+            <div style="font-size:14px;font-weight:600;margin-top:4px">Pay with Miles</div>
+            <div style="font-size:11px;color:var(--text-muted)" id="payMilesSuffix"></div>
+          </div>
         </div>
+        <div style="margin-top:8px;font-size:13px;color:var(--text-secondary)">Available: <span id="payMilesAvailable">0</span> miles | Needed: <span id="payMilesNeeded">0</span> miles</div>
+      </div>
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px;margin-bottom:20px">
+        <h4 style="font-size:14px;font-weight:600;margin-bottom:12px">Required Agreements</h4>
+        <div class="checkbox-row"><input type="checkbox" id="agreeTerms"><label for="agreeTerms">I agree to the <a href="#">Terms of Service</a> and Conditions of Carriage</label></div>
+        <div class="checkbox-row"><input type="checkbox" id="agreePrivacy"><label for="agreePrivacy">I acknowledge the <a href="#">Privacy Policy</a> and data processing practices</label></div>
+        <div class="checkbox-row"><input type="checkbox" id="agreePolicy"><label for="agreePolicy">I agree to the <a href="#">Booking Policy</a> including cancellation and refund terms</label></div>
+      </div>
+      <div style="display:flex;gap:12px;margin-top:20px">
+        <button class="btn btn-outline btn-lg" onclick="handleBookingNav(-1)">Back</button>
+        <button class="btn btn-primary btn-lg btn-full" id="bookingSubmit">Confirm & Book</button>
+      </div>
     </div>
-
-  <script>
-        // ========== GLOBAL STATE ==========
-        // ⚠️ CRITICAL: Replace this with your actual Google Apps Script Web App URL ending in /exec
-        const API_URL = 'https://script.google.com/macros/s/AKfycbwOpzPgTj94-tQAEjIJ3Q3l54zCLGC7Ag2XDlNUPwvb8M1v8p6qhuVDVigGYz8G-bGWhQ/exec'; 
-        
-        let currentUser = null;
-        let exchangeRate = 1;
-        let currentCurrency = 'USD';
-        let bookingData = {
-            origin: '', destination: '', departDate: '', serviceType: '',
-            passengers: 1, cabin: 'Economy', promoCode: '', baseFare: 0
-        };
-        let passengerData = [];
-
-        // ========== INITIALIZATION ==========
-        window.addEventListener('load', async function() {
-            setMinDate();
-            
-            try {
-                // BETTER LOADING: Wait for both data requests to finish BEFORE hiding the loading screen
-                await Promise.all([
-                    loadInitialData(), 
-                    checkLoginStatus()
-                ]);
-            } catch (error) {
-                console.error("Error during initial data load:", error);
-            } finally {
-                // Hide overlay only after we have the data, with a tiny buffer for a smooth fade
-                setTimeout(() => {
-                    const overlay = document.getElementById('loadingOverlay');
-                    if(overlay) overlay.classList.add('hidden');
-                    // start polling system status after initial load
-                    startStatusPolling();
-                }, 300);
-            }
-        });
-
-        function setMinDate() {
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('departDate').min = today;
-            document.getElementById('departDate').value = today;
-        }
-
-        // Must return the fetch promise so the loader knows when to hide
-        function checkLoginStatus() {
-            return fetch(API_URL + '?action=checkLogin')
-                .then(async response => {
-                    // get raw response text first
-                    const text = await response.text();
-                    // try converting to JSON safely
-                    try {
-                        return JSON.parse(text);
-                    } catch (e) {
-                        console.error('Invalid JSON response:', text);
-                        throw e;
-                    }
-                })
-                .then(data => {
-                    if (data && data.loggedIn) {
-                        currentUser = data.user;
-                        updateNavigation();
-                        loadUserPortalData();
-                    }
-                })
-                .catch(e => console.error('Login check error:', e));
-        }
-
-        // ========== NAVIGATION ==========
-        function updateNavigation() {
-            if (currentUser) {
-                document.getElementById('loginBtn').style.display = 'none';
-                document.getElementById('signupBtn').style.display = 'none';
-                document.getElementById('logoutBtn').style.display = 'block';
-                document.getElementById('navPortal').style.display = 'block';
-                document.getElementById('userInfo').style.display = 'block';
-                document.getElementById('userInfo').textContent = `${currentUser.FullName} (${currentUser.Miles} miles)`;
-
-                if (currentUser.Role === 'Admin') {
-                    document.getElementById('navAdmin').style.display = 'block';
-                }
-            } else {
-                document.getElementById('loginBtn').style.display = 'block';
-                document.getElementById('signupBtn').style.display = 'block';
-                document.getElementById('logoutBtn').style.display = 'none';
-                document.getElementById('navPortal').style.display = 'none';
-                document.getElementById('navAdmin').style.display = 'none';
-                document.getElementById('userInfo').style.display = 'none';
-            }
-        }
-
-        function showHome() {
-            document.getElementById('homePage').style.display = 'block';
-            document.getElementById('portalPage').style.display = 'none';
-            document.getElementById('adminPage').style.display = 'none';
-            loadInitialData();
-        }
-
-        function showPortal() {
-            if (!currentUser) {
-                showLoginModal();
-                return;
-            }
-            document.getElementById('homePage').style.display = 'none';
-            document.getElementById('portalPage').style.display = 'block';
-            document.getElementById('adminPage').style.display = 'none';
-            loadUserPortalData();
-        }
-
-        function showAdminPortal() {
-            if (!currentUser || currentUser.Role !== 'Admin') {
-                showNotification('error', 'Access Denied', 'You do not have admin privileges');
-                return;
-            }
-            document.getElementById('homePage').style.display = 'none';
-            document.getElementById('portalPage').style.display = 'none';
-            document.getElementById('adminPage').style.display = 'block';
-            loadAdminData();
-        }
-
-        // ========== AUTHENTICATION ==========
-        function showLoginModal() {
-            document.getElementById('loginModal').classList.add('active');
-        }
-
-        function closeLoginModal() {
-            document.getElementById('loginModal').classList.remove('active');
-        }
-
-        function handleLogin() {
-            const email = document.getElementById('loginEmail').value;
-            const password = document.getElementById('loginPassword').value;
-
-            if (!email || !password) {
-                showNotification('error', 'Error', 'Please enter email and password');
-                return;
-            }
-
-            fetch(API_URL + '?action=login', {
-                method: 'POST',
-                body: JSON.stringify({ email, password })
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    currentUser = data.user;
-                    updateNavigation();
-                    closeLoginModal();
-                    showNotification('success', 'Welcome!', `Logged in as ${currentUser.FullName}`);
-                    loadUserPortalData();
-                } else {
-                    showNotification('error', 'Login Failed', data.message);
-                }
-            });
-        }
-
-        function showSignupModal() {
-            document.getElementById('signupModal').classList.add('active');
-        }
-
-        function closeSignupModal() {
-            document.getElementById('signupModal').classList.remove('active');
-        }
-
-        function handleSignup() {
-            const name = document.getElementById('signupName').value;
-            const email = document.getElementById('signupEmail').value;
-            const password = document.getElementById('signupPassword').value;
-            const confirm = document.getElementById('signupConfirm').value;
-            const agree = document.getElementById('agreeTerms').checked;
-
-            if (!name || !email || !password || !confirm) {
-                showNotification('error', 'Error', 'Please fill in all fields');
-                return;
-            }
-
-            if (password !== confirm) {
-                showNotification('error', 'Error', 'Passwords do not match');
-                return;
-            }
-
-            if (!agree) {
-                showNotification('error', 'Error', 'You must agree to Terms of Service');
-                return;
-            }
-
-            fetch(API_URL + '?action=signup', {
-                method: 'POST',
-                body: JSON.stringify({ FullName: name, Email: email, Password: password })
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    currentUser = data.user;
-                    updateNavigation();
-                    closeSignupModal();
-                    showNotification('success', 'Success!', 'Account created successfully');
-                } else {
-                    showNotification('error', 'Signup Failed', data.message);
-                }
-            });
-        }
-
-        function logout() {
-            fetch(API_URL + '?action=logout', { method: 'POST' })
-                .then(r => r.json())
-                .then(data => {
-                    currentUser = null;
-                    updateNavigation();
-                    showHome();
-                    showNotification('success', 'Logged Out', 'See you soon!');
-                });
-        }
-
-        // ========== FLIGHT SEARCH & BOOKING ==========
-        function startBooking() {
-            bookingData.origin = document.getElementById('origin').value.toUpperCase();
-            bookingData.destination = document.getElementById('destination').value.toUpperCase();
-            bookingData.departDate = document.getElementById('departDate').value;
-            bookingData.serviceType = document.getElementById('serviceType').value;
-            bookingData.passengers = parseInt(document.getElementById('passengers').value);
-            bookingData.cabin = document.getElementById('cabin').value;
-            bookingData.promoCode = document.getElementById('promoCode').value;
-
-            if (!bookingData.origin || !bookingData.destination || !bookingData.departDate) {
-                showNotification('error', 'Error', 'Please fill in all flight details');
-                return;
-            }
-
-            if (!currentUser) {
-                showNotification('warning', 'Login Required', 'Please login to complete booking');
-                showLoginModal();
-                return;
-            }
-
-            // Initialize passenger forms
-            passengerData = [];
-            for (let i = 0; i < bookingData.passengers; i++) {
-                passengerData.push({});
-            }
-
-            // Show booking wizard
-            document.getElementById('flightSummary').textContent =
-                `${bookingData.origin} → ${bookingData.destination} on ${bookingData.departDate} (${bookingData.passengers} passenger${bookingData.passengers > 1 ? 's' : ''})`;
-
-            showBookingStep(1);
-            document.getElementById('bookingModal').classList.add('active');
-        }
-
-        function showBookingStep(step) {
-            document.getElementById('bookingStep1').style.display = step === 1 ? 'block' : 'none';
-            document.getElementById('bookingStep2').style.display = step === 2 ? 'block' : 'none';
-            document.getElementById('bookingStep3').style.display = step === 3 ? 'block' : 'none';
-
-            if (step === 2) {
-                generatePassengerForms();
-            } else if (step === 3) {
-                calculateBookingPrice();
-            }
-        }
-
-        function generatePassengerForms() {
-            const container = document.getElementById('passengerFormsContainer');
-            container.innerHTML = '';
-
-            for (let i = 0; i < bookingData.passengers; i++) {
-                const form = document.createElement('div');
-                form.className = 'card';
-                form.innerHTML = `
-                    <h4 style="margin-bottom: 1rem;">Passenger ${i + 1}</h4>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Full Name</label>
-                            <input type="text" class="pax-name" placeholder="Full Name" value="${passengerData[i].name || ''}">
-                        </div>
-                        <div class="form-group">
-                            <label>Gender</label>
-                            <select class="pax-gender">
-                                <option value="">Select Gender</option>
-                                <option value="M" ${passengerData[i].gender === 'M' ? 'selected' : ''}>Male</option>
-                                <option value="F" ${passengerData[i].gender === 'F' ? 'selected' : ''}>Female</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Date of Birth</label>
-                            <input type="date" class="pax-dob" value="${passengerData[i].dob || ''}">
-                        </div>
-                        <div class="form-group">
-                            <label>Passport Number</label>
-                            <input type="text" class="pax-passport" placeholder="Passport Number" value="${passengerData[i].passport || ''}">
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Phone Number</label>
-                            <input type="tel" class="pax-phone" placeholder="Phone Number" value="${passengerData[i].phone || ''}">
-                        </div>
-                    </div>
-                `;
-                container.appendChild(form);
-            }
-        }
-
-        function nextBookingStep() {
-            const currentStep = document.getElementById('bookingStep1').style.display === 'block' ? 1 :
-                               document.getElementById('bookingStep2').style.display === 'block' ? 2 : 3;
-
-            if (currentStep === 2) {
-                // Validate passenger data
-                const forms = document.querySelectorAll('.pax-name');
-                for (let i = 0; i < forms.length; i++) {
-                    passengerData[i].name = forms[i].value;
-                    passengerData[i].gender = document.querySelectorAll('.pax-gender')[i].value;
-                    passengerData[i].dob = document.querySelectorAll('.pax-dob')[i].value;
-                    passengerData[i].passport = document.querySelectorAll('.pax-passport')[i].value;
-                    passengerData[i].phone = document.querySelectorAll('.pax-phone')[i].value;
-
-                    if (!passengerData[i].name || !passengerData[i].dob || !passengerData[i].passport) {
-                        showNotification('error', 'Error', `Please fill in all details for passenger ${i + 1}`);
-                        return;
-                    }
-                }
-            }
-
-            showBookingStep(currentStep + 1);
-        }
-
-        function prevBookingStep() {
-            const currentStep = document.getElementById('bookingStep1').style.display === 'block' ? 1 :
-                               document.getElementById('bookingStep2').style.display === 'block' ? 2 : 3;
-
-            if (currentStep > 1) {
-                showBookingStep(currentStep - 1);
-            }
-        }
-
-        function calculateBookingPrice() {
-            fetch(API_URL + '?action=getFlightTime&origin=' + bookingData.origin + '&destination=' + bookingData.destination +
-                  '&departDate=' + bookingData.departDate + '&serviceType=' + bookingData.serviceType +
-                  '&promoCode=' + bookingData.promoCode)
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    bookingData.baseFare = data.surgeFare;
-                    const total = (bookingData.baseFare * bookingData.passengers);
-                    document.getElementById('subtotalPrice').textContent = formatPrice(bookingData.baseFare * bookingData.passengers);
-                    document.getElementById('totalPrice').textContent = formatPrice(total);
-
-                    // Check miles
-                    if (currentUser) {
-                        const milesPrice = total * 0.5; // 1 mile = $0.02
-                        document.getElementById('milesRequired').textContent = Math.ceil(milesPrice);
-                        document.getElementById('userMilesAvailable').textContent = currentUser.Miles;
-                    }
-                }
-            });
-        }
-
-        function completeBooking() {
-            if (!document.getElementById('agreeBookingTerms').checked) {
-                showNotification('error', 'Error', 'Please agree to Terms of Service');
-                return;
-            }
-
-            const bookingRefTimestamp = Date.now().toString();
-            const bookingPayload = {
-                bookingRef: bookingRefTimestamp,
-                email: currentUser.Email,
-                origin: bookingData.origin,
-                destination: bookingData.destination,
-                departDate: bookingData.departDate,
-                passengers: bookingData.passengers,
-                cabin: bookingData.cabin,
-                serviceType: bookingData.serviceType,
-                totalPrice: bookingData.baseFare * bookingData.passengers,
-                paymentMethod: document.getElementById('paymentMethod').value,
-                passengerDetails: passengerData
-            };
-
-            fetch(API_URL + '?action=booking', {
-                method: 'POST',
-                body: JSON.stringify(bookingPayload)
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    showNotification('success', 'Booking Confirmed!', `Booking Reference: ${bookingRefTimestamp}`);
-                    closeBookingModal();
-                    loadUserPortalData();
-                } else {
-                    showNotification('error', 'Booking Failed', data.message);
-                }
-            });
-        }
-
-        function closeBookingModal() {
-            document.getElementById('bookingModal').classList.remove('active');
-        }
-
-        // ========== UPDATE FLIGHT INFO ==========
-        function updateFlightInfo() {
-            const origin = document.getElementById('origin').value;
-            const destination = document.getElementById('destination').value;
-            const departDate = document.getElementById('departDate').value;
-
-            if (!origin || !destination || !departDate) return;
-
-            fetch(API_URL + '?action=getFlightTime&origin=' + origin + '&destination=' + destination +
-                  '&departDate=' + departDate + '&serviceType=' + document.getElementById('serviceType').value)
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    document.getElementById('flightDistance').textContent = data.distanceMiles + ' mi';
-                    document.getElementById('flightTime').textContent = data.flightTime + ' hrs';
-                    document.getElementById('baseFare').textContent = formatPrice(data.baseFare);
-                    document.getElementById('weatherInfo').textContent = data.weather?.condition || '--';
-                    document.getElementById('flightInfo').style.display = 'block';
-                }
-            });
-        }
-
-        // ========== CURRENCY & FORMATTING ==========
-        function updateCurrency() {
-            currentCurrency = document.getElementById('currencySelect').value;
-            fetch(API_URL + '?action=getExchangeRate&currency=' + currentCurrency)
-                .then(r => r.json())
-                .then(data => {
-                    if (data.success) {
-                        exchangeRate = data.rate;
-                        updateFlightInfo();
-                    }
-                });
-        }
-
-        function formatPrice(usd) {
-            const converted = usd * exchangeRate;
-            const symbols = {
-                'USD': '$', 'EUR': '€', 'GBP': '£', 'JPY': '¥', 'AUD': 'A$'
-            };
-            const symbol = symbols[currentCurrency] || '$';
-
-            if (currentCurrency === 'JPY') {
-                return symbol + Math.round(converted);
-            }
-            return symbol + converted.toFixed(2);
-        }
-
-        // ========== USER PORTAL ==========
-        function switchPortalTab(tab) {
-            document.querySelectorAll('#portalPage .tab-button').forEach(btn => btn.classList.remove('active'));
-            document.querySelectorAll('#portalPage .tab-content').forEach(tc => tc.classList.remove('active'));
-
-            event.target.classList.add('active');
-            document.getElementById(tab + 'Tab').classList.add('active');
-        }
-
-        function loadUserPortalData() {
-            if (!currentUser) return;
-
-            fetch(API_URL + '?action=getUserBookings&email=' + currentUser.Email)
-                .then(r => r.json())
-                .then(data => {
-                    displayUserBookings(data.bookings || []);
-                });
-
-            fetch(API_URL + '?action=getDocuments')
-                .then(r => r.json())
-                .then(data => {
-                    displayDocuments(data.documents || []);
-                });
-
-            fetch(API_URL + '?action=getEvents')
-                .then(r => r.json())
-                .then(data => {
-                    displayPortalEvents(data.events || []);
-                });
-
-            // Update dashboard stats
-            document.getElementById('totalMiles').textContent = currentUser.Miles;
-            const tier = calculateTier(currentUser.Miles);
-            document.getElementById('memberTier').textContent = tier;
-            document.getElementById('accountStatus').textContent = getStatusDisplay(currentUser.Status);
-
-            // Count bookings
-            fetch(API_URL + '?action=getUserBookings&email=' + currentUser.Email)
-                .then(r => r.json())
-                .then(data => {
-                    document.getElementById('totalBookings').textContent = (data.bookings || []).length;
-                });
-
-            // Load settings
-            document.getElementById('settingName').value = currentUser.FullName || '';
-            document.getElementById('settingEmail').value = currentUser.Email || '';
-        }
-
-        function displayUserBookings(bookings) {
-            const container = document.getElementById('userBookingsContainer');
-            if (bookings.length === 0) {
-                container.innerHTML = '<div class="alert alert-info">No bookings yet. <a href="#" onclick="showHome(); return false;">Book your first flight!</a></div>';
-                return;
-            }
-
-            container.innerHTML = bookings.map(b => `
-                <div class="booking-card">
-                    <div class="booking-header">
-                        <div>
-                            <div class="booking-ref">Booking: ${b.BookingRef}</div>
-                            <div style="font-size: 0.9rem; color: var(--grey-blue);">${b.DepartDate}</div>
-                        </div>
-                        <div class="booking-status ${getStatusClass(b.Status)}">${b.Status}</div>
-                    </div>
-                    <div class="booking-details">
-                        <div class="detail-item">
-                            <div class="detail-label">Route</div>
-                            <div class="detail-value">${b.Origin} → ${b.Destination}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Passengers</div>
-                            <div class="detail-value">${b.Passengers}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Cabin</div>
-                            <div class="detail-value">${b.PaxCabin}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Total Price</div>
-                            <div class="detail-value">${formatPrice(b.TotalPrice)}</div>
-                        </div>
-                    </div>
-                    <div class="booking-actions">
-                        <button class="btn-primary btn-small" onclick="viewEticket('${b.BookingRef}')">View eTicket</button>
-                        <button class="btn-secondary btn-small" onclick="viewBookingDetails('${b.BookingRef}')">Change Details</button>
-                        <button class="btn-danger btn-small" onclick="cancelBooking('${b.BookingRef}')">Cancel</button>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function displayDocuments(documents) {
-            const container = document.getElementById('documentsContainer');
-            if (documents.length === 0) {
-                container.innerHTML = '<div class="alert alert-info">No documents available</div>';
-                return;
-            }
-
-            container.innerHTML = documents.map(d => `
-                <div class="document-card">
-                    <div class="document-info">
-                        <div class="document-title">
-                            ${d.Confidential === 'TRUE' || d.Confidential === true ? '🔒 ' : ''}
-                            ${d.Title}
-                        </div>
-                        ${d.Confidential === 'TRUE' || d.Confidential === true ? '<div class="document-confidential">Confidential - Restricted Access</div>' : ''}
-                    </div>
-                    <button class="btn-primary btn-small" onclick="window.open('${d.Link}')">Access</button>
-                </div>
-            `).join('');
-        }
-
-        function displayPortalEvents(events) {
-            const container = document.getElementById('portalEventsContainer');
-            if (events.length === 0) {
-                container.innerHTML = '<div class="alert alert-info">No upcoming events</div>';
-                return;
-            }
-
-            container.innerHTML = events.map(e => `
-                <div class="event-card">
-                    <div class="event-date">${e.Date}</div>
-                    <div class="event-title">${e.Title}</div>
-                    <div style="color: var(--grey-blue); margin-top: 0.5rem;">${e.Description}</div>
-                </div>
-            `).join('');
-        }
-
-        function viewEticket(bookingRef) {
-            fetch(API_URL + '?action=getBookingDetails&bookingRef=' + bookingRef)
-                .then(r => r.json())
-                .then(data => {
-                    const booking = data.booking;
-                    document.getElementById('eticketContent').innerHTML = `
-                        <div style="text-align: center; margin-bottom: 2rem; border-bottom: 2px solid var(--border); padding-bottom: 1rem;">
-                            <div style="font-size: 2rem; font-weight: bold; color: var(--primary);">✈️ EXPRESS AIRWAYS</div>
-                            <div style="font-size: 1.2rem; color: var(--grey-blue); margin-top: 0.5rem;">E-TICKET</div>
-                        </div>
-                        <div class="form-row" style="margin-bottom: 1.5rem;">
-                            <div>
-                                <div style="color: var(--grey-blue); font-size: 0.9rem;">BOOKING REFERENCE</div>
-                                <div style="font-size: 1.5rem; font-weight: bold;">${booking.BookingRef}</div>
-                            </div>
-                            <div>
-                                <div style="color: var(--grey-blue); font-size: 0.9rem;">BOOKING STATUS</div>
-                                <div style="font-size: 1.5rem; font-weight: bold;">${booking.Status}</div>
-                            </div>
-                        </div>
-                        <div style="background: var(--light-grey); padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem;">
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                                <div>
-                                    <div style="font-size: 0.85rem; color: var(--grey-blue);">FROM</div>
-                                    <div style="font-size: 1.5rem; font-weight: bold;">${booking.Origin}</div>
-                                </div>
-                                <div>
-                                    <div style="font-size: 0.85rem; color: var(--grey-blue);">TO</div>
-                                    <div style="font-size: 1.5rem; font-weight: bold;">${booking.Destination}</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
-                            <div>
-                                <div style="color: var(--grey-blue);">Departure Date</div>
-                                <div style="font-weight: bold;">${booking.DepartDate}</div>
-                            </div>
-                            <div>
-                                <div style="color: var(--grey-blue);">Passengers</div>
-                                <div style="font-weight: bold;">${booking.Passengers}</div>
-                            </div>
-                            <div>
-                                <div style="color: var(--grey-blue);">Cabin Class</div>
-                                <div style="font-weight: bold;">${booking.PaxCabin}</div>
-                            </div>
-                            <div>
-                                <div style="color: var(--grey-blue);">Total Amount</div>
-                                <div style="font-weight: bold;">${formatPrice(booking.TotalPrice)}</div>
-                            </div>
-                        </div>
-                        <div style="border-top: 2px solid var(--border); padding-top: 1.5rem;">
-                            <div style="font-weight: bold; margin-bottom: 1rem;">Passenger Details</div>
-                            <div style="background: var(--light-grey); padding: 1rem; border-radius: 8px;">
-                                <div>${booking.PaxName}</div>
-                                <div style="font-size: 0.9rem; color: var(--grey-blue);">Passport: ${booking.PaxPassport}</div>
-                                <div style="font-size: 0.9rem; color: var(--grey-blue);">DOB: ${booking.PaxDOB}</div>
-                            </div>
-                        </div>
-                    `;
-                    document.getElementById('eticketModal').classList.add('active');
-                });
-        }
-
-        function printEticket() {
-            window.print();
-        }
-
-        function closeEticketModal() {
-            document.getElementById('eticketModal').classList.remove('active');
-        }
-
-        function viewBookingDetails(bookingRef) {
-            showNotification('info', 'Feature', 'Booking details editing coming soon');
-        }
-
-        function cancelBooking(bookingRef) {
-            if (confirm('Are you sure you want to cancel this booking?')) {
-                fetch(API_URL + '?action=cancelBooking&bookingRef=' + bookingRef, { method: 'POST' })
-                    .then(r => r.json())
-                    .then(data => {
-                        if (data.success) {
-                            showNotification('success', 'Booking Cancelled', 'Your booking has been cancelled');
-                            loadUserPortalData();
-                        }
-                    });
-            }
-        }
-
-        function saveSettings() {
-            const settings = {
-                FullName: document.getElementById('settingName').value,
-                Email: currentUser.Email
-            };
-
-            fetch(API_URL + '?action=updateAccount', {
-                method: 'POST',
-                body: JSON.stringify(settings)
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    currentUser.FullName = settings.FullName;
-                    updateNavigation();
-                    showNotification('success', 'Settings Saved', 'Your account settings have been updated');
-                }
-            });
-        }
-
-        // ========== ADMIN PORTAL ==========
-        function switchAdminTab(tab) {
-            document.querySelectorAll('#adminPage .tab-button').forEach(btn => btn.classList.remove('active'));
-            document.querySelectorAll('#adminPage .tab-content').forEach(tc => tc.classList.remove('active'));
-
-            event.target.classList.add('active');
-            document.getElementById(tab + 'Tab').classList.add('active');
-        }
-
-        function loadAdminData() {
-            fetch(API_URL + '?action=getAdminStats')
-                .then(r => r.json())
-                .then(data => {
-                    document.getElementById('adminTotalBookings').textContent = data.totalBookings || 0;
-                    document.getElementById('adminTotalUsers').textContent = data.totalUsers || 0;
-                    document.getElementById('adminTodayBookings').textContent = data.todayBookings || 0;
-                    document.getElementById('adminPendingRequests').textContent = data.pendingRequests || 0;
-                });
-
-            // Load all bookings
-            fetch(API_URL + '?action=getAllBookings')
-
-.then(r => r.json())
-                .then(data => {
-                    const table = document.getElementById('adminBookingsTable');
-                    if (table) {
-                        table.innerHTML = (data.bookings || []).map(b => `
-                            <tr>
-                                <td>${b.BookingRef}</td>
-                                <td>${b.Email}</td>
-                                <td>${b.Origin} → ${b.Destination}</td>
-                                <td>${b.DepartDate}</td>
-                                <td>${b.Status}</td>
-                                <td><button class="btn-small" onclick="approveBooking('${b.BookingRef}')">Approve</button></td>
-                            </tr>
-                        `).join('');
-                    }
-                });
-
-            // Load all users
-            fetch(API_URL + '?action=getAllUsers')
-                .then(r => r.json())
-                .then(data => {
-                    const table = document.getElementById('adminUsersTable');
-                    if (table) {
-                        table.innerHTML = (data.users || []).map(u => `
-                            <tr>
-                                <td>${u.FullName}</td>
-                                <td>${u.Email}</td>
-                                <td>${u.Miles}</td>
-                                <td>${calculateTier(u.Miles)}</td>
-                                <td>${u.Status}</td>
-                                <td><button class="btn-small" onclick="editUser('${u.Email}')">Edit</button></td>
-                            </tr>
-                        `).join('');
-                    }
-                });
-
-            // Load promo codes
-            fetch(API_URL + '?action=getPromoCodes')
-                .then(r => r.json())
-                .then(data => {
-                    const table = document.getElementById('adminPromoTable');
-                    if (table) {
-                        table.innerHTML = (data.promos || []).map(p => `
-                            <tr>
-                                <td>${p.Code}</td>
-                                <td>${p.DiscountPercent}</td>
-                                <td>${p.DiscountDollars}</td>
-                                <td>${p.MaxUses}</td>
-                                <td>${p.UsedCount}</td>
-                                <td>${p.ExpiryDate}</td>
-                                <td>${p.Active}</td>
-                            </tr>
-                        `).join('');
-                    }
-                });
-
-            // Load ancillaries
-            fetch(API_URL + '?action=getAncillariesAll')
-                .then(r => r.json())
-                .then(data => {
-                    const table = document.getElementById('adminAncillariesTable');
-                    if (table) {
-                        table.innerHTML = (data.ancillaries || []).map(a => `
-                            <tr>
-                                <td>${a.Type}</td>
-                                <td>${a.Description}</td>
-                                <td>${a.Price}</td>
-                            </tr>
-                        `).join('');
-                    }
-                });
-
-            // Load documents
-            fetch(API_URL + '?action=getDocuments')
-                .then(r => r.json())
-                .then(data => {
-                    const table = document.getElementById('adminDocumentsTable');
-                    if (table) {
-                        table.innerHTML = (data.documents || []).map(d => `
-                            <tr>
-                                <td>${d.Title}</td>
-                                <td>${d.Confidential === 'TRUE' ? '🔒 Yes' : 'No'}</td>
-                                <td><a href="${d.Link}" target="_blank">Link</a></td>
-                            </tr>
-                        `).join('');
-                    }
-                });
-        }
-
-        // ========== INITIAL DATA LOAD ==========
-        function loadInitialData() {
-            // Load hero
-            fetch(API_URL + '?action=getHero')
-                .then(r => r.json())
-                .then(data => {
-                    if (data.success) {
-                        const heroH1 = document.querySelector('.hero h1');
-                        const heroP = document.querySelector('.hero p');
-                        if (heroH1) heroH1.textContent = data.hero.headline;
-                        if (heroP) heroP.textContent = data.hero.subheader;
-                    }
-                });
-
-            // Load sections
-            fetch(API_URL + '?action=getSections')
-                .then(r => r.json())
-                .then(data => {
-                    displaySections(data.sections || []);
-                });
-
-            // Load events
-            fetch(API_URL + '?action=getEvents')
-                .then(r => r.json())
-                .then(data => {
-                    displayEvents(data.events || []);
-                });
-            // initial system status render
-            pollSystemStatus();
-        }
-
-        // ========== SYSTEM STATUS POLLING ==========
-        function renderSystemStatus(status) {
-            const container = document.getElementById('systemStatusContent');
-            if (!container) return;
-            container.innerHTML = '';
-            const keys = Object.keys(status || {});
-            if (keys.length === 0) return;
-            keys.forEach(k => {
-                if (k === 'timestamp') return;
-                const val = status[k];
-                const el = document.createElement('div');
-                el.style.display = 'flex';
-                el.style.alignItems = 'center';
-                el.style.gap = '0.5rem';
-                el.style.padding = '0.4rem 0.6rem';
-                el.style.borderRadius = '8px';
-                el.style.background = 'rgba(243,244,246,0.7)';
-                el.style.fontWeight = '600';
-                const dot = document.createElement('span');
-                dot.style.width = '10px';
-                dot.style.height = '10px';
-                dot.style.borderRadius = '50%';
-                if ((val || '').toString().toUpperCase().indexOf('OP') === 0 || (val || '').toString().toUpperCase() === 'OPERATIONAL') dot.style.background = '#10b981';
-                else if ((val || '').toString().toUpperCase().indexOf('PEN') === 0 || (val || '').toString().toUpperCase() === 'DEGRADED') dot.style.background = '#f59e0b';
-                else dot.style.background = '#ef4444';
-                const label = document.createElement('div');
-                label.textContent = `${k}: ${val}`;
-                el.appendChild(dot);
-                el.appendChild(label);
-                container.appendChild(el);
-            });
-            // timestamp
-            const ts = status.timestamp || new Date().toISOString();
-            const tsEl = document.createElement('div');
-            tsEl.style.marginLeft = 'auto';
-            tsEl.style.color = '#475569';
-            tsEl.style.fontSize = '0.9rem';
-            tsEl.textContent = 'Updated: ' + new Date(ts).toLocaleString();
-            container.appendChild(tsEl);
-            document.getElementById('systemStatusBar').style.display = 'block';
-        }
-
-        function pollSystemStatus() {
-            fetch(API_URL + '?action=getSystemStatus')
-                .then(r => r.json())
-                .then(data => {
-                    if (!data) return;
-                    const payload = data.status || data;
-                    // backend now persists this to Config; render on frontend
-                    renderSystemStatus(payload);
-                })
-                .catch(e => console.error('System status fetch error', e));
-        }
-
-        function startStatusPolling() {
-            // immediate
-            pollSystemStatus();
-            // then every 30s
-            setInterval(pollSystemStatus, 30000);
-        }
-
-        function displaySections(sections) {
-            const container = document.getElementById('sectionsContainer');
-            if (!container || sections.length === 0) return;
-
-            container.innerHTML = '<h2 style="margin-bottom: 2rem; color: var(--primary);">Featured</h2>' +
-            '<div class="section-grid">' +
-            sections.map(s => `
-                <div class="section-card" onclick="${s.Link ? 'window.open("' + s.Link + '")' : ''}">
-                    <div class="section-image">
-                        <img src="${s.Image || 'https://via.placeholder.com/250x200?text=Flight'}" alt="${s.Title}">
-                    </div>
-                    <div class="section-content">
-                        <div class="section-title">${s.Title}</div>
-                        <div class="section-description">${s.Description}</div>
-                        ${s.Link ? '<button class="btn-primary btn-small">Learn More</button>' : ''}
-                    </div>
-                </div>
-            `).join('') + '</div>';
-        }
-
-        function displayEvents(events) {
-            const container = document.getElementById('eventsContainer');
-            if (!container) return;
-            
-            if (events.length === 0) {
-                container.innerHTML = '<div class="alert alert-info">No upcoming events</div>';
-                return;
-            }
-
-            container.innerHTML = events.map(e => `
-                <div class="event-card">
-                    <div class="event-date">${e.Date}</div>
-                    <div class="event-title">${e.Title}</div>
-                    <div style="color: var(--grey-blue); margin-top: 0.5rem;">${e.Description}</div>
-                </div>
-            `).join('');
-        }
-
-        // ========== HELPERS ==========
-        function calculateTier(miles) {
-            if (miles >= 100000) return 'Gold';
-            if (miles >= 50000) return 'Titanium';
-            if (miles >= 25000) return 'Silver';
-            return 'Basic';
-        }
-
-        function getStatusDisplay(status) {
-            const statusMap = {
-                1: '✓ Good',
-                2: 'ⓘ Booking Suspended',
-                3: '⚠ Contact Suspended',
-                4: '✕ Full Suspension'
-            };
-            return statusMap[status] || 'Unknown';
-        }
-
-        function getStatusClass(status) {
-            if (status === 'CONFIRMED') return 'status-confirmed';
-            if (status === 'PENDING') return 'status-pending';
-            if (status === 'CANCELLED') return 'status-cancelled';
-            return '';
-        }
-
-        function showNotification(type, title, message) {
-            const notif = document.createElement('div');
-            notif.className = 'notification ' + type;
-            notif.innerHTML = `<h4>${title}</h4><p>${message}</p>`;
-            document.body.appendChild(notif);
-            setTimeout(() => notif.remove(), 5000);
-        }
-
-        // Stub functions for admin
-        function approveBooking(ref) {
-            if (!confirm('Approve booking ' + ref + '?')) return;
-            fetch(API_URL, {
-                method: 'POST',
-                body: JSON.stringify({ action: 'admin.approveBooking', bookingRef: ref, status: 'CONFIRMED' })
-            }).then(r => r.json()).then(data => {
-                if (data.success) {
-                    showNotification('success', 'Approved', 'Booking approved');
-                    loadAdminData();
-                } else showNotification('error', 'Error', data.message || 'Unable to approve');
-            }).catch(e => showNotification('error', 'Error', e.toString()));
-        }
-
-        function adminAddPromo() {
-            const code = document.getElementById('promoCodeInput').value.trim();
-            const pct = parseFloat(document.getElementById('promoPercent').value) || 0;
-            const dollars = parseFloat(document.getElementById('promoDollars').value) || 0;
-            const maxUses = parseInt(document.getElementById('promoMaxUses').value, 10) || 999;
-            const expiry = document.getElementById('promoExpiry').value || '';
-            if (!code) { showNotification('error', 'Validation', 'Promo code required'); return; }
-            fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'admin.addPromo', code: code, discountPercent: pct, discountDollars: dollars, maxUses: maxUses, expiryDate: expiry, active: true }) })
-                .then(r => r.json()).then(data => {
-                    if (data.success) { showNotification('success', 'Promo Added', data.message); loadAdminData(); }
-                    else showNotification('error', 'Error', data.message || 'Failed');
-                }).catch(e => showNotification('error', 'Error', e.toString()));
-        }
-
-        function adminAddAncillary() {
-            const type = document.getElementById('ancType').value.trim();
-            const desc = document.getElementById('ancDesc').value.trim();
-            const price = parseFloat(document.getElementById('ancPrice').value) || 0;
-            if (!type) { showNotification('error', 'Validation', 'Type required'); return; }
-            fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'admin.addAncillary', type: type, description: desc, price: price }) })
-                .then(r => r.json()).then(data => {
-                    if (data.success) { showNotification('success', 'Added', data.message); loadAdminData(); }
-                    else showNotification('error', 'Error', data.message || 'Failed');
-                }).catch(e => showNotification('error', 'Error', e.toString()));
-        }
-
-        function editUser(email) {
-            const name = prompt('New full name (leave blank to skip) for ' + email + ':');
-            const role = prompt('New role (leave blank to skip) for ' + email + ':');
-            const miles = prompt('Miles (leave blank to skip):');
-            const payload = { action: 'admin.updateUser', email: email };
-            if (name) payload.fullName = name;
-            if (role) payload.role = role;
-            if (miles) payload.miles = parseInt(miles, 10) || 0;
-            fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) }).then(r => r.json()).then(data => {
-                if (data.success) { showNotification('success', 'User Updated', data.message); loadAdminData(); }
-                else showNotification('error', 'Error', data.message || 'Failed');
-            });
-        }
-    </script>
-</body>
-</html>
+    <div class="booking-step" id="step4">
+      <div style="text-align:center;padding:40px">
+        <div style="font-size:64px;margin-bottom:16px">\u2705</div>
+        <h3 style="font-size:24px;margin-bottom:8px">Booking Confirmed!</h3>
+        <p style="color:var(--text-secondary);margin-bottom:20px">Your booking reference is:</p>
+        <div style="font-size:32px;font-weight:800;color:var(--accent);margin-bottom:8px" id="confirmationRef">—</div>
+        <div style="font-size:20px;font-weight:600;margin-bottom:24px" id="confirmationFare">—</div>
+        <div style="color:var(--text-secondary);margin-bottom:8px">Status: <span style="color:var(--success);font-weight:700" id="confirmationStatus">CONFIRMED</span></div>
+        <div style="color:var(--text-secondary);margin-bottom:24px">Miles earned: <span style="color:#fbbf24;font-weight:700" id="confirmationMiles">0</span></div>
+        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+          <button class="btn btn-primary" onclick="viewETicket(document.getElementById('confirmationRef').textContent)">View eTicket</button>
+          <button class="btn btn-outline" data-section="portal">My Bookings</button>
+          <button class="btn btn-outline" onclick="resetHome()">Book Another</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section style="padding:60px 0" id="sectionsSection">
+  <div class="section-header">
+    <div class="section-tag">Our Services</div>
+    <h2 class="section-title">Explore Express Airways</h2>
+    <p class="section-desc">Comprehensive flight services for every need</p>
+  </div>
+  <div class="sections-grid" id="sectionsGrid">
+    <a href="#" class="section-card" onclick="return false">
+      <div class="section-card-body"><h3>Express Airways</h3><p>Premium global flight services with unmatched reliability.</p></div>
+    </a>
+    <a href="docs/index.html" class="section-card">
+      <div class="section-card-body"><h3>Operations Hub</h3><p>Real-time documentation and operational resources.</p></div>
+    </a>
+    <a href="status/index.html" class="section-card">
+      <div class="section-card-body"><h3>Infrastructure Status</h3><p>Live system monitoring and performance metrics.</p></div>
+    </a>
+    <a href="legal/index.html" class="section-card">
+      <div class="section-card-body"><h3>Legal Portal</h3><p>Judicial resources and compliance documentation.</p></div>
+    </a>
+  </div>
+</section>
+
+<section style="padding:60px 24px;display:none" id="portalSection">
+  <div class="section-header">
+    <div class="section-tag">User Portal</div>
+    <h2 class="section-title" id="portalTitle">Welcome</h2>
+    <p class="section-desc">Manage your bookings, events, documents, and account</p>
+  </div>
+  <div class="tabs" style="max-width:800px;margin:0 auto 32px">
+    <button class="tab portal-tab active" data-portal="bookings">My Bookings</button>
+    <button class="tab portal-tab" data-portal="events">Events</button>
+    <button class="tab portal-tab" data-portal="documents">Documents</button>
+    <button class="tab portal-tab" data-portal="settings">Account</button>
+  </div>
+  <div class="portal-section active" id="bookingsTab"><div id="bookingsList"><div style="text-align:center;padding:20px"><div class="spinner" style="margin:0 auto"></div></div></div></div>
+  <div class="portal-section" id="eventsTab"><div class="events-scroll" id="eventsScroll"><div style="text-align:center;padding:20px;color:var(--text-muted);width:100%"><div class="spinner" style="margin:0 auto"></div></div></div></div>
+  <div class="portal-section" id="documentsTab">
+    <div style="max-width:1200px;margin:0 auto">
+      <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px">Confidential documents require access request (\uD83D\uDD12)</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px" id="docsVault"></div>
+    </div>
+  </div>
+  <div class="portal-section" id="settingsTab">
+    <div style="max-width:600px;margin:0 auto">
+      <div class="card" style="padding:24px">
+        <h3 style="font-size:18px;margin-bottom:20px">Account Settings</h3>
+        <div class="form-group"><label class="form-label">Full Name</label><input class="form-input" id="settingsName"></div>
+        <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="settingsEmail" type="email" disabled></div>
+        <div class="account-field"><span class="account-field-label">Miles Balance</span><span class="account-field-value" id="settingsMiles">0</span></div>
+        <div class="account-field"><span class="account-field-label">Loyalty Tier</span><span class="account-field-value" id="settingsTier">Basic</span></div>
+        <button class="btn btn-primary btn-full" id="settingsSave" style="margin-top:16px">Save Changes</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section style="padding:60px 24px;display:none" id="contactSection">
+  <div class="section-header">
+    <div class="section-tag">Get In Touch</div>
+    <h2 class="section-title">Contact Express Airways</h2>
+    <p class="section-desc">We're here to help with any questions or concerns</p>
+  </div>
+  <div style="max-width:600px;margin:0 auto">
+    <div class="card" style="padding:24px">
+      <div class="form-group"><label class="form-label">Your Name</label><input class="form-input" id="contactName" placeholder="Full name"></div>
+      <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="contactEmail" type="email" placeholder="your@email.com"></div>
+      <div class="form-group"><label class="form-label">Message</label><textarea class="form-input" id="contactMessage" rows="4" placeholder="How can we help you?"></textarea></div>
+      <button class="btn btn-primary btn-full" id="contactSubmit">Send Message</button>
+    </div>
+  </div>
+</section>
+
+<section style="padding:60px 24px;display:none" id="travelAgentSection">
+  <div class="section-header">
+    <div class="section-tag">Partner Program</div>
+    <h2 class="section-title">Third-Party Travel Agent Registration</h2>
+    <p class="section-desc">Register as a travel agent to access exclusive booking privileges</p>
+  </div>
+  <div class="travel-agent-form">
+    <div class="form-group"><label class="form-label">Full Name</label><input class="form-input" id="agentName" placeholder="Your full name"></div>
+    <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="agentEmail" type="email" placeholder="your@agency.com"></div>
+    <div class="form-group"><label class="form-label">Agency Name</label><input class="form-input" id="agentAgency" placeholder="Agency name"></div>
+    <button class="btn btn-primary btn-full" id="agentSubmit">Register as Travel Agent</button>
+    <p style="font-size:12px;color:var(--text-muted);margin-top:12px;text-align:center">By registering, you agree to our partner terms and conditions.</p>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="footer-content">
+    <div class="footer-brand">
+      <div class="footer-logo">
+        <img src="OIG3.jpg" alt="Express Airways" style="height:28px;width:28px;border-radius:50%;object-fit:cover">
+        <span>Express Airways</span>
+      </div>
+      <p class="footer-desc">Next-generation flight services with unified booking, operations, and travel management.</p>
+    </div>
+    <div class="footer-links">
+      <div class="footer-col"><h4>Services</h4><a data-section="booking" style="cursor:pointer">Book a Flight</a><a data-section="portal" style="cursor:pointer">My Portal</a><a href="docs/index.html">Operations Hub</a><a href="status/index.html">Status</a></div>
+      <div class="footer-col"><h4>Company</h4><a data-section="contact" style="cursor:pointer">Contact</a><a data-section="travelAgent" style="cursor:pointer">Travel Agents</a></div>
+      <div class="footer-col"><h4>Platform</h4><a href="legal/index.html">Legal Portal</a><a href="admin/index.html">Admin</a><a href="developer/index.html">Dev Portal</a></div>
+    </div>
+  </div>
+  <div class="footer-bottom"><p>&copy; 2026 Express Airways. All rights reserved.</p></div>
+</footer>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<div class="modal-overlay hidden" id="authModal">
+  <div class="modal modal-sm">
+    <button class="modal-close" onclick="hideModal('authModal')">&times;</button>
+    <div class="modal-header">
+      <h3>Express Airways Account</h3>
+      <p>Sign in or create a new account</p>
+    </div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" data-tab="login">Sign In</button>
+      <button class="auth-tab" data-tab="signup">Register</button>
+    </div>
+    <form id="loginForm" class="active">
+      <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="loginEmail" type="email" placeholder="your@email.com" required></div>
+      <div class="form-group"><label class="form-label">Password</label><input class="form-input" id="loginPassword" type="password" placeholder="Enter password" required></div>
+      <button class="btn btn-primary btn-full" type="submit">Sign In</button>
+    </form>
+    <form id="signupForm" class="hidden">
+      <div class="form-group"><label class="form-label">Full Name</label><input class="form-input" id="signupName" placeholder="Full name" required></div>
+      <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="signupEmail" type="email" placeholder="your@email.com" required></div>
+      <div class="form-group"><label class="form-label">Password</label><input class="form-input" id="signupPassword" type="password" placeholder="Min 8 characters" required></div>
+      <div class="form-group"><label class="form-label">Confirm Password</label><input class="form-input" id="signupConfirm" type="password" placeholder="Repeat password" required></div>
+      <button class="btn btn-primary btn-full" type="submit">Create Account</button>
+    </form>
+  </div>
+</div>
+
+<script>var EA_TRACKER={API_URL:'https://script.google.com/macros/s/AKfycbyfr1k04IqvPSHND5I47ZowM8EAUmBuFR4pKJVWDdsB0ZCr4pMrCLxFME1v70aLbyWo/exec',initialized:false,init(e){if(this.initialized)return;this.initialized=true;this.page=e||window.location.pathname;this.fingerprint=this.getFingerprint();this.getIP().then(ip=>{this.ip=ip;this.send()});this.send()},getFingerprint(){const e=document.createElement('canvas');e.width=200;e.height=50;const t=e.getContext('2d');t.textBaseline='top';t.font='14px Arial';t.fillStyle='#f60';t.fillRect(125,1,62,20);t.fillStyle='#069';t.fillText('EA'+navigator.userAgent.length,2,15);t.fillStyle='rgba(102,204,0,0.7)';t.fillText('ExpressAirways',4,17);const n=e.toDataURL();let r='';try{const i=document.createElement('canvas').getContext('webgl');if(i){const o=i.getExtension('WEBGL_debug_renderer_info');if(o)r=i.getParameter(o.UNMASKED_RENDERER_WEBGL)+'|'+i.getParameter(o.UNMASKED_VENDOR_WEBGL)}}catch(e){}const a=window.screen.width+'x'+window.screen.height+'x'+window.screen.colorDepth,s=Intl.DateTimeFormat().resolvedOptions().timeZone,l=navigator.language,c=navigator.userAgent,u=[n,r,a,s,l,c].join('|||');let d=0;for(let e=0;e<u.length;e++){const t=u.charCodeAt(e);d=(d<<5)-d+t;d|=0}return Math.abs(d).toString(16)},async getIP(){try{const e=await fetch('https://api.ipify.org?format=json',{cache:'no-store'});return(await e.json()).ip}catch(e){return''}},send(){const e={action:'track',fingerprint:this.fingerprint,ip:this.ip,ua:navigator.userAgent,screen:window.screen.width+'x'+window.screen.height+'x'+window.screen.colorDepth,tz:Intl.DateTimeFormat().resolvedOptions().timeZone,lang:navigator.language,page:this.page,user:window.currentUser?(window.currentUser.email||window.currentUser.Email||''):''},t=Object.entries(e).map(([e,t])=>encodeURIComponent(e)+'='+encodeURIComponent(t||'')).join('&');fetch(this.API_URL+'?'+t+'&t='+Date.now(),{mode:'no-cors'}).catch(()=>{})}};</script>
+<script src="js/script.js"></script>
 </body>
 </html>
