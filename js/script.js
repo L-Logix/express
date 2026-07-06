@@ -954,16 +954,5 @@
       if (el) el.addEventListener('change', () => { state.booking[id] = el.checked; });
     });
 
-    createParticles();
   });
-
-  function createParticles() {
-    const container = qs('.hero-particles');
-    if (!container) return;
-    for (let i = 0; i < 30; i++) {
-      const p = document.createElement('div');
-      p.style.cssText = 'position:absolute;width:' + (Math.random()*2+1) + 'px;height:' + (Math.random()*2+1) + 'px;background:var(--accent);border-radius:50%;left:' + Math.random()*100 + '%;opacity:' + (Math.random()*0.4+0.1) + ';animation:particleFloat ' + (Math.random()*15+10) + 's linear infinite;animation-delay:' + Math.random()*10 + 's';
-      container.appendChild(p);
-    }
-  }
 })();

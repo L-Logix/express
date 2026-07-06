@@ -9,7 +9,6 @@
 .dropdown-item { display: flex; align-items: center; gap: 10px; padding: 10px 16px; font-size: 13px; color: var(--text-secondary); transition: var(--transition); cursor: pointer; text-decoration: none; }
 .dropdown-item:hover { background: var(--bg-glass); color: var(--text-primary); }
 
-.hero-particles { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
 @keyframes particleFloat { 0% { transform: translateY(100vh) scale(0); opacity: 0; } 20% { opacity: 0.6; } 80% { opacity: 0.6; } 100% { transform: translateY(-10vh) scale(1); opacity: 0; } }
 
 .hero { min-height: 100vh; padding: var(--nav-height) 24px 0; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }

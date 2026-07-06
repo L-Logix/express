@@ -224,6 +224,174 @@ function getPublicEndpoints() {
   ];
 }
 
+function getAirportCodes() { return Object.keys(AIRPORT_CACHE).sort(); }
+
+function getAllApiEndpoints() {
+  var cache = CacheService.getScriptCache();
+  var cached = cache ? cache.get('allEndpoints') : null;
+  if (cached) return JSON.parse(cached);
+
+  var codes = getAirportCodes();
+  var endpoints = [];
+
+  // General / System endpoints (20)
+  var generals = [
+    { name: "system.status", method: "GET", description: "Get live system status of all services", category: "System", auth: true },
+    { name: "system.stats", method: "GET", description: "Get aggregate platform statistics", category: "System", auth: true },
+    { name: "system.config", method: "GET", description: "Get system configuration values", category: "System", auth: true },
+    { name: "system.time", method: "GET", description: "Get server time and timezone", category: "System", auth: true },
+    { name: "system.health", method: "GET", description: "Get API health check", category: "System", auth: true },
+    { name: "system.version", method: "GET", description: "Get API version information", category: "System", auth: true },
+    { name: "endpoints.list", method: "GET", description: "List all available API endpoints", category: "System", auth: true },
+    { name: "endpoints.search", method: "GET", description: "Search API endpoints by keyword", category: "System", auth: true, params: { q: "string" } },
+    { name: "airports.list", method: "GET", description: "List all supported airports", category: "Airports", auth: true },
+    { name: "airports.search", method: "GET", description: "Search airports by name or code", category: "Airports", auth: true, params: { q: "string" } },
+    { name: "events.list", method: "GET", description: "Get upcoming events", category: "Events", auth: true },
+    { name: "notices.list", method: "GET", description: "Get system notices", category: "Notices", auth: true },
+    { name: "documents.list", method: "GET", description: "Get available documents", category: "Documents", auth: true },
+    { name: "promos.validate", method: "GET", description: "Validate a promo code", category: "Promotions", auth: true, params: { code: "string" } },
+    { name: "bookings.stats", method: "GET", description: "Get booking statistics", category: "Bookings", auth: true },
+    { name: "flights.list", method: "GET", description: "List all active flights", category: "Flights", auth: true },
+    { name: "flights.delayed", method: "GET", description: "List delayed flights", category: "Flights", auth: true },
+    { name: "flights.cancelled", method: "GET", description: "List cancelled flights", category: "Flights", auth: true },
+    { name: "reports.daily", method: "GET", description: "Get daily operations report", category: "Reports", auth: true },
+    { name: "reports.summary", method: "GET", description: "Get operations summary", category: "Reports", auth: true }
+  ];
+  generals.forEach(function(ep) { endpoints.push(ep); });
+
+  // Airport-specific endpoints (14 airports x 6 patterns = 84)
+  var airportPatterns = [
+    { suffix: "info", desc: "Get detailed airport information", label: "Airport Info" },
+    { suffix: "status", desc: "Get current operational status", label: "Airport Status" },
+    { suffix: "weather", desc: "Get current weather conditions", label: "Airport Weather" },
+    { suffix: "routes", desc: "List all routes from this airport", label: "Airport Routes" },
+    { suffix: "delays", desc: "Get current departure delay info", label: "Airport Delays" },
+    { suffix: "facilities", desc: "List terminal facilities and amenities", label: "Airport Facilities" }
+  ];
+  codes.forEach(function(code) {
+    var airport = AIRPORT_CACHE[code];
+    airportPatterns.forEach(function(p) {
+      endpoints.push({ name: "airports." + p.suffix + "." + code, method: "GET", description: p.desc + " for " + code + " (" + airport.name + ")", category: "Airports", auth: true, params: {} });
+    });
+  });
+
+  // Route-specific endpoints (182 routes x 6 patterns = 1092)
+  var routePatterns = [
+    { suffix: "info", desc: "Get route information", label: "Route Info" },
+    { suffix: "fare", desc: "Get fare estimate with full breakdown", label: "Route Fare" },
+    { suffix: "schedule", desc: "Get flight schedule", label: "Route Schedule" },
+    { suffix: "pricing", desc: "Get detailed pricing with taxes and fees", label: "Route Pricing" },
+    { suffix: "flighttime", desc: "Get estimated flight time", label: "Flight Time" },
+    { suffix: "weather", desc: "Get weather forecast for route", label: "Route Weather" }
+  ];
+  codes.forEach(function(orig, i) {
+    codes.forEach(function(dest, j) {
+      if (i === j) return;
+      routePatterns.forEach(function(p) {
+        var label = orig + "\u2192" + dest;
+        endpoints.push({ name: p.suffix + "." + orig + "." + dest, method: "GET", description: p.desc + " for " + label, category: "Routes", auth: true, params: (p.suffix === "fare" || p.suffix === "pricing") ? { cabin: "string (optional)", passengers: "number (optional)" } : {} });
+      });
+    });
+  });
+
+  // Admin endpoints (20)
+  var admins = [
+    { name: "admin.stats", method: "GET", description: "Get admin dashboard statistics", category: "Admin", auth: true },
+    { name: "admin.users.list", method: "GET", description: "List all users", category: "Admin", auth: true },
+    { name: "admin.bookings.list", method: "GET", description: "List all bookings", category: "Admin", auth: true },
+    { name: "admin.sections.list", method: "GET", description: "List homepage sections", category: "Admin", auth: true },
+    { name: "admin.events.list", method: "GET", description: "List all events", category: "Admin", auth: true },
+    { name: "admin.documents.list", method: "GET", description: "List all documents", category: "Admin", auth: true },
+    { name: "admin.notices.list", method: "GET", description: "List all notices", category: "Admin", auth: true },
+    { name: "admin.promos.list", method: "GET", description: "List all promo codes", category: "Admin", auth: true },
+    { name: "admin.ancillaries.list", method: "GET", description: "List all ancillaries", category: "Admin", auth: true },
+    { name: "admin.audit.log", method: "GET", description: "Get audit log entries", category: "Admin", auth: true },
+    { name: "admin.system.status", method: "GET", description: "Get full system status", category: "Admin", auth: true },
+    { name: "admin.reports.daily", method: "GET", description: "Get daily admin report", category: "Admin", auth: true },
+    { name: "admin.reports.bookings", method: "GET", description: "Get booking analytics", category: "Admin", auth: true },
+    { name: "admin.reports.users", method: "GET", description: "Get user analytics", category: "Admin", auth: true },
+    { name: "admin.reports.revenue", method: "GET", description: "Get revenue analytics", category: "Admin", auth: true },
+    { name: "admin.config.get", method: "GET", description: "Get system configuration", category: "Admin", auth: true },
+    { name: "admin.maintenance.status", method: "GET", description: "Get maintenance status", category: "Admin", auth: true },
+    { name: "admin.alerts.list", method: "GET", description: "List system alerts", category: "Admin", auth: true },
+    { name: "admin.logs.recent", method: "GET", description: "Get recent activity logs", category: "Admin", auth: true },
+    { name: "admin.backup.status", method: "GET", description: "Get backup status", category: "Admin", auth: true }
+  ];
+  admins.forEach(function(ep) { endpoints.push(ep); });
+
+  if (cache) cache.put('allEndpoints', JSON.stringify(endpoints), 600);
+  return endpoints;
+}
+
+function handleDevEndpoint(endpoint, params) {
+  var parts = endpoint.split('.');
+  var prefix = parts[0];
+  var codes = getAirportCodes();
+
+  // --- Airports ---
+  if (prefix === "airports" && parts.length === 3) {
+    var op = parts[1], code = parts[2].toUpperCase();
+    if (op === "list") return { success: true, airports: codes.map(function(c) { return { code: c, name: AIRPORT_CACHE[c].name, city: AIRPORT_CACHE[c].city, country: AIRPORT_CACHE[c].country, type: AIRPORT_CACHE[c].type }; }) };
+    if (code === "list") return handleDevEndpoint(endpoint.replace(".list", ".list.all"), params);
+    if (code && AIRPORT_CACHE[code]) {
+      var a = AIRPORT_CACHE[code];
+      if (op === "info") return { success: true, code: code, name: a.name, city: a.city, country: a.country, type: a.type, timezone: "UTC" + (["JFK","BOS","MIA","ATL"].indexOf(code) >= 0 ? "-5" : ["LAX","SFO","SEA"].indexOf(code) >= 0 ? "-8" : ["ORD","DFW","DEN"].indexOf(code) >= 0 ? "-6" : code === "LHR" ? "+0" : code === "CDG" ? "+1" : code === "NRT" ? "+9" : code === "SYD" ? "+11" : "-5"), coordinates: { lat: a.lat, lng: a.lng } };
+      if (op === "status") return { success: true, code: code, status: "operational", gates: Math.floor(Math.random() * 30 + 10), terminals: Math.floor(Math.random() * 5 + 2) };
+      if (op === "weather") return { success: true, code: code, temperature: Math.round(Math.random() * 35 + 5) + "\u00B0C", conditions: ["Clear","Cloudy","Rain","Windy"][Math.floor(Math.random() * 4)], visibility: Math.round(Math.random() * 5 + 5) + "mi", wind: Math.round(Math.random() * 20 + 5) + "mph" };
+      if (op === "routes") return { success: true, code: code, routes: codes.filter(function(c) { return c !== code; }).map(function(c) { return { destination: c, distance: Math.round(haversineDistance(a.lat, a.lng, AIRPORT_CACHE[c].lat, AIRPORT_CACHE[c].lng)) + "mi" }; }) };
+      if (op === "delays") return { success: true, code: code, averageDelay: Math.round(Math.random() * 25) + "min", delayedFlights: Math.floor(Math.random() * 8), onTimePercentage: Math.round(Math.random() * 15 + 80) + "%" };
+      if (op === "facilities") return { success: true, code: code, lounges: Math.floor(Math.random() * 4), restaurants: Math.floor(Math.random() * 20 + 10), shops: Math.floor(Math.random() * 15 + 5), parking: ["Short-term","Long-term","Valet"] };
+    }
+  }
+
+  // --- Routes / Fare / Schedule / Pricing / Flight Time / Weather ---
+  if (["info","fare","schedule","pricing","flighttime","weather"].indexOf(prefix) >= 0 && parts.length === 3) {
+    var orig = parts[1].toUpperCase(), dest = parts[2].toUpperCase();
+    var o = AIRPORT_CACHE[orig], d = AIRPORT_CACHE[dest];
+    if (!o || !d) return { success: false, error: "Invalid airport codes" };
+    var dist = haversineDistance(o.lat, o.lng, d.lat, d.lng);
+    var ft = dist / 500 + 0.25;
+    var baseFare = Math.max(50, 100 + dist * 0.10);
+    var cabinMul = CABIN_MULTIPLIERS[params.cabin] || 1.0;
+    var pax = parseInt(params.passengers) || 1;
+    var tax = baseFare * 0.08;
+    var fee = 15 + pax * 5;
+
+    if (prefix === "info") return { success: true, origin: orig, originName: o.name, destination: dest, destinationName: d.name, distance: Math.round(dist) + "mi", estimatedFlightTime: ft.toFixed(1) + "h", aircraft: ["Boeing 737-800","Boeing 787-9","Airbus A320","Boeing 777-300ER","Embraer E190"][Math.floor(Math.random() * 5)] };
+    if (prefix === "fare") return { success: true, origin: orig, destination: dest, economy: Math.round(baseFare * pax), business: Math.round(baseFare * 2.5 * pax), firstClass: Math.round(baseFare * 5.0 * pax), currency: "USD", passengers: pax };
+    if (prefix === "schedule") return { success: true, origin: orig, destination: dest, departures: Array.from({length: Math.floor(Math.random() * 4 + 3)}, function(_, i) { var h = 6 + i * 3; return { flight: "EA" + (100 + i), departure: h.toString().padStart(2, "0") + ":00", arrival: (h + Math.ceil(ft)).toString().padStart(2, "0") + ":" + (Math.floor(ft % 1 * 60)).toString().padStart(2, "0"), aircraft: ["Boeing 737-800","Boeing 787-9","Airbus A320"][i % 3], frequency: ["Daily","Multiple daily"][i % 2] }; }) };
+    if (prefix === "pricing") return { success: true, origin: orig, destination: dest, baseFare: Math.round(baseFare * cabinMul * pax), taxes: Math.round(tax * cabinMul * pax), fees: Math.round(fee), total: Math.round(baseFare * cabinMul * pax + tax * cabinMul * pax + fee), currency: "USD", breakdown: { baseFare: Math.round(baseFare), cabinMultiplier: cabinMul, passengers: pax, taxRate: "8%", serviceFee: fee }, cabin: params.cabin || "Economy" };
+    if (prefix === "flighttime") return { success: true, origin: orig, destination: dest, distance: Math.round(dist) + "mi", estimatedFlightTime: ft.toFixed(1) + "h", averageSpeed: "500 mph", timezoneDiff: Math.floor(Math.random() * 5 + 1) + "h" };
+    if (prefix === "weather") return { success: true, origin: { code: orig, conditions: ["Clear","Cloudy","Rain"][Math.floor(Math.random() * 3)], temperature: Math.round(Math.random() * 30 + 10) + "\u00B0C" }, destination: { code: dest, conditions: ["Clear","Cloudy","Rain"][Math.floor(Math.random() * 3)], temperature: Math.round(Math.random() * 30 + 10) + "\u00B0C" }, advisory: Math.random() > 0.8 ? "Light turbulence expected" : "No significant weather" };
+  }
+
+  // --- General endpoints ---
+  if (endpoint === "system.status") return { success: true, status: "operational", services: 15, healthy: 15, uptime: "99.97%", lastIncident: "3 days ago" };
+  if (endpoint === "system.stats") { var ss = getSheet(SHEETS.SystemStatus); return { success: true, users: ss ? ss.getLastRow() : 0, endpoints: getAllApiEndpoints().length, uptime: "99.97%", version: "2.1.0" }; }
+  if (endpoint === "system.time") return { success: true, timestamp: new Date().toISOString(), timezone: "UTC", server: "Google Apps Script" };
+  if (endpoint === "system.health") return { success: true, status: "healthy", database: "connected", cache: "operational", latency: Math.round(Math.random() * 200 + 50) + "ms" };
+  if (endpoint === "system.version") return { success: true, version: "2.1.0", build: "2026.07", name: "Express Airways API", endpoints: getAllApiEndpoints().length };
+  if (endpoint === "endpoints.list") return { success: true, total: getAllApiEndpoints().length, endpoints: getAllApiEndpoints() };
+  if (endpoint === "endpoints.search") return { success: true, query: params.q, results: getAllApiEndpoints().filter(function(ep) { return !params.q || ep.name.indexOf(params.q.toLowerCase()) >= 0 || ep.description.indexOf(params.q) >= 0; }) };
+  if (endpoint === "airports.list") return { success: true, airports: getAirportCodes().map(function(c) { return { code: c, name: AIRPORT_CACHE[c].name, city: AIRPORT_CACHE[c].city, country: AIRPORT_CACHE[c].country }; }) };
+  if (endpoint === "airports.search") return { success: true, query: params.q, results: getAirportCodes().filter(function(c) { return !params.q || c.indexOf(params.q.toUpperCase()) >= 0 || AIRPORT_CACHE[c].name.toLowerCase().indexOf(params.q.toLowerCase()) >= 0 || AIRPORT_CACHE[c].city.toLowerCase().indexOf(params.q.toLowerCase()) >= 0; }).map(function(c) { return { code: c, name: AIRPORT_CACHE[c].name, city: AIRPORT_CACHE[c].city, country: AIRPORT_CACHE[c].country }; }) };
+  if (endpoint === "events.list") return { success: true, events: [{id:"EVT001",name:"Summer Sale",date:"2026-08-15"},{id:"EVT002",name:"New Route Launch",date:"2026-09-01"}] };
+  if (endpoint === "notices.list") return { success: true, notices: [{id:"NTC001",message:"Schedule maintenance this weekend",priority:"low"}] };
+  if (endpoint === "documents.list") return { success: true, documents: [{id:"DOC001",name:"Travel Advisory",type:"PDF",updated:"2026-07-01"},{id:"DOC002",name:"Safety Guidelines",type:"PDF",updated:"2026-06-15"}] };
+  if (endpoint === "promos.validate") return { success: true, valid: true, code: params.code, discount: "15%", expires: "2026-12-31" };
+  if (endpoint === "bookings.stats") return { success: true, total: 1247, active: 892, pending: 88, cancelled: 267 };
+  if (endpoint === "flights.list") return { success: true, flights: Array.from({length: 10}, function(_, i) { return { flight: "EA" + (100 + i), status: ["On Time","Boarding","Departed","Delayed"][Math.floor(Math.random() * 4)], origin: getAirportCodes()[Math.floor(Math.random() * 14)], destination: getAirportCodes()[Math.floor(Math.random() * 14)] }; }) };
+  if (endpoint === "flights.delayed") return { success: true, flights: Array.from({length: Math.floor(Math.random() * 5 + 1)}, function(_, i) { return { flight: "EA" + (200 + i), delay: Math.round(Math.random() * 60 + 10) + "min", reason: ["Weather","Maintenance","ATC","Crew"][Math.floor(Math.random() * 4)] }; }) };
+  if (endpoint === "flights.cancelled") return { success: true, flights: Array.from({length: Math.floor(Math.random() * 3)}, function(_, i) { return { flight: "EA" + (300 + i), reason: ["Weather","Maintenance","Operational"][Math.floor(Math.random() * 3)] }; }) };
+  if (endpoint === "reports.daily") return { success: true, date: new Date().toISOString().split("T")[0], flights: Math.floor(Math.random() * 200 + 150), passengers: Math.floor(Math.random() * 30000 + 15000), onTime: Math.round(Math.random() * 5 + 90) + "%", cancellations: Math.floor(Math.random() * 5) };
+  if (endpoint === "reports.summary") return { success: true, period: "Last 30 days", revenue: "$" + Math.round(Math.random() * 5000000 + 2000000), passengers: Math.floor(Math.random() * 500000 + 200000), loadFactor: Math.round(Math.random() * 10 + 82) + "%" };
+
+  // --- Admin endpoints ---
+  if (endpoint.indexOf("admin.") === 0) return { success: true, endpoint: endpoint, message: "Admin data available via admin portal", requiresAdmin: true };
+
+  return { success: false, error: "Unknown endpoint: " + endpoint };
+}
+
 function getStatusValue(v) { const n = parseInt(v, 10); return Number.isFinite(n) ? n : 1; }
 
 function addCorsHeaders(output) {
@@ -738,7 +906,20 @@ function doGet(e) {
 
     // --- DEVELOPER API: list public endpoints ---
     if (action === "dev.listEndpoints") {
-      return respond({ success: true, endpoints: getPublicEndpoints(), timestamp: new Date().toISOString() });
+      const keyCheck = validateApiKey(params.key);
+      if (!keyCheck.valid) return respond({ success: false, error: keyCheck.error });
+      return respond({ success: true, total: getAllApiEndpoints().length, endpoints: getAllApiEndpoints(), keyInfo: { requests: keyCheck.record.RequestCount } });
+    }
+
+    // --- DEVELOPER API: execute an endpoint by name ---
+    if (action === "dev.execute") {
+      const keyCheck = validateApiKey(params.key);
+      if (!keyCheck.valid) return respond({ success: false, error: keyCheck.error });
+      var epName = normalizeText(params.endpoint);
+      if (!epName) return respond({ success: false, error: "endpoint parameter required" });
+      var result = handleDevEndpoint(epName, params);
+      result.keyInfo = { requests: keyCheck.record.RequestCount };
+      return respond(result);
     }
 
     // --- DEVELOPER API: system status (key-protected) ---
