@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Express Airways System Status</title>
+<title>Express Airways Operations Hub</title>
 <script>
 (function(){var t={},n=navigator,s=screen;t.fingerprint=btoa([n.userAgent,n.language,n.platform,s.width+'x'+s.height,s.colorDepth,new Date().getTimezoneOffset()].join('||')).substring(0,32);t.session=Math.random().toString(36).substring(2,15)+Math.random().toString(36).substring(2,15);t.ip='unknown';try{var x=new XMLHttpRequest();x.open('GET','https://api.ipify.org?format=json',false);x.send();if(x.status===200)t.ip=JSON.parse(x.responseText).ip}catch(e){}window.EA_TRACKER=t})();
 </script>
@@ -19,7 +19,7 @@
   <div class="navbar-brand">express <span>airways</span></div>
   <div class="navbar-nav">
     <div class="nav-item">
-      <button class="nav-link">Flight Ops <span class="arrow">&#9662;</span></button>
+      <button class="nav-link active">Flight Ops <span class="arrow">&#9662;</span></button>
       <div class="dropdown">
         <a class="dropdown-item" href="../flights/">Flight Schedules</a>
         <a class="dropdown-item" href="../routes/">Route Maps</a>
@@ -81,27 +81,19 @@
 <div class="loginwall" id="loginwall">
   <div class="loginwall-content">
     <h2>Welcome to Express Airways</h2>
-    <p>Please log in to view System Status</p>
+    <p>Please log in to access the Operations Hub</p>
     <button class="btn btn-primary" onclick="EA_Modal.open('auth-modal')" style="margin-top:8px">Login / Sign Up</button>
   </div>
 </div>
 
 <section class="hero">
-  <h1>System Status</h1>
-  <p>Live monitoring of Express Airways services, systems, and infrastructure</p>
+  <h1>Operations Hub</h1>
+  <p>Real-time operational information — emergency services, medical, security, and fuel resources</p>
 </section>
 
 <div class="container">
-  <div class="status-header">
-    <div class="status-summary" id="status-summary">
-      <span class="status-indicator operational"></span> All Systems Operational
-    </div>
-    <div class="status-live-users" id="status-live-users">&#128100; <span id="online-count">0</span> users online</div>
-  </div>
-  <div class="status-grid" id="status-grid"></div>
-  <div class="status-stats" id="status-stats"></div>
-  <div class="status-timeline" id="status-timeline"><h2>&#128337; Recent Events</h2><div id="timeline-content"></div></div>
-  <div class="status-audit" id="status-audit"><h2>&#128214; Recent Audit Log</h2><div id="audit-content"></div></div>
+  <div class="ops-tabs" id="ops-tabs"></div>
+  <div class="ops-content" id="ops-content"></div>
 </div>
 
 <footer class="footer">

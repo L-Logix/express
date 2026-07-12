@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Express Airways Legal Portal</title>
+<title>Express Airways Account Center</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -19,10 +19,10 @@
 .spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 .navbar{position:fixed;top:0;left:0;right:0;height:var(--nav-height);display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:rgba(8,12,26,0.9);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);z-index:100}
-.nav-brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit}.nav-brand img{height:32px;width:32px;border-radius:50%;object-fit:cover}
+.nav-brand{display:flex;align-items:center;gap:10px;cursor:pointer}.nav-brand img{height:32px;width:32px;border-radius:50%;object-fit:cover}
 .nav-title{font-size:18px;font-weight:700;letter-spacing:-0.5px}
 .nav-badge{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;padding:3px 10px;border-radius:6px;background:var(--accent-gradient);color:#fff}
-.nav-links{display:flex;gap:4px;overflow-x:auto;max-width:60%}
+.nav-links{display:flex;gap:4px;overflow-x:auto;max-width:60%;-ms-overflow-style:none;scrollbar-width:none}
 .nav-links::-webkit-scrollbar{display:none}
 .nav-link{padding:8px 14px;font-size:13px;font-weight:500;color:var(--text-secondary);text-decoration:none;border-radius:var(--radius-sm);transition:var(--transition);white-space:nowrap}
 .nav-link:hover{color:var(--text-primary);background:var(--bg-glass)}
@@ -32,19 +32,20 @@
 .dropdown-menu{position:absolute;top:100%;left:0;min-width:200px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:8px;z-index:200;opacity:0;visibility:hidden;transform:translateY(-8px);transition:all .2s ease;box-shadow:var(--shadow-lg)}
 .dropdown-menu a{display:block;padding:8px 12px;font-size:13px;color:var(--text-secondary);text-decoration:none;border-radius:6px;transition:var(--transition)}
 .dropdown-menu a:hover{background:var(--bg-glass);color:var(--text-primary)}
-.hero{min-height:60vh;padding:var(--nav-height) 24px 0;display:flex;align-items:center;justify-content:center;text-align:center}
-.hero h1{font-size:clamp(28px,5vw,48px);font-weight:800;margin-bottom:12px}
+.hero{min-height:100vh;padding:var(--nav-height) 24px 0;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.hero-content{position:relative;z-index:1;text-align:center;max-width:900px;width:100%;padding:40px 0 60px}
+.hero-headline{font-size:clamp(32px,6vw,56px);font-weight:800;letter-spacing:-1.5px;line-height:1.15;margin-bottom:16px}
 .hero-accent{background:var(--accent-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.hero p{color:var(--text-secondary);font-size:16px;max-width:600px;margin:0 auto}
+.hero-desc{font-size:17px;color:var(--text-secondary);line-height:1.7;margin-bottom:8px}
 .card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px;margin-bottom:16px}
-.card-title{font-size:18px;font-weight:700;margin-bottom:16px}
+.card-title{font-size:16px;font-weight:700;margin-bottom:16px}
 .form-group{margin-bottom:16px}
 .form-label{display:block;font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.8px}
 .form-input{width:100%;padding:11px 14px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg-primary);color:var(--text-primary);font-size:14px;font-family:var(--font-sans);transition:var(--transition)}
 .form-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
 .form-input::placeholder{color:var(--text-muted)}
-textarea.form-input{resize:vertical;min-height:80px}
 select.form-input{cursor:pointer;-webkit-appearance:none;appearance:none;padding-right:36px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14'%3E%3Cpath fill='%2364748b' d='M3 5l4 4 4-4'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+textarea.form-input{resize:vertical;min-height:80px}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:11px 24px;border-radius:var(--radius-sm);font-size:14px;font-weight:700;border:none;cursor:pointer;transition:var(--transition);font-family:var(--font-sans);text-decoration:none;position:relative}
 .btn-primary{background:var(--accent-gradient);color:#fff}
 .btn-primary:hover{box-shadow:0 4px 24px var(--accent-glow);transform:translateY(-1px)}
@@ -62,15 +63,17 @@ select.form-input{cursor:pointer;-webkit-appearance:none;appearance:none;padding
 .auth-tabs{display:flex;gap:4px;background:var(--bg-card);border-radius:var(--radius-sm);padding:3px;margin-bottom:24px}
 .auth-tab{flex:1;text-align:center;padding:10px;font-size:13px;font-weight:600;border:none;background:transparent;color:var(--text-secondary);border-radius:6px;cursor:pointer;transition:var(--transition)}
 .auth-tab.active{background:var(--accent-gradient);color:#fff}
-.tabs{display:flex;gap:4px;background:var(--bg-card);border-radius:var(--radius-sm);padding:3px;margin-bottom:24px;flex-wrap:wrap}
+.tabs{display:flex;gap:4px;background:var(--bg-card);border-radius:var(--radius-sm);padding:3px;margin-bottom:32px;flex-wrap:wrap}
 .tab{padding:10px 20px;font-size:13px;font-weight:600;border:none;background:transparent;color:var(--text-secondary);border-radius:6px;cursor:pointer;transition:var(--transition)}
 .tab:hover{color:var(--text-primary);background:var(--bg-glass)}
 .tab.active{background:var(--accent-gradient);color:#fff}
+.portal-section{display:none}
+.portal-section.active{display:block;animation:fadeIn .3s ease}
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);z-index:1000;display:flex;align-items:center;justify-content:center;padding:24px;opacity:0;visibility:hidden;transition:all .3s ease}
 .modal-overlay:not(.hidden){opacity:1;visibility:visible}
 .modal-overlay:not(.hidden) .modal{transform:translateY(0);opacity:1}
-.modal{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-xl);padding:32px;max-width:560px;width:100%;max-height:90vh;overflow-y:auto;position:relative;transform:translateY(20px);opacity:0;transition:all .3s ease}
-.modal-lg{max-width:720px}
+.modal{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-xl);padding:32px;max-width:480px;width:100%;max-height:90vh;overflow-y:auto;position:relative;transform:translateY(20px);opacity:0;transition:all .3s ease}
+.modal-lg{max-width:640px}
 .modal-close{position:absolute;top:12px;right:16px;background:none;border:none;color:var(--text-muted);font-size:24px;cursor:pointer;padding:4px;line-height:1;transition:var(--transition)}
 .modal-close:hover{color:var(--text-primary)}
 .modal-header{margin-bottom:20px}
@@ -97,24 +100,32 @@ select.form-input{cursor:pointer;-webkit-appearance:none;appearance:none;padding
 .loginwall-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-xl);padding:40px;max-width:440px;width:100%;text-align:center;animation:fadeIn .4s ease}
 .loginwall-card h2{font-size:24px;font-weight:800;margin-bottom:8px}
 .loginwall-card p{color:var(--text-secondary);font-size:14px;margin-bottom:24px}
-.portal-section{display:none;animation:fadeIn .3s ease}
-.portal-section.active{display:block}
-.info-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;font-size:14px}
-.info-label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);margin-bottom:2px}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px}
+.stat-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:24px;text-align:center}
+.stat-number{font-size:36px;font-weight:800;background:var(--accent-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.stat-label{font-size:12px;color:var(--text-muted);margin-top:4px;text-transform:uppercase;letter-spacing:1px}
+.profile-card{display:flex;align-items:center;gap:16px;padding:20px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);margin-bottom:16px}
+.profile-avatar{width:56px;height:56px;border-radius:50%;background:var(--accent-gradient);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;color:#fff}
+.profile-info h3{font-size:18px;font-weight:700;margin-bottom:2px}
+.profile-info p{font-size:13px;color:var(--text-secondary)}
+.miles-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:100px;background:linear-gradient(135deg,rgba(251,191,36,0.15),rgba(251,191,36,0.05));border:1px solid rgba(251,191,36,0.2);font-size:12px;font-weight:600;color:#fbbf24}
+.tier-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:100px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px}
+.tier-basic{background:rgba(100,116,139,0.15);color:#94a3b8;border:1px solid rgba(100,116,139,0.2)}
+.tier-silver{background:rgba(148,163,184,0.15);color:#cbd5e1;border:1px solid rgba(148,163,184,0.2)}
+.tier-titanium{background:rgba(79,140,255,0.15);color:#4f8cff;border:1px solid rgba(79,140,255,0.2)}
+.tier-gold{background:rgba(251,191,36,0.15);color:#fbbf24;border:1px solid rgba(251,191,36,0.2)}
 table{width:100%;border-collapse:collapse;font-size:13px}
 table th{background:var(--bg-secondary);padding:10px 12px;text-align:left;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-secondary);border-bottom:1px solid var(--border)}
 table td{padding:8px 12px;border-bottom:1px solid var(--border)}
 table tr:hover td{background:var(--bg-glass)}
 .table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius-md)}
-.legal-text{font-size:14px;color:var(--text-secondary);line-height:1.8;max-height:400px;overflow-y:auto;padding:16px;background:var(--bg-primary);border:1px solid var(--border);border-radius:var(--radius-md)}
-.legal-text h3{color:var(--text-primary);font-size:16px;margin:16px 0 8px}
-.legal-text p{margin-bottom:12px}
 @media(max-width:768px){
-  .footer-content{grid-template-columns:1fr}
+  .footer-content{grid-template-columns:1fr;gap:24px}
   .footer-links{grid-template-columns:1fr 1fr}
   .nav-links{max-width:40%}
-  .info-grid{grid-template-columns:1fr}
+  .hero{padding:var(--nav-height) 16px 0}
   .modal{padding:24px;margin:12px}
+  .stats-grid{grid-template-columns:repeat(2,1fr)}
 }
 </style>
 </head>
@@ -124,9 +135,9 @@ table tr:hover td{background:var(--bg-glass)}
 
 <div id="loginwall" class="loginwall-overlay">
   <div class="loginwall-card">
-    <div style="font-size:48px;margin-bottom:16px">&#9878;&#65039;</div>
-    <h2>Express Airways Legal Portal</h2>
-    <p>Authentication required to access legal documents and case information.</p>
+    <div style="font-size:48px;margin-bottom:16px">&#9992;&#65039;</div>
+    <h2>Express Airways Account Center</h2>
+    <p>Sign in to manage your profile, bookings, miles, and preferences.</p>
     <div class="auth-tabs">
       <button class="auth-tab active" data-tab="login">Sign In</button>
       <button class="auth-tab" data-tab="register">Register</button>
@@ -134,10 +145,10 @@ table tr:hover td{background:var(--bg-glass)}
     <form id="loginForm">
       <div class="form-group"><input type="email" class="form-input" id="loginEmail" placeholder="Email address" required></div>
       <div class="form-group"><input type="password" class="form-input" id="loginPassword" placeholder="Password" required></div>
-      <button type="submit" class="btn btn-primary btn-full">Authenticate</button>
+      <button type="submit" class="btn btn-primary btn-full">Sign In</button>
     </form>
     <form id="registerForm" class="hidden">
-      <div class="form-group"><input class="form-input" id="regName" placeholder="Full legal name" required></div>
+      <div class="form-group"><input class="form-input" id="regName" placeholder="Full name" required></div>
       <div class="form-group"><input type="email" class="form-input" id="regEmail" placeholder="Email address" required></div>
       <div class="form-group"><input type="password" class="form-input" id="regPassword" placeholder="Password (8+ characters)" required minlength="8"></div>
       <button type="submit" class="btn btn-primary btn-full">Create Account</button>
@@ -146,7 +157,7 @@ table tr:hover td{background:var(--bg-glass)}
 </div>
 
 <nav class="navbar">
-  <a href="../index.html" class="nav-brand"><img src="OIG3.jpg" alt="EA"><span class="nav-title">Express Airways</span><span class="nav-badge">LEGAL</span></a>
+  <a href="../index.html" class="nav-brand"><img src="OIG3.jpg" alt="EA"><span class="nav-title">Express Airways</span><span class="nav-badge">ACCOUNT</span></a>
   <div class="nav-links">
     <div class="dropdown-nav"><a href="#" class="nav-link">Flight Ops</a><div class="dropdown-menu"><a href="../flights/index.html">Flights</a><a href="../routes/index.html">Routes</a><a href="../cargo/index.html">Cargo</a></div></div>
     <div class="dropdown-nav"><a href="#" class="nav-link">Airports</a><div class="dropdown-menu"><a href="../airports/index.html">Airport Guide</a><a href="../maps/index.html">Maps</a><a href="../parking/index.html">Parking</a><a href="../lounge/index.html">Lounges</a><a href="../weather/index.html">Weather</a></div></div>
@@ -164,112 +175,97 @@ table tr:hover td{background:var(--bg-glass)}
       <div class="user-dropdown hidden" id="userDropdown" style="position:absolute;top:calc(100%+8px);right:0;width:220px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:8px;z-index:200;box-shadow:var(--shadow-lg)">
         <div class="dropdown-header" style="padding:8px 12px"><span class="dropdown-name" id="dropdownName" style="font-size:14px;font-weight:600">User</span><span class="dropdown-email" id="dropdownEmail" style="display:block;font-size:12px;color:var(--text-muted);margin-top:2px">user@email.com</span></div>
         <div class="dropdown-divider" style="height:1px;background:var(--border);margin:4px 0"></div>
+        <a class="dropdown-item" id="dropdownProfile" style="display:block;padding:8px 12px;font-size:13px;color:var(--text-secondary);border-radius:6px;cursor:pointer;text-decoration:none">My Profile</a>
+        <a class="dropdown-item" id="dropdownBookings" style="display:block;padding:8px 12px;font-size:13px;color:var(--text-secondary);border-radius:6px;cursor:pointer;text-decoration:none">My Bookings</a>
+        <a class="dropdown-item" id="dropdownMiles" style="display:block;padding:8px 12px;font-size:13px;color:var(--text-secondary);border-radius:6px;cursor:pointer;text-decoration:none">Miles & Loyalty</a>
+        <div class="dropdown-divider" style="height:1px;background:var(--border);margin:4px 0"></div>
         <a class="dropdown-item" id="dropdownLogout" style="display:block;padding:8px 12px;font-size:13px;color:var(--danger);border-radius:6px;cursor:pointer;text-decoration:none">Sign Out</a>
       </div>
     </div>
   </div>
 </nav>
 
-<section class="hero">
-  <div>
-    <h1>Express Airways <span class="hero-accent">Legal Portal</span></h1>
-    <p>Terms of service, privacy policy, active cases, and compliance information</p>
+<section class="hero" style="min-height:60vh">
+  <div class="hero-content">
+    <h1 class="hero-headline">Express Airways <span class="hero-accent">Account Center</span></h1>
+    <p class="hero-desc">Manage your profile, bookings, loyalty miles, and preferences</p>
   </div>
 </section>
 
-<main style="max-width:1100px;margin:-60px auto 40px;padding:0 24px;position:relative;z-index:2">
-  <div class="tabs" id="legalTabs">
-    <button class="tab active" data-tab="terms">Terms of Service</button>
-    <button class="tab" data-tab="privacy">Privacy Policy</button>
-    <button class="tab" data-tab="cases">Active Cases</button>
-    <button class="tab" data-tab="compliance">Compliance</button>
+<main style="max-width:1000px;margin:-60px auto 40px;padding:0 24px;position:relative;z-index:2" id="accountApp">
+  <div class="tabs" id="accountTabs">
+    <button class="tab active" data-tab="profile">Profile</button>
+    <button class="tab" data-tab="bookings">Bookings</button>
+    <button class="tab" data-tab="miles">Miles</button>
+    <button class="tab" data-tab="settings">Settings</button>
   </div>
 
-  <div id="tabTerms" class="portal-section active">
+  <div id="tabProfile" class="portal-section active">
+    <div class="profile-card" id="profileCard">
+      <div class="profile-avatar" id="profileAvatar">U</div>
+      <div class="profile-info">
+        <h3 id="profileName">Loading...</h3>
+        <p id="profileEmail">Loading...</p>
+      </div>
+    </div>
+    <div class="stats-grid" style="grid-template-columns:1fr 1fr">
+      <div class="stat-card"><div class="stat-number" id="milesBalanceDisplay">0</div><div class="stat-label">Miles Balance</div></div>
+      <div class="stat-card"><div id="tierDisplay" class="tier-badge tier-basic" style="display:inline-flex;margin-top:12px;font-size:16px;padding:8px 20px">Basic</div><div class="stat-label" style="margin-top:8px">Loyalty Tier</div></div>
+    </div>
     <div class="card">
-      <div class="card-title">Terms of Service</div>
-      <div class="legal-text">
-        <h3>1. Acceptance of Terms</h3>
-        <p>By accessing and using Express Airways services, you agree to be bound by these Terms of Service. If you do not agree, please do not use our services.</p>
-        <h3>2. Booking and Cancellation</h3>
-        <p>All bookings are subject to availability. Cancellations made within 24 hours of departure may incur fees. Refund policies vary by fare type.</p>
-        <h3>3. Luggage and Baggage</h3>
-        <p>Carry-on baggage must not exceed 7kg (15lbs). Checked baggage allowance is 23kg (50lbs) per passenger for Economy class, 32kg (70lbs) for Business and First Class.</p>
-        <h3>4. Flight Changes</h3>
-        <p>Flight changes are permitted up to 2 hours before departure. Change fees apply based on fare class and destination.</p>
-        <h3>5. Passenger Conduct</h3>
-        <p>Express Airways reserves the right to deny boarding to any passenger who violates safety regulations or exhibits disruptive behavior.</p>
-        <h3>6. Limitation of Liability</h3>
-        <p>Express Airways' liability is limited to the value of the ticket as defined by the Montreal Convention. We are not liable for delays caused by force majeure.</p>
-        <h3>7. Privacy</h3>
-        <p>Your personal data is processed in accordance with our Privacy Policy. By using our services, you consent to data collection for operational purposes.</p>
-        <h3>8. Governing Law</h3>
-        <p>These Terms shall be governed by the laws of the jurisdiction in which Express Airways is registered.</p>
+      <div class="card-title">Account Details</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:14px">
+        <div><span style="color:var(--text-secondary)">Name:</span> <span id="detailName">—</span></div>
+        <div><span style="color:var(--text-secondary)">Email:</span> <span id="detailEmail">—</span></div>
+        <div><span style="color:var(--text-secondary)">Member Since:</span> <span id="detailJoined">—</span></div>
+        <div><span style="color:var(--text-secondary)">Role:</span> <span id="detailRole">—</span></div>
       </div>
     </div>
   </div>
 
-  <div id="tabPrivacy" class="portal-section">
+  <div id="tabBookings" class="portal-section">
     <div class="card">
-      <div class="card-title">Privacy Policy</div>
-      <div class="legal-text">
-        <h3>Information We Collect</h3>
-        <p>We collect personal information including name, email address, phone number, passport details, payment information, and travel preferences when you book a flight or create an account.</p>
-        <h3>How We Use Your Data</h3>
-        <p>Your data is used to process bookings, provide customer support, improve our services, send flight updates, and comply with legal obligations.</p>
-        <h3>Data Sharing</h3>
-        <p>We may share your information with partner airlines, airport authorities, customs and immigration officials, and payment processors as necessary for your travel.</p>
-        <h3>Data Retention</h3>
-        <p>We retain your personal data for as long as your account is active and for a period of 5 years thereafter to comply with legal and regulatory requirements.</p>
-        <h3>Your Rights</h3>
-        <p>You have the right to access, correct, or delete your personal data. You may also object to or restrict certain processing activities. Contact our Data Protection Officer at privacy@expressairways.com.</p>
-        <h3>Security</h3>
-        <p>We implement appropriate technical and organizational measures to protect your personal data against unauthorized access, alteration, disclosure, or destruction.</p>
-        <h3>Cookies</h3>
-        <p>Our website uses essential cookies for authentication and session management. Analytics cookies are used with your consent to improve our services.</p>
-        <h3>Updates</h3>
-        <p>This Privacy Policy may be updated periodically. We will notify you of material changes via email or through our website.</p>
-        <p style="margin-top:16px;color:var(--text-muted)">Last updated: January 2026</p>
+      <div class="card-title">Recent Bookings</div>
+      <div id="bookingsContainer"><p style="color:var(--text-muted);text-align:center;padding:20px">No bookings found.</p></div>
+    </div>
+  </div>
+
+  <div id="tabMiles" class="portal-section">
+    <div class="stats-grid" style="grid-template-columns:repeat(3,1fr)">
+      <div class="stat-card"><div class="stat-number" id="milesTotal">0</div><div class="stat-label">Total Miles</div></div>
+      <div class="stat-card"><div class="stat-number" id="milesEarnedYear">0</div><div class="stat-label">Earned This Year</div></div>
+      <div class="stat-card"><div class="stat-number" id="milesRedeemed">0</div><div class="stat-label">Redeemed</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Tier Benefits</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px">
+        <div class="stat-card"><div class="stat-label">Basic</div><p style="font-size:12px;color:var(--text-secondary);margin-top:4px">1x miles, standard perks</p></div>
+        <div class="stat-card"><div class="stat-label">Silver</div><p style="font-size:12px;color:var(--text-secondary);margin-top:4px">1.25x miles, priority boarding</p></div>
+        <div class="stat-card"><div class="stat-label">Titanium</div><p style="font-size:12px;color:var(--text-secondary);margin-top:4px">1.5x miles, lounge access</p></div>
+        <div class="stat-card"><div class="stat-label">Gold</div><p style="font-size:12px;color:var(--text-secondary);margin-top:4px">2x miles, first class upgrades</p></div>
       </div>
     </div>
   </div>
 
-  <div id="tabCases" class="portal-section">
+  <div id="tabSettings" class="portal-section">
     <div class="card">
-      <div class="card-title">Active Legal Cases</div>
-      <div id="casesContainer"><p style="color:var(--text-muted);text-align:center;padding:20px">Loading cases...</p></div>
+      <div class="card-title">Edit Profile</div>
+      <form id="editProfileForm">
+        <div class="form-group"><label class="form-label">Full Name</label><input class="form-input" id="editName" placeholder="Your name" required></div>
+        <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="editEmail" disabled style="opacity:0.6"></div>
+        <button type="submit" class="btn btn-primary btn-full">Save Changes</button>
+      </form>
     </div>
-  </div>
-
-  <div id="tabCompliance" class="portal-section">
     <div class="card">
-      <div class="card-title">Compliance Information</div>
-      <div class="legal-text">
-        <h3>Regulatory Compliance</h3>
-        <p>Express Airways operates in full compliance with international aviation regulations set forth by ICAO, IATA, and applicable national aviation authorities.</p>
-        <h3>Safety Standards</h3>
-        <p>Our fleet undergoes rigorous maintenance checks following EASA and FAA standards. All crew members are certified and undergo recurrent training.</p>
-        <h3>Data Protection</h3>
-        <p>We comply with GDPR, CCPA, and applicable data protection laws. Our data processing activities are regularly audited by independent third parties.</p>
-        <h3>Anti-Discrimination</h3>
-        <p>Express Airways is committed to providing equal service to all passengers regardless of race, gender, religion, disability, or sexual orientation.</p>
-        <h3>Environmental Compliance</h3>
-        <p>We participate in CORSIA (Carbon Offsetting and Reduction Scheme for International Aviation) and are committed to reducing our carbon footprint.</p>
-        <h3>Reporting</h3>
-        <p>Suspected compliance violations can be reported through our internal whistleblower system. Reports can be made anonymously.</p>
-      </div>
+      <div class="card-title">Notification Preferences</div>
+      <label style="display:flex;align-items:center;gap:10px;padding:8px 0;font-size:14px;cursor:pointer"><input type="checkbox" id="notifBookings" checked> Booking confirmations</label>
+      <label style="display:flex;align-items:center;gap:10px;padding:8px 0;font-size:14px;cursor:pointer"><input type="checkbox" id="notifPromos" checked> Promotions & offers</label>
+      <label style="display:flex;align-items:center;gap:10px;padding:8px 0;font-size:14px;cursor:pointer"><input type="checkbox" id="notifStatus" checked> Flight status alerts</label>
+      <label style="display:flex;align-items:center;gap:10px;padding:8px 0;font-size:14px;cursor:pointer"><input type="checkbox" id="notifMiles" checked> Miles & tier updates</label>
+      <button class="btn btn-primary btn-full" id="saveNotifBtn" style="margin-top:16px">Save Preferences</button>
     </div>
   </div>
 </main>
-
-<div id="caseDetailModal" class="modal-overlay hidden">
-  <div class="modal modal-lg">
-    <button class="modal-close" onclick="document.getElementById('caseDetailModal').classList.add('hidden')">&times;</button>
-    <div class="modal-header"><h3 id="caseModalTitle">Case Details</h3><p id="caseModalMeta">Case information</p></div>
-    <div class="info-grid" id="caseModalGrid"></div>
-    <div style="margin-top:16px"><h4 style="font-size:14px;font-weight:600;margin-bottom:8px">Description</h4><p id="caseModalDesc" style="color:var(--text-secondary);font-size:14px;line-height:1.6">—</p></div>
-  </div>
-</div>
 
 <footer class="footer">
   <div class="footer-content">
@@ -303,26 +299,30 @@ function qs(s){return document.querySelector(s)}
 function qsa(s){return document.querySelectorAll(s)}
 function btnLoading(el){if(!el)return;if(el.dataset._orig===undefined)el.dataset._orig=el.innerHTML;el.classList.add('loading');el.disabled=true}
 function btnReset(el){if(!el)return;el.classList.remove('loading');el.disabled=false}
-async function api(action,extra){var p={action:action};if(extra)for(var k in extra)p[k]=extra[k];var qs2=Object.entries(p).map(function(kv){return encodeURIComponent(kv[0])+'='+encodeURIComponent(kv[1]||'')}).join('&');try{var c=new AbortController();var t=setTimeout(function(){c.abort()},15000);var r=await fetch(EA_API+'?'+qs2+'&t='+Date.now(),{cache:'no-store',signal:c.signal});clearTimeout(t);if(!r.ok)throw new Error('HTTP '+r.status);return await r.json()}catch(e){console.error('EA API Error:',e);return null}}
+async function api(action,extra){var p={action:action};if(extra)for(var k in extra)p[k]=extra[k];var qs2=Object.entries(p).map(function(kv){return encodeURIComponent(kv[0])+'='+encodeURIComponent(kv[1]||'')}).join('&');try{var c=new AbortController();var t=setTimeout(function(){c.abort()},15000);var r=await fetch(EA_API+'?'+qs2+'&t='+Date.now(),{cache:'no-store',signal:c.signal});clearTimeout(t);return await r.json()}catch(e){console.error('EA API Error:',e);return null}}
 function auditEvent(eventType,detail){try{var params={action:'audit.event',event:eventType,page:window.location.pathname,fingerprint:EA_TRACKER.fingerprint,detail:detail||'',user:currentUser?currentUser.email:''};var qs3=Object.entries(params).map(function(kv){return encodeURIComponent(kv[0])+'='+encodeURIComponent(kv[1]||'')}).join('&');fetch(EA_API+'?'+qs3+'&t='+Date.now(),{mode:'no-cors'}).catch(function(e){console.error('Audit failed:',e)})}catch(e){console.error('Audit error:',e)}}
 var currentUser=null;
-function updateLegalAuthUI(){if(currentUser){hide($('loginwall'));show($('userMenu'));show($('logoutBtn'));$('avatarInitials').textContent=(currentUser.name||'U').charAt(0).toUpperCase();$('dropdownName').textContent=currentUser.name||'User';$('dropdownEmail').textContent=currentUser.email||'';loadCases()}else{show($('loginwall'));hide($('userMenu'));hide($('logoutBtn'))}}
-async function login(email,pw){btnLoading(qs('#loginForm button[type="submit"]'));var d=await api('login',{email:email,password:pw});btnReset(qs('#loginForm button[type="submit"]'));if(d&&d.success){currentUser=d.user;EA_AUTH.setUser(d.user);updateLegalAuthUI();Toast('success','Welcome, '+d.user.name);auditEvent('legal_login',email)}else{Toast('error',d&&d.message?d.message:'Login failed')}}
-async function register(name,email,pw){btnLoading(qs('#registerForm button[type="submit"]'));var d=await api('signup',{fullName:name,email:email,password:pw});btnReset(qs('#registerForm button[type="submit"]'));if(d&&d.success){Toast('success','Account created. Please sign in.');switchAuthTab('login')}else{Toast('error',d&&d.message?d.message:'Registration failed')}}
-function logoutUser(){currentUser=null;EA_AUTH.logout();updateLegalAuthUI();Toast('info','Signed out');auditEvent('legal_logout','')}
+function updateAuthUI(){if(currentUser){hide($('loginwall'));show($('userMenu'));show($('logoutBtn'));$('avatarInitials').textContent=(currentUser.name||'U').split(' ').map(function(w){return w[0]}).join('').toUpperCase().slice(0,2);$('dropdownName').textContent=currentUser.name||'User';$('dropdownEmail').textContent=currentUser.email||'';$('profileAvatar').textContent=(currentUser.name||'U').split(' ').map(function(w){return w[0]}).join('').toUpperCase().slice(0,2);$('profileName').textContent='Welcome, '+(currentUser.name||'')+'!';$('profileEmail').textContent=currentUser.email||'';$('detailName').textContent=currentUser.name||'—';$('detailEmail').textContent=currentUser.email||'—';$('detailJoined').textContent=currentUser.joinDate||currentUser.JoinDate||'—';$('detailRole').textContent=currentUser.role||currentUser.Role||'Member';$('editName').value=currentUser.name||'';$('editEmail').value=currentUser.email||'';loadUserData()}else{show($('loginwall'));hide($('userMenu'));hide($('logoutBtn'))}}
+async function login(email,password){btnLoading(qs('#loginForm button[type="submit"]'));var d=await api('login',{email:email,password:password});btnReset(qs('#loginForm button[type="submit"]'));if(d&&d.success){currentUser=d.user;EA_AUTH.setUser(d.user);updateAuthUI();Toast('success','Welcome back, '+d.user.name+'!');auditEvent('login',email)}else{Toast('error',d&&d.message?d.message:'Login failed')}}
+async function register(name,email,password){btnLoading(qs('#registerForm button[type="submit"]'));var d=await api('signup',{fullName:name,email:email,password:password});btnReset(qs('#registerForm button[type="submit"]'));if(d&&d.success){Toast('success','Account created! Please sign in.');switchAuthTab('login')}else{Toast('error',d&&d.message?d.message:'Registration failed')}}
+function logoutUser(){currentUser=null;EA_AUTH.logout();updateAuthUI();Toast('info','Signed out');auditEvent('logout','')}
 function switchAuthTab(tab){qsa('.auth-tab').forEach(function(t){t.classList.toggle('active',t.dataset.tab===tab)});hide($('loginForm'));hide($('registerForm'));show(tab==='login'?$('loginForm'):$('registerForm'))}
-function switchLegalTab(tab){qsa('#legalTabs .tab').forEach(function(t){t.classList.toggle('active',t.dataset.tab===tab)});hide($('tabTerms'));hide($('tabPrivacy'));hide($('tabCases'));hide($('tabCompliance'));show($('tab'+tab.charAt(0).toUpperCase()+tab.slice(1)));auditEvent('legal_tab',tab)}
-async function loadCases(){if(!currentUser){$('casesContainer').innerHTML='<p style="color:var(--text-muted);text-align:center;padding:20px">Sign in to view cases.</p>';return}$('casesContainer').innerHTML='<p style="color:var(--text-muted);text-align:center;padding:20px">Loading cases...</p>';var d=await api('getActiveCases',{});if(d&&d.success&&d.cases&&d.cases.length>0){var html='<div class="table-wrap"><table><thead><tr><th>Title</th><th>Type</th><th>Status</th><th>Filed</th><th>Actions</th></tr></thead><tbody>';d.cases.forEach(function(c){html+='<tr><td>'+esc(c.Title||c.title||'Case')+'</td><td>'+esc(c.Type||c.type||'—')+'</td><td>'+esc(c.Status||c.status||'Active')+'</td><td>'+esc(c.FilingDate||c.filingDate||c.CreatedAt||c.createdAt||'—')+'</td><td><button class="btn btn-sm btn-ghost" onclick="showCaseDetail(\''+esc(String(c.CaseID||c.caseID||''))+'\')">View</button></td></tr>'});html+='</tbody></table></div>';$('casesContainer').innerHTML=html}else{$('casesContainer').innerHTML='<p style="color:var(--text-muted);text-align:center;padding:20px">No active cases found.</p>'}}
-function showCaseDetail(id){if(!id)return;var d=null;var cases=[];try{var raw=document.getElementById('casesContainer').innerHTML;cases=raw.split('</tr>').slice(1,-1)}catch(e){}var modal=$('caseDetailModal');$('caseModalTitle').textContent='Case #'+esc(id);$('caseModalMeta').textContent='Case details from Express Airways legal system';$('caseModalGrid').innerHTML='<div><span class="info-label">Case ID</span><span>'+esc(id)+'</span></div><div><span class="info-label">Status</span><span>Active</span></div><div><span class="info-label">Jurisdiction</span><span>Express Airways Legal</span></div><div><span class="info-label">Filed</span><span>'+new Date().toLocaleDateString()+'</span></div>';$('caseModalDesc').textContent='Detailed case information for case '+id+'. Full case docket available upon authorized request.';modal.classList.remove('hidden');auditEvent('case_view',id)}
-document.addEventListener('DOMContentLoaded',function(){EA_TRACKER.init('/legal/');var savedUser=EA_AUTH.getUser();if(savedUser){currentUser=savedUser;updateLegalAuthUI()}else{show($('loginwall'));hideGlobalLoader()}auditEvent('pageview','/legal/');setInterval(function(){api('heartbeat',{user:currentUser?currentUser.email:''}).catch(function(e){console.error('Heartbeat failed:',e)})},60000);
+function switchTab(tab){qsa('#accountTabs .tab').forEach(function(t){t.classList.toggle('active',t.dataset.tab===tab)});hide($('tabProfile'));hide($('tabBookings'));hide($('tabMiles'));hide($('tabSettings'));show($('tab'+tab.charAt(0).toUpperCase()+tab.slice(1)));auditEvent('tab_switch',tab)}
+async function loadUserData(){var email=currentUser.email||currentUser.Email;if(!email)return;var d=await api('getUser',{email:email});if(d&&d.success&&d.user){var u=d.user;$('milesBalanceDisplay').textContent=(u.miles||0).toLocaleString();$('milesTotal').textContent=(u.miles||0).toLocaleString();$('milesEarnedYear').textContent=(u.milesEarnedYear||u.yearlyMiles||0).toLocaleString();$('milesRedeemed').textContent=(u.milesRedeemed||u.redeemedMiles||0).toLocaleString();var tier=u.loyaltyTier||u.LoyaltyTier||'Basic';var tierEl=$('tierDisplay');tierEl.textContent=tier;tierEl.className='tier-badge tier-'+tier.toLowerCase();currentUser.miles=u.miles;currentUser.loyaltyTier=tier}var b=await api('getUserBookings',{email:email});if(b&&b.success&&b.bookings&&b.bookings.length>0){var html='<div class="table-wrap"><table><thead><tr><th>Ref</th><th>Route</th><th>Date</th><th>Status</th><th>Total</th></tr></thead><tbody>';b.bookings.forEach(function(bk){html+='<tr><td>'+esc(bk.BookingRef||bk.bookingRef||'')+'</td><td>'+esc((bk.Origin||'')+' \u2192 '+(bk.Destination||''))+'</td><td>'+esc(bk.DepartDate||bk.departDate||'')+'</td><td>'+esc(bk.Status||bk.status||'')+'</td><td>'+(bk.TotalPrice||bk.totalPrice||'')+'</td></tr>'});html+='</tbody></table></div>';$('bookingsContainer').innerHTML=html}else{$('bookingsContainer').innerHTML='<p style="color:var(--text-muted);text-align:center;padding:20px">No bookings found.</p>'}}
+document.addEventListener('DOMContentLoaded',function(){EA_TRACKER.init('/account/');var savedUser=EA_AUTH.getUser();if(savedUser){currentUser=savedUser;updateAuthUI()}else{show($('loginwall'));hideGlobalLoader()}auditEvent('pageview','/account/');setInterval(function(){api('heartbeat',{user:currentUser?currentUser.email:''}).catch(function(e){console.error('Heartbeat failed:',e)})},60000);
 var scrollDepth=0;window.addEventListener('scroll',function(){var d=Math.round((window.scrollY+window.innerHeight)/document.documentElement.scrollHeight*100);if(d>scrollDepth+10){scrollDepth=d;auditEvent('scroll',d+'%')}});
 qsa('.auth-tab').forEach(function(t){t.addEventListener('click',function(){switchAuthTab(this.dataset.tab)})});
 $('loginForm').addEventListener('submit',function(e){e.preventDefault();login($('loginEmail').value.trim(),$('loginPassword').value)});
-$('registerForm').addEventListener('submit',function(e){e.preventDefault();var n=$('regName').value.trim();var em=$('regEmail').value.trim();var pw=$('regPassword').value;if(!n||!em||!pw)return Toast('error','Fill in all fields');if(pw.length<8)return Toast('error','Password must be 8+');register(n,em,pw)});
+$('registerForm').addEventListener('submit',function(e){e.preventDefault();var n=$('regName').value.trim();var em=$('regEmail').value.trim();var pw=$('regPassword').value;if(!n||!em||!pw)return Toast('error','Fill in all fields');if(pw.length<8)return Toast('error','Password must be 8+ characters');register(n,em,pw)});
 $('logoutBtn').addEventListener('click',logoutUser);
 $('dropdownLogout').addEventListener('click',logoutUser);
+$('dropdownProfile').addEventListener('click',function(){switchTab('profile')});
+$('dropdownBookings').addEventListener('click',function(){switchTab('bookings')});
+$('dropdownMiles').addEventListener('click',function(){switchTab('miles')});
+qsa('#accountTabs .tab').forEach(function(t){t.addEventListener('click',function(){switchTab(this.dataset.tab)})});
 $('userAvatarBtn').addEventListener('click',function(e){e.stopPropagation();var dd=$('userDropdown');dd.classList.toggle('hidden');if(!dd.classList.contains('hidden')){setTimeout(function(){document.addEventListener('click',function closeDd(){dd.classList.add('hidden');document.removeEventListener('click',closeDd)})},100)}});
-qsa('#legalTabs .tab').forEach(function(t){t.addEventListener('click',function(){switchLegalTab(this.dataset.tab)})});
+$('editProfileForm').addEventListener('submit',async function(e){e.preventDefault();var name=$('editName').value.trim();if(!name)return Toast('error','Name required');btnLoading(qs('#editProfileForm button[type="submit"]'));var d=await api('admin.updateUser',{email:currentUser.email,fullName:name});btnReset(qs('#editProfileForm button[type="submit"]'));if(d&&d.success){currentUser.name=name;EA_AUTH.setUser(currentUser);updateAuthUI();Toast('success','Profile updated');auditEvent('profile_update',name)}else{Toast('error',d&&d.message?d.message:'Update failed')}});
+$('saveNotifBtn').addEventListener('click',function(){var prefs={bookings:$('notifBookings').checked,promos:$('notifPromos').checked,status:$('notifStatus').checked,miles:$('notifMiles').checked};Toast('success','Notification preferences saved');auditEvent('notif_prefs',JSON.stringify(prefs))});
 document.addEventListener('click',function(e){auditEvent('click',e.target.tagName+':'+(e.target.textContent||'').trim().slice(0,50))});
 });
 </script>

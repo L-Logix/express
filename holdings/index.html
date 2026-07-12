@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Express Airways System Status</title>
+<title>Express Airways Holdings</title>
 <script>
 (function(){var t={},n=navigator,s=screen;t.fingerprint=btoa([n.userAgent,n.language,n.platform,s.width+'x'+s.height,s.colorDepth,new Date().getTimezoneOffset()].join('||')).substring(0,32);t.session=Math.random().toString(36).substring(2,15)+Math.random().toString(36).substring(2,15);t.ip='unknown';try{var x=new XMLHttpRequest();x.open('GET','https://api.ipify.org?format=json',false);x.send();if(x.status===200)t.ip=JSON.parse(x.responseText).ip}catch(e){}window.EA_TRACKER=t})();
 </script>
@@ -81,27 +81,25 @@
 <div class="loginwall" id="loginwall">
   <div class="loginwall-content">
     <h2>Welcome to Express Airways</h2>
-    <p>Please log in to view System Status</p>
+    <p>Please log in to access this page</p>
     <button class="btn btn-primary" onclick="EA_Modal.open('auth-modal')" style="margin-top:8px">Login / Sign Up</button>
   </div>
 </div>
 
 <section class="hero">
-  <h1>System Status</h1>
-  <p>Live monitoring of Express Airways services, systems, and infrastructure</p>
+  <h1>Express Airways Holdings</h1>
+  <p>Parent company of Express Airways Group — explore our portfolio of aviation, travel, and technology subsidiaries</p>
 </section>
 
 <div class="container">
-  <div class="status-header">
-    <div class="status-summary" id="status-summary">
-      <span class="status-indicator operational"></span> All Systems Operational
-    </div>
-    <div class="status-live-users" id="status-live-users">&#128100; <span id="online-count">0</span> users online</div>
+  <div class="holdings-search">
+    <input type="text" id="search-input" placeholder="Search holdings by name, ticker, or sector..." oninput="renderHoldings()">
   </div>
-  <div class="status-grid" id="status-grid"></div>
-  <div class="status-stats" id="status-stats"></div>
-  <div class="status-timeline" id="status-timeline"><h2>&#128337; Recent Events</h2><div id="timeline-content"></div></div>
-  <div class="status-audit" id="status-audit"><h2>&#128214; Recent Audit Log</h2><div id="audit-content"></div></div>
+  <div class="holdings-grid" id="holdings-grid"></div>
+  <div class="holding-detail" id="holding-detail" style="display:none">
+    <button class="btn btn-secondary" onclick="closeDetail()" style="margin-bottom:16px">&larr; Back to Holdings</button>
+    <div id="detail-content"></div>
+  </div>
 </div>
 
 <footer class="footer">

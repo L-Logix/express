@@ -7,29 +7,248 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css">
-<style>:root{--bg-primary:#080c1a;--bg-secondary:#0d1230;--bg-card:rgba(13,18,48,0.7);--bg-glass:rgba(255,255,255,0.04);--bg-glass-hover:rgba(255,255,255,0.08);--text-primary:#f0f4ff;--text-secondary:#8892b0;--text-muted:#555d7a;--accent:#4f8cff;--accent-glow:rgba(79,140,255,0.3);--accent-gradient:linear-gradient(135deg,#4f8cff,#00d4aa);--success:#00d4aa;--warning:#fbbf24;--danger:#ef4444;--danger-glow:rgba(239,68,68,0.3);--border:rgba(255,255,255,0.06);--border-active:rgba(79,140,255,0.3);--radius-sm:8px;--radius-md:12px;--radius-lg:20px;--radius-xl:28px;--shadow-sm:0 2px 8px rgba(0,0,0,0.3);--shadow-md:0 8px 32px rgba(0,0,0,0.4);--shadow-lg:0 16px 48px rgba(0,0,0,0.5);--font-sans:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;--font-mono:'JetBrains Mono',monospace;--transition:0.3s cubic-bezier(0.4,0,0.2,1);--nav-height:72px}*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}*:focus-visible{outline:2px solid var(--accent);outline-offset:2px}html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}body{font-family:var(--font-sans);background:var(--bg-primary);color:var(--text-primary);line-height:1.6;overflow-x:hidden;min-height:100vh;-webkit-tap-highlight-color:transparent}a{color:var(--accent);text-decoration:none}a:hover{color:#7ab7ff}::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08);border-radius:3px}::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.15)}.hidden{display:none!important}.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border:none;border-radius:var(--radius-sm);font-size:14px;font-weight:600;cursor:pointer;transition:var(--transition);white-space:nowrap;font-family:var(--font-sans)}.btn-sm{padding:7px 14px;font-size:13px}.btn-lg{padding:14px 28px;font-size:16px;border-radius:var(--radius-md)}.btn-full{width:100%;justify-content:center}.btn-primary{background:var(--accent-gradient);color:#fff;box-shadow:0 0 20px var(--accent-glow)}.btn-primary:hover{transform:translateY(-1px);box-shadow:0 0 30px var(--accent-glow)}.btn-outline{background:transparent;color:var(--text-primary);border:1px solid var(--border)}.btn-outline:hover{background:var(--bg-glass);border-color:var(--accent)}.btn-glass{background:var(--bg-glass);color:var(--text-primary);backdrop-filter:blur(10px);border:1px solid var(--border)}.btn-glass:hover{background:var(--bg-glass-hover);transform:translateY(-1px)}.btn-ghost{background:transparent;color:var(--text-secondary);padding:8px;border-radius:var(--radius-sm)}.btn-ghost:hover{background:var(--bg-glass);color:var(--text-primary)}.btn:disabled{opacity:.4;cursor:not-allowed;transform:none}.card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem;backdrop-filter:blur(10px);transition:var(--transition)}.card:hover{border-color:var(--border-active);box-shadow:var(--shadow-md)}.toast-container{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}.toast{display:flex;align-items:center;gap:10px;padding:14px 20px;border-radius:var(--radius-md);background:var(--bg-secondary);border:1px solid var(--border);box-shadow:var(--shadow-md);font-size:13px;font-weight:500;pointer-events:auto;animation:toastIn .35s ease forwards;max-width:400px;min-width:280px}@keyframes toastIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}@keyframes toastOut{from{opacity:1}to{opacity:0;transform:translateX(100%)}}.toast.success{border-left:3px solid var(--success)}.toast.error{border-left:3px solid var(--danger)}.toast.warning{border-left:3px solid var(--warning)}.toast.info{border-left:3px solid var(--accent)}.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn .2s ease}@keyframes fadeIn{from{opacity:0}to{opacity:1}}.modal{background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-xl);width:100%;max-height:90vh;overflow-y:auto;position:relative;animation:slideUp .3s ease}@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}.modal-sm{max-width:480px;padding:32px}.modal-lg{max-width:700px;padding:32px}.modal-close{position:absolute;top:16px;right:16px;background:none;border:none;color:var(--text-muted);font-size:28px;cursor:pointer;width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:var(--radius-sm);transition:var(--transition);z-index:1}.modal-close:hover{background:var(--bg-glass);color:var(--text-primary)}.modal-header{text-align:center;margin-bottom:24px}.modal-header h3{font-size:22px;font-weight:700;margin-bottom:8px}.modal-header p{font-size:14px;color:var(--text-secondary)}.form-group{margin-bottom:16px}.form-label{display:block;font-size:13px;font-weight:600;color:var(--text-secondary);margin-bottom:6px}.form-input{width:100%;padding:11px 14px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg-primary);color:var(--text-primary);font-size:14px;transition:var(--transition)}.form-input::placeholder{color:var(--text-muted)}.form-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 20px var(--accent-glow)}.spinner{width:32px;height:32px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}.navbar{position:fixed;top:0;left:0;right:0;height:var(--nav-height);display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:rgba(8,12,26,0.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);z-index:100}.nav-brand{display:flex;align-items:center;gap:10px}.nav-title{font-size:18px;font-weight:700;letter-spacing:-.3px}.nav-badge{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;padding:2px 8px;border-radius:4px;background:var(--accent-gradient);color:#fff;line-height:1.4}.nav-links{display:flex;align-items:center;gap:4px}.nav-link{font-size:14px;font-weight:500;color:var(--text-secondary);padding:8px 16px;border-radius:var(--radius-sm);transition:var(--transition);cursor:pointer}.nav-link:hover,.nav-link.active{color:var(--text-primary);background:var(--bg-glass)}.nav-actions{display:flex;align-items:center;gap:8px}.hero{position:relative;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:var(--nav-height) 24px 40px;overflow:hidden}.hero-bg{position:absolute;inset:0;z-index:0}.hero-gradient{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(79,140,255,0.15),transparent),radial-gradient(ellipse 60% 50% at 80% 100%,rgba(0,212,170,0.1),transparent),radial-gradient(ellipse 50% 50% at 20% 100%,rgba(79,140,255,0.08),transparent)}.hero-content{position:relative;z-index:1;text-align:center;max-width:800px}.hero-title{font-size:clamp(36px,7vw,72px);font-weight:800;letter-spacing:-2px;line-height:1.1;margin-bottom:20px}.hero-title-accent{background:var(--accent-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}.hero-subtitle{font-size:18px;color:var(--text-secondary);max-width:600px;margin:0 auto 32px;line-height:1.7}.hero-actions{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;margin-bottom:48px}.hero-stats{display:flex;align-items:center;justify-content:center;gap:48px}.hero-stat{text-align:center}.hero-stat-number{font-size:36px;font-weight:800;letter-spacing:-1px;background:var(--accent-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}.hero-stat-label{display:block;font-size:13px;color:var(--text-muted);margin-top:4px;font-weight:500}.section-header{text-align:center;margin-bottom:56px}.section-tag{display:inline-block;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:12px}.section-title{font-size:36px;font-weight:700;letter-spacing:-1px;margin-bottom:12px}.section-desc{font-size:16px;color:var(--text-secondary);max-width:500px;margin:0 auto}.footer{border-top:1px solid var(--border);padding:60px 24px 24px}.footer-content{max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;gap:48px;flex-wrap:wrap}.footer-brand{max-width:280px}.footer-logo{display:flex;align-items:center;gap:10px;font-size:18px;font-weight:700;margin-bottom:12px}.footer-desc{font-size:13px;color:var(--text-muted);line-height:1.7}.footer-links{display:flex;gap:48px}.footer-col h4{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:16px}.footer-col a{display:block;font-size:14px;color:var(--text-secondary);margin-bottom:10px;transition:var(--transition);cursor:pointer}.footer-col a:hover{color:var(--text-primary)}.footer-bottom{max-width:1200px;margin:40px auto 0;padding-top:20px;border-top:1px solid var(--border);text-align:center;font-size:12px;color:var(--text-muted)}@media(max-width:768px){:root{--nav-height:60px}.nav-links{display:none}.hero-title{font-size:32px}.hero-stats{flex-direction:column;gap:24px}.footer-content{flex-direction:column;gap:32px}.footer-links{flex-wrap:wrap;gap:24px}}</style>
+<style>
+:root {
+  --bg-primary: #080c1a;
+  --bg-secondary: #0d1230;
+  --bg-card: rgba(13, 18, 48, 0.7);
+  --bg-glass: rgba(255, 255, 255, 0.04);
+  --bg-glass-hover: rgba(255, 255, 255, 0.08);
+  --text-primary: #f0f4ff;
+  --text-secondary: #8892b0;
+  --text-muted: #555d7a;
+  --accent: #4f8cff;
+  --accent-glow: rgba(79, 140, 255, 0.3);
+  --accent-gradient: linear-gradient(135deg, #4f8cff, #00d4aa);
+  --success: #00d4aa;
+  --warning: #fbbf24;
+  --danger: #ef4444;
+  --danger-glow: rgba(239, 68, 68, 0.3);
+  --border: rgba(255, 255, 255, 0.06);
+  --border-active: rgba(79, 140, 255, 0.3);
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.3);
+  --shadow-md: 0 8px 32px rgba(0,0,0,0.4);
+  --shadow-lg: 0 16px 48px rgba(0,0,0,0.5);
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --nav-height: 72px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+*:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{font-family:var(--font-sans);background:var(--bg-primary);color:var(--text-primary);line-height:1.6;overflow-x:hidden;min-height:100vh;-webkit-tap-highlight-color:transparent}
+a{color:var(--accent);text-decoration:none}
+a:hover{color:#7ab7ff}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.15)}
+.hidden{display:none!important}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border:none;border-radius:var(--radius-sm);font-size:14px;font-weight:600;cursor:pointer;transition:var(--transition);white-space:nowrap;font-family:var(--font-sans)}
+.btn-sm{padding:7px 14px;font-size:13px}
+.btn-lg{padding:14px 28px;font-size:16px;border-radius:var(--radius-md)}
+.btn-full{width:100%;justify-content:center}
+.btn-primary{background:var(--accent-gradient);color:#fff;box-shadow:0 0 20px var(--accent-glow)}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 0 30px var(--accent-glow)}
+.btn-outline{background:transparent;color:var(--text-primary);border:1px solid var(--border)}
+.btn-outline:hover{background:var(--bg-glass);border-color:var(--accent)}
+.btn-glass{background:var(--bg-glass);color:var(--text-primary);backdrop-filter:blur(10px);border:1px solid var(--border)}
+.btn-glass:hover{background:var(--bg-glass-hover);transform:translateY(-1px)}
+.btn:disabled{opacity:0.4;cursor:not-allowed;transform:none}
+.btn.loading{position:relative;color:transparent!important;pointer-events:none}
+.btn.loading::after{content:'';position:absolute;width:16px;height:16px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:btnSpin .6s linear infinite;top:50%;left:50%;margin:-8px 0 0 -8px}
+@keyframes btnSpin{to{transform:rotate(360deg)}}
+.card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem;backdrop-filter:blur(10px);transition:var(--transition)}
+.card:hover{border-color:var(--border-active);box-shadow:var(--shadow-md)}
+.toast-container{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{display:flex;align-items:center;gap:10px;padding:14px 20px;border-radius:var(--radius-md);background:var(--bg-secondary);border:1px solid var(--border);box-shadow:var(--shadow-md);font-size:13px;font-weight:500;pointer-events:auto;animation:toastIn 0.35s ease forwards;max-width:400px;min-width:280px}
+@keyframes toastIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes toastOut{from{opacity:1}to{opacity:0;transform:translateX(100%)}}
+.toast.success{border-left:3px solid var(--success)}
+.toast.error{border-left:3px solid var(--danger)}
+.toast.warning{border-left:3px solid var(--warning)}
+.toast.info{border-left:3px solid var(--accent)}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn 0.2s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal{background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-xl);width:100%;max-height:90vh;overflow-y:auto;position:relative;animation:slideUp 0.3s ease}
+@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal-sm{max-width:480px;padding:32px}
+.modal-close{position:absolute;top:16px;right:16px;background:none;border:none;color:var(--text-muted);font-size:28px;cursor:pointer;width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:var(--radius-sm);transition:var(--transition);z-index:1}
+.modal-close:hover{background:var(--bg-glass);color:var(--text-primary)}
+.modal-header{text-align:center;margin-bottom:24px}
+.modal-header h3{font-size:22px;font-weight:700;margin-bottom:8px}
+.modal-header p{font-size:14px;color:var(--text-secondary)}
+.form-group{margin-bottom:16px}
+.form-label{display:block;font-size:13px;font-weight:600;color:var(--text-secondary);margin-bottom:6px}
+.form-input{width:100%;padding:11px 14px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg-primary);color:var(--text-primary);font-size:14px;transition:var(--transition)}
+.form-input::placeholder{color:var(--text-muted)}
+.form-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 20px var(--accent-glow)}
+.spinner{width:32px;height:32px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto}
+@keyframes spin{to{transform:rotate(360deg)}}
+#globalLoader{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(8,12,26,0.92);backdrop-filter:blur(12px);display:flex;align-items:center;justify-content:center;z-index:99999;transition:opacity 0.5s ease,visibility 0.5s ease}
+#globalLoader.fade-out{opacity:0;visibility:hidden;pointer-events:none}
+.loader-content{text-align:center}
+.loader-text{margin-top:20px;color:var(--text-muted);font-size:14px;letter-spacing:1px;text-transform:uppercase}
+.navbar{position:fixed;top:0;left:0;right:0;height:var(--nav-height);display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:rgba(8,12,26,0.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);z-index:100}
+.nav-brand{display:flex;align-items:center;gap:10px;cursor:pointer;text-decoration:none;color:inherit}
+.nav-title{font-size:18px;font-weight:700;letter-spacing:-0.3px}
+.nav-links{display:flex;align-items:center;gap:4px}
+.nav-item{position:relative}
+.nav-link{font-size:14px;font-weight:500;color:var(--text-secondary);padding:8px 14px;border-radius:var(--radius-sm);transition:var(--transition);cursor:pointer;display:flex;align-items:center;gap:4px}
+.nav-link:hover,.nav-link.active{color:var(--text-primary);background:var(--bg-glass)}
+.nav-link svg{width:12px;height:12px;transition:var(--transition)}
+.nav-item:hover .nav-link svg{transform:rotate(180deg)}
+.nav-actions{display:flex;align-items:center;gap:8px}
+.nav-dropdown{position:absolute;top:calc(100% + 8px);left:0;min-width:200px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-md);box-shadow:var(--shadow-lg);z-index:50;padding:8px;opacity:0;visibility:hidden;transform:translateY(-8px);transition:all 0.2s ease}
+.nav-item:hover .nav-dropdown{opacity:1;visibility:visible;transform:translateY(0)}
+.nav-dropdown a{display:flex;align-items:center;gap:8px;padding:10px 14px;font-size:13px;color:var(--text-secondary);border-radius:var(--radius-sm);transition:var(--transition);text-decoration:none}
+.nav-dropdown a:hover{background:var(--bg-glass);color:var(--text-primary)}
+.nav-hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:8px;background:none;border:none}
+.nav-hamburger span{width:24px;height:2px;background:var(--text-primary);border-radius:2px;transition:var(--transition)}
+.user-menu{position:relative}
+.user-avatar{display:flex;align-items:center;gap:6px;padding:4px 10px 4px 4px;border-radius:100px;background:var(--bg-glass);border:1px solid var(--border);cursor:pointer}
+.avatar-initials{width:28px;height:28px;border-radius:50%;background:var(--accent-gradient);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff}
+.user-dropdown{position:absolute;top:calc(100% + 8px);right:0;width:240px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-md);box-shadow:var(--shadow-lg);z-index:50;animation:slideUp 0.2s ease}
+.dropdown-header{padding:14px 16px}
+.dropdown-name{display:block;font-size:14px;font-weight:600}
+.dropdown-email{display:block;font-size:12px;color:var(--text-muted);margin-top:2px}
+.dropdown-divider{height:1px;background:var(--border);margin:0}
+.dropdown-item{display:block;padding:10px 16px;font-size:13px;color:var(--text-secondary);transition:var(--transition);cursor:pointer;text-decoration:none}
+.dropdown-item:hover{background:var(--bg-glass);color:var(--text-primary)}
+.loginwall{position:fixed;inset:0;background:rgba(8,12,26,0.6);backdrop-filter:blur(12px);z-index:150;display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn 0.6s ease}
+.loginwall-content{text-align:center;max-width:440px;width:100%}
+.loginwall-brand{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:24px}
+.loginwall-brand img{width:48px;height:48px;border-radius:50%;object-fit:cover}
+.loginwall-brand span{font-size:24px;font-weight:800;letter-spacing:-0.5px}
+.loginwall h2{font-size:28px;font-weight:700;margin-bottom:8px}
+.loginwall p{font-size:15px;color:var(--text-secondary);margin-bottom:32px;line-height:1.6}
+.loginwall .auth-tabs{display:flex;gap:4px;background:var(--bg-card);border-radius:var(--radius-sm);padding:3px;margin-bottom:24px}
+.loginwall .auth-tab{flex:1;text-align:center;padding:10px;font-size:13px;font-weight:600;border:none;background:transparent;color:var(--text-secondary);border-radius:6px;cursor:pointer;transition:var(--transition)}
+.loginwall .auth-tab.active{background:var(--accent-gradient);color:#fff}
+.hero{position:relative;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:var(--nav-height) 24px 40px;overflow:hidden}
+.hero-bg{position:absolute;inset:0;z-index:0}
+.hero-gradient{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(79,140,255,0.15),transparent),radial-gradient(ellipse 60% 50% at 80% 100%,rgba(0,212,170,0.1),transparent),radial-gradient(ellipse 50% 50% at 20% 100%,rgba(79,140,255,0.08),transparent)}
+.hero-content{position:relative;z-index:1;text-align:center;max-width:900px;width:100%;display:flex;flex-direction:column;align-items:center;gap:36px;padding:40px 0 60px}
+.hero-text-area{max-width:650px}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 16px;border-radius:100px;background:var(--bg-glass);border:1px solid var(--border);font-size:13px;font-weight:600;color:var(--text-secondary);margin-bottom:20px}
+.pulse-dot{width:6px;height:6px;border-radius:50%;background:var(--success);display:inline-block;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+.hero-headline{font-size:clamp(32px,6vw,56px);font-weight:800;letter-spacing:-1.5px;line-height:1.15;margin-bottom:16px}
+.hero-accent{background:var(--accent-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-desc{font-size:17px;color:var(--text-secondary);line-height:1.7;margin-bottom:8px}
+.hero-stats{display:flex;align-items:center;justify-content:center;gap:48px;flex-wrap:wrap}
+.hero-stat{text-align:center}
+.hero-stat-number{font-size:36px;font-weight:800;letter-spacing:-1px;background:var(--accent-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-stat-label{display:block;font-size:13px;color:var(--text-muted);margin-top:4px;font-weight:500}
+.section-header{text-align:center;margin-bottom:56px}
+.section-tag{display:inline-block;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:12px}
+.section-title{font-size:36px;font-weight:700;letter-spacing:-1px;margin-bottom:12px}
+.section-desc{font-size:16px;color:var(--text-secondary);max-width:500px;margin:0 auto}
+.sections-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:24px;max-width:1200px;margin:0 auto;padding:0 24px 60px}
+.section-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;transition:all 0.4s cubic-bezier(0.4,0,0.2,1);cursor:pointer;text-decoration:none;color:var(--text-primary);display:block}
+.section-card:hover{border-color:var(--border-active);transform:translateY(-4px);box-shadow:var(--shadow-lg)}
+.section-card-body{padding:24px;text-align:center}
+.section-card-body .card-icon{font-size:40px;margin-bottom:12px}
+.section-card-body h3{font-size:18px;font-weight:600;margin-bottom:8px}
+.section-card-body p{font-size:14px;color:var(--text-secondary);line-height:1.6}
+.footer{border-top:1px solid var(--border);padding:60px 24px 24px}
+.footer-content{max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;gap:48px;flex-wrap:wrap}
+.footer-brand{max-width:280px}
+.footer-logo{display:flex;align-items:center;gap:10px;font-size:18px;font-weight:700;margin-bottom:12px}
+.footer-logo img{width:28px;height:28px;border-radius:50%;object-fit:cover}
+.footer-desc{font-size:13px;color:var(--text-muted);line-height:1.7}
+.footer-links{display:flex;gap:48px;flex-wrap:wrap}
+.footer-col h4{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:16px}
+.footer-col a{display:block;font-size:14px;color:var(--text-secondary);margin-bottom:10px;transition:var(--transition);cursor:pointer;text-decoration:none}
+.footer-col a:hover{color:var(--text-primary)}
+.footer-bottom{max-width:1200px;margin:40px auto 0;padding-top:20px;border-top:1px solid var(--border);text-align:center;font-size:12px;color:var(--text-muted)}
+.auth-tabs{display:flex;gap:4px;background:var(--bg-card);border-radius:var(--radius-sm);padding:3px;margin-bottom:24px}
+.auth-tab{flex:1;text-align:center;padding:10px;font-size:13px;font-weight:600;border:none;background:transparent;color:var(--text-secondary);border-radius:6px;cursor:pointer;transition:var(--transition)}
+.auth-tab.active{background:var(--accent-gradient);color:#fff}
+@media(max-width:768px){
+  :root{--nav-height:60px}
+  .nav-links{display:none}
+  .nav-hamburger{display:flex}
+  .nav-links.open{display:flex;flex-direction:column;position:fixed;top:var(--nav-height);left:0;right:0;background:rgba(8,12,26,0.98);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:16px;max-height:calc(100vh - var(--nav-height));overflow-y:auto}
+  .nav-links.open .nav-item{width:100%}
+  .nav-links.open .nav-dropdown{position:static;opacity:1;visibility:visible;transform:none;box-shadow:none;border:none;padding:0;margin-top:4px;background:transparent}
+  .hero-headline{font-size:32px}
+  .hero-stats{flex-direction:column;gap:24px}
+  .footer-content{flex-direction:column;gap:32px}
+  .footer-links{flex-wrap:wrap;gap:24px}
+  .sections-grid{grid-template-columns:1fr}
+}
+</style>
 </head>
 <body>
 
+<div id="globalLoader"><div class="loader-content"><div class="spinner"></div><p class="loader-text">Connecting to Express Airways servers...</p></div></div>
+
 <nav class="navbar">
-  <a href="#" class="nav-brand" data-section="home" style="text-decoration:none;color:inherit;cursor:pointer">
+  <a href="/" class="nav-brand">
     <img src="OIG3.jpg" alt="Express Airways" style="height:32px;width:32px;border-radius:50%;object-fit:cover">
     <span class="nav-title">Express Airways</span>
   </a>
-  <div class="nav-links">
-    <a class="nav-link active" data-section="home">Home</a>
-    <a class="nav-link" data-section="portal">My Portal</a>
-    <a class="nav-link" data-section="contact">Contact</a>
-    <a class="nav-link" data-section="travelAgent">Travel Agents</a>
-    <a class="nav-link" href="docs/index.html">Ops Hub</a>
-    <a class="nav-link" href="status/index.html">Status</a>
-    <a class="nav-link" href="legal/index.html">Legal</a>
-    <a class="nav-link" href="admin/index.html">Admin</a>
-    <a class="nav-link" href="developer/index.html">Dev</a>
+  <button class="nav-hamburger" id="hamburgerBtn" aria-label="Toggle menu">
+    <span></span><span></span><span></span>
+  </button>
+  <div class="nav-links" id="navLinks">
+    <div class="nav-item">
+      <span class="nav-link">Flight Ops <svg viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></span>
+      <div class="nav-dropdown">
+        <a href="flights/index.html">&#9992; Flight Search</a>
+        <a href="flights/index.html">&#128197; Schedule</a>
+        <a href="flights/index.html">&#128176; Pricing</a>
+      </div>
+    </div>
+    <div class="nav-item">
+      <span class="nav-link">Airports <svg viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></span>
+      <div class="nav-dropdown">
+        <a href="airports/index.html">&#127758; Airport Directory</a>
+        <a href="airports/index.html">&#128204; Maps</a>
+        <a href="airports/index.html">&#128200; Statistics</a>
+      </div>
+    </div>
+    <div class="nav-item">
+      <span class="nav-link">Travel <svg viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></span>
+      <div class="nav-dropdown">
+        <a href="travel/index.html">&#127979; Destinations</a>
+        <a href="travel/index.html">&#128716; Hotels</a>
+        <a href="travel/index.html">&#128247; Guides</a>
+      </div>
+    </div>
+    <div class="nav-item">
+      <span class="nav-link">Company <svg viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></span>
+      <div class="nav-dropdown">
+        <a href="holdings/index.html">&#127970; Holdings</a>
+        <a href="holdings/index.html">&#128200; Financials</a>
+        <a href="holdings/index.html">&#128101; Leadership</a>
+      </div>
+    </div>
+    <div class="nav-item">
+      <span class="nav-link">Account <svg viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></span>
+      <div class="nav-dropdown">
+        <a href="account/index.html">&#128100; Profile</a>
+        <a href="account/index.html">&#128179; Bookings</a>
+        <a href="account/index.html">&#11088; Loyalty</a>
+      </div>
+    </div>
+    <div class="nav-item">
+      <span class="nav-link">More <svg viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></span>
+      <div class="nav-dropdown">
+        <a href="status/index.html">&#128200; System Status</a>
+        <a href="documents/index.html">&#128196; Documents</a>
+        <a href="ops/index.html">&#9881; Operations</a>
+        <a href="legal/index.html">&#9878; Legal</a>
+        <a href="developer/index.html">&#128187; Developer</a>
+      </div>
+    </div>
   </div>
   <div class="nav-actions">
-    <div class="miles-badge hidden" id="milesDisplay">0 miles</div>
     <div class="user-menu hidden" id="userMenu">
       <div class="user-avatar">
         <div class="avatar-initials" id="avatarInitials">U</div>
@@ -39,11 +258,10 @@
         <div class="dropdown-header">
           <span class="dropdown-name" id="dropdownName">User</span>
           <span class="dropdown-email" id="dropdownEmail">user@email.com</span>
-          <span style="display:block;font-size:11px;color:var(--accent);margin-top:4px" id="tierDisplay">Basic</span>
         </div>
         <div class="dropdown-divider"></div>
-        <a class="dropdown-item" data-section="portal">My Bookings</a>
-        <a class="dropdown-item" data-section="settings">Account Settings</a>
+        <a class="dropdown-item" href="account/index.html">My Account</a>
+        <a class="dropdown-item" href="account/index.html">My Bookings</a>
         <div class="dropdown-divider"></div>
         <a class="dropdown-item" id="logoutBtn" style="color:var(--danger)">Sign Out</a>
       </div>
@@ -53,13 +271,39 @@
   </div>
 </nav>
 
+<div class="loginwall hidden" id="loginwall">
+  <div class="loginwall-content">
+    <div class="loginwall-brand">
+      <img src="OIG3.jpg" alt="Express Airways">
+      <span>Express Airways</span>
+    </div>
+    <h2>Welcome to Express Airways</h2>
+    <p>Sign in to access global flight services, real-time operations, and your personalized dashboard.</p>
+    <div class="auth-tabs">
+      <button class="auth-tab active" data-tab="login">Sign In</button>
+      <button class="auth-tab" data-tab="signup">Register</button>
+    </div>
+    <form id="loginwallLoginForm">
+      <div class="form-group"><input class="form-input" id="loginwallEmail" type="email" placeholder="Email" required style="text-align:center"></div>
+      <div class="form-group"><input class="form-input" id="loginwallPassword" type="password" placeholder="Password" required style="text-align:center"></div>
+      <button class="btn btn-primary btn-full btn-lg" type="submit">Sign In</button>
+    </form>
+    <form id="loginwallSignupForm" class="hidden">
+      <div class="form-group"><input class="form-input" id="loginwallName" placeholder="Full Name" required style="text-align:center"></div>
+      <div class="form-group"><input class="form-input" id="loginwallEmail2" type="email" placeholder="Email" required style="text-align:center"></div>
+      <div class="form-group"><input class="form-input" id="loginwallPassword2" type="password" placeholder="Password (min 8 chars)" required style="text-align:center"></div>
+      <button class="btn btn-primary btn-full btn-lg" type="submit">Create Account</button>
+    </form>
+  </div>
+</div>
+
 <section class="hero" id="heroSection">
   <div class="hero-bg" id="heroBg"></div>
   <div class="hero-gradient"></div>
   <div class="hero-content">
     <div class="hero-text-area">
       <div class="hero-badge">
-        <span class="pulse-dot" style="width:6px;height:6px;border-radius:50%;background:var(--success);display:inline-block;animation:pulse 2s infinite"></span>
+        <span class="pulse-dot"></span>
         Express Airways NextGen
       </div>
       <h1 class="hero-headline">
@@ -68,248 +312,60 @@
       </h1>
       <p class="hero-desc" id="heroSub">Professional flight services worldwide. Book, manage, and fly with confidence.</p>
     </div>
-    <div class="booking-step" id="step1">
-    <div class="booking-card" id="bookingCard">
-      <div class="trip-tabs">
-        <button class="trip-tab active" data-trip="round" onclick="setTripType('round')">Round Trip</button>
-        <button class="trip-tab" data-trip="oneway" onclick="setTripType('oneway')">One Way</button>
-      </div>
-      <div class="booking-fields">
-        <div class="bf-row">
-          <div class="bf-group bf-origin">
-            <label class="bf-label">From</label>
-            <input class="bf-input" id="originInput" placeholder="City or airport" list="originList" autocomplete="off">
-            <datalist id="originList"></datalist>
-          </div>
-          <button class="bf-swap" onclick="swapAirports()" title="Swap airports">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
-          </button>
-          <div class="bf-group bf-dest">
-            <label class="bf-label">To</label>
-            <input class="bf-input" id="destInput" placeholder="City or airport" list="destList" autocomplete="off">
-            <datalist id="destList"></datalist>
-          </div>
-        </div>
-        <div class="bf-row">
-          <div class="bf-group bf-date">
-            <label class="bf-label">Depart</label>
-            <input class="bf-input" type="date" id="dateInput">
-          </div>
-          <div class="bf-group bf-date" id="returnDateGroup">
-            <label class="bf-label">Return</label>
-            <input class="bf-input" type="date" id="returnDateInput">
-          </div>
-        </div>
-        <div class="bf-row">
-          <div class="bf-group bf-pax">
-            <label class="bf-label">Passengers</label>
-            <select class="bf-input" id="paxInput"><option value="1">1 Passenger</option><option value="2">2 Passengers</option><option value="3">3 Passengers</option><option value="4">4 Passengers</option><option value="5">5 Passengers</option><option value="6">6 Passengers</option><option value="7">7 Passengers</option><option value="8">8 Passengers</option><option value="9">9 Passengers</option><option value="10">10 Passengers</option></select>
-          </div>
-          <div class="bf-group bf-cabin">
-            <label class="bf-label">Cabin</label>
-            <select class="bf-input" id="cabinSelect"><option value="Economy">Economy</option><option value="Business">Business</option><option value="FirstClass">First Class</option></select>
-          </div>
-          <div class="bf-group bf-carrier">
-            <label class="bf-label">Carrier</label>
-            <select class="bf-input" id="carrierSelect">
-              <option value="EA">EA - Express Airways (International)</option>
-              <option value="EX">EX - Explore Airways (Domestic)</option>
-              <option value="EC">EC - Express Charter</option>
-            </select>
-          </div>
-        </div>
-        <div class="bf-row" id="charterTimeRow" style="display:none">
-          <div class="bf-group bf-date">
-            <label class="bf-label">Departure Time</label>
-            <input class="bf-input" type="time" id="departTimeInput" value="08:00">
-          </div>
-        </div>
-        <div class="bf-row promo-row">
-          <div class="bf-group bf-full">
-            <label class="bf-label">Promo Code</label>
-            <input class="bf-input" id="promoInput" placeholder="Enter promo code">
-          </div>
-        </div>
-        <div class="bf-row bf-extra-row" id="extraFieldsRow" style="display:none">
-          <div class="bf-group bf-full">
-            <div id="flightPreview" style="display:flex;gap:16px;flex-wrap:wrap;padding:8px 0">
-              <span style="font-size:13px;color:var(--text-secondary)">Distance: <strong id="distanceDisplay" style="color:var(--text-primary)">—</strong></span>
-              <span style="font-size:13px;color:var(--text-secondary)">Flight time: <strong id="flightTimeDisplay" style="color:var(--text-primary)">—</strong></span>
-              <span style="font-size:13px;color:var(--text-secondary)">Weather: <strong id="weatherDisplay" style="color:var(--text-primary)">—</strong></span>
-              <span style="font-size:13px;color:var(--text-secondary)">Est. fare: <strong id="totalDisplay" style="color:var(--accent)">—</strong></span>
-              <span style="font-size:13px;color:var(--text-secondary)">Miles earn: <strong id="milesEarnedDisplay" style="color:#fbbf24">0</strong></span>
-            </div>
-          </div>
-        </div>
-      </div>
-      <button class="bf-search" id="searchFlightsBtn">Search Flights</button>
-      <span id="promoStatus" style="font-size:12px;margin-top:6px;display:block;text-align:center"></span>
-    </div>
-    </div>
     <div class="hero-stats">
       <div class="hero-stat">
-        <div class="hero-stat-number" id="statUsers">—</div>
-        <span class="hero-stat-label">Active Users</span>
+        <div class="hero-stat-number" id="statUsers">0</div>
+        <span class="hero-stat-label">Live Users Online</span>
       </div>
       <div class="hero-stat">
-        <div class="hero-stat-number" id="statBookings">—</div>
-        <span class="hero-stat-label">Bookings Completed</span>
+        <div class="hero-stat-number" id="statFlights">0</div>
+        <span class="hero-stat-label">Flights Completed Today</span>
       </div>
       <div class="hero-stat">
-        <div class="hero-stat-number" id="statDocuments">—</div>
-        <span class="hero-stat-label">Documents Available</span>
+        <div class="hero-stat-number" id="statDestinations">0</div>
+        <span class="hero-stat-label">Destinations Worldwide</span>
       </div>
     </div>
   </div>
 </section>
 
-<div id="bookingWizardSection" style="display:none;padding:60px 24px">
-  <div class="booking-wizard">
-    <div class="step-indicators" id="stepIndicators"></div>
-    <div class="booking-step" id="step2">
-      <h3 style="text-align:center;margin-bottom:24px;font-size:20px">Passenger Details</h3>
-      <div id="passengersContainer"></div>
-      <div class="carrier-select" id="carrierSelectWizard" style="margin-bottom:20px"></div>
-      <div style="display:flex;gap:12px;margin-top:20px">
-        <button class="btn btn-outline btn-lg" onclick="handleBookingNav(-1)">Back</button>
-        <button class="btn btn-primary btn-lg btn-full" onclick="handleBookingNav(2)">Continue to Payment</button>
-      </div>
-    </div>
-    <div class="booking-step" id="step3">
-      <h3 style="text-align:center;margin-bottom:24px;font-size:20px">Payment & Confirmation</h3>
-      <div class="flight-summary">
-        <div class="flight-summary-row"><span class="flight-summary-label">Total Price</span><span class="flight-summary-value" id="paySummaryTotal">—</span></div>
-        <div class="flight-summary-row"><span class="flight-summary-label">Miles You'll Earn</span><span class="flight-summary-value" id="paySummaryMiles">0</span></div>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Payment Method</label>
-        <div style="display:flex;gap:12px;flex-wrap:wrap">
-          <div class="carrier-option selected" data-payment="cash" onclick="selectPayment('cash')" style="flex:1;min-width:120px">
-            <div style="font-size:24px">\uD83D\uDCB5</div>
-            <div style="font-size:14px;font-weight:600;margin-top:4px">Pay with Cash</div>
-          </div>
-          <div class="carrier-option" data-payment="miles" onclick="selectPayment('miles')" style="flex:1;min-width:120px">
-            <div style="font-size:24px">\u2728</div>
-            <div style="font-size:14px;font-weight:600;margin-top:4px">Pay with Miles</div>
-            <div style="font-size:11px;color:var(--text-muted)" id="payMilesSuffix"></div>
-          </div>
-        </div>
-        <div style="margin-top:8px;font-size:13px;color:var(--text-secondary)">Available: <span id="payMilesAvailable">0</span> miles | Needed: <span id="payMilesNeeded">0</span> miles</div>
-      </div>
-      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px;margin-bottom:20px">
-        <h4 style="font-size:14px;font-weight:600;margin-bottom:12px">Required Agreements</h4>
-        <div class="checkbox-row"><input type="checkbox" id="agreeTerms"><label for="agreeTerms">I agree to the <a href="#">Terms of Service</a> and Conditions of Carriage</label></div>
-        <div class="checkbox-row"><input type="checkbox" id="agreePrivacy"><label for="agreePrivacy">I acknowledge the <a href="#">Privacy Policy</a> and data processing practices</label></div>
-        <div class="checkbox-row"><input type="checkbox" id="agreePolicy"><label for="agreePolicy">I agree to the <a href="#">Booking Policy</a> including cancellation and refund terms</label></div>
-      </div>
-      <div style="display:flex;gap:12px;margin-top:20px">
-        <button class="btn btn-outline btn-lg" onclick="handleBookingNav(-1)">Back</button>
-        <button class="btn btn-primary btn-lg btn-full" id="bookingSubmit">Confirm & Book</button>
-      </div>
-    </div>
-    <div class="booking-step" id="step4">
-      <div style="text-align:center;padding:40px">
-        <div style="font-size:64px;margin-bottom:16px">\u2705</div>
-        <h3 style="font-size:24px;margin-bottom:8px">Booking Confirmed!</h3>
-        <p style="color:var(--text-secondary);margin-bottom:20px">Your booking reference is:</p>
-        <div style="font-size:32px;font-weight:800;color:var(--accent);margin-bottom:8px" id="confirmationRef">—</div>
-        <div style="font-size:20px;font-weight:600;margin-bottom:24px" id="confirmationFare">—</div>
-        <div style="color:var(--text-secondary);margin-bottom:8px">Status: <span style="color:var(--success);font-weight:700" id="confirmationStatus">CONFIRMED</span></div>
-        <div style="color:var(--text-secondary);margin-bottom:24px">Miles earned: <span style="color:#fbbf24;font-weight:700" id="confirmationMiles">0</span></div>
-        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
-          <button class="btn btn-primary" onclick="viewETicket(document.getElementById('confirmationRef').textContent)">View eTicket</button>
-          <button class="btn btn-outline" data-section="portal">My Bookings</button>
-          <button class="btn btn-outline" onclick="resetHome()">Book Another</button>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<section style="padding:60px 0" id="sectionsSection">
+<section style="padding:60px 0" id="servicesSection">
   <div class="section-header">
     <div class="section-tag">Our Services</div>
     <h2 class="section-title">Explore Express Airways</h2>
     <p class="section-desc">Comprehensive flight services for every need</p>
   </div>
-  <div class="sections-grid" id="sectionsGrid">
-    <a href="#" class="section-card" onclick="return false">
-      <div class="section-card-body"><h3>Express Airways</h3><p>Premium global flight services with unmatched reliability.</p></div>
+  <div class="sections-grid">
+    <a href="flights/index.html" class="section-card">
+      <div class="section-card-body"><div class="card-icon">&#9992;</div><h3>Flights</h3><p>Search, book, and manage flights worldwide with real-time pricing and availability.</p></div>
     </a>
-    <a href="docs/index.html" class="section-card">
-      <div class="section-card-body"><h3>Operations Hub</h3><p>Real-time documentation and operational resources.</p></div>
+    <a href="airports/index.html" class="section-card">
+      <div class="section-card-body"><div class="card-icon">&#127758;</div><h3>Airports</h3><p>Comprehensive airport directory with terminal maps, services, and live status.</p></div>
+    </a>
+    <a href="travel/index.html" class="section-card">
+      <div class="section-card-body"><div class="card-icon">&#127979;</div><h3>Travel</h3><p>Destination guides, hotel partnerships, and curated travel experiences.</p></div>
+    </a>
+    <a href="holdings/index.html" class="section-card">
+      <div class="section-card-body"><div class="card-icon">&#127970;</div><h3>Holdings</h3><p>Corporate structure, financial reporting, and investor relations.</p></div>
+    </a>
+    <a href="documents/index.html" class="section-card">
+      <div class="section-card-body"><div class="card-icon">&#128196;</div><h3>Documents</h3><p>Access operational documents, reports, and regulatory filings.</p></div>
+    </a>
+    <a href="ops/index.html" class="section-card">
+      <div class="section-card-body"><div class="card-icon">&#9881;</div><h3>Operations</h3><p>Real-time operational tools, fleet management, and crew resources.</p></div>
     </a>
     <a href="status/index.html" class="section-card">
-      <div class="section-card-body"><h3>Infrastructure Status</h3><p>Live system monitoring and performance metrics.</p></div>
+      <div class="section-card-body"><div class="card-icon">&#128200;</div><h3>Status</h3><p>Live system monitoring, service status, and performance metrics.</p></div>
+    </a>
+    <a href="account/index.html" class="section-card">
+      <div class="section-card-body"><div class="card-icon">&#128100;</div><h3>Account</h3><p>Manage your profile, bookings, loyalty miles, and preferences.</p></div>
+    </a>
+    <a href="developer/index.html" class="section-card">
+      <div class="section-card-body"><div class="card-icon">&#128187;</div><h3>Developer</h3><p>API documentation, integration guides, and developer resources.</p></div>
     </a>
     <a href="legal/index.html" class="section-card">
-      <div class="section-card-body"><h3>Legal Portal</h3><p>Judicial resources and compliance documentation.</p></div>
+      <div class="section-card-body"><div class="card-icon">&#9878;</div><h3>Legal</h3><p>Terms of service, privacy policy, compliance, and regulatory information.</p></div>
     </a>
-  </div>
-</section>
-
-<section style="padding:60px 24px;display:none" id="portalSection">
-  <div class="section-header">
-    <div class="section-tag">User Portal</div>
-    <h2 class="section-title" id="portalTitle">Welcome</h2>
-    <p class="section-desc">Manage your bookings, events, documents, and account</p>
-  </div>
-  <div class="tabs" style="max-width:800px;margin:0 auto 32px">
-    <button class="tab portal-tab active" data-portal="bookings">My Bookings</button>
-    <button class="tab portal-tab" data-portal="events">Events</button>
-    <button class="tab portal-tab" data-portal="documents">Documents</button>
-    <button class="tab portal-tab" data-portal="settings">Account</button>
-  </div>
-  <div class="portal-section active" id="bookingsTab"><div id="bookingsList"><div style="text-align:center;padding:20px"><div class="spinner" style="margin:0 auto"></div></div></div></div>
-  <div class="portal-section" id="eventsTab"><div class="events-scroll" id="eventsScroll"><div style="text-align:center;padding:20px;color:var(--text-muted);width:100%"><div class="spinner" style="margin:0 auto"></div></div></div></div>
-  <div class="portal-section" id="documentsTab">
-    <div style="max-width:1200px;margin:0 auto">
-      <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px">Confidential documents require access request (\uD83D\uDD12)</p>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px" id="docsVault"></div>
-    </div>
-  </div>
-  <div class="portal-section" id="settingsTab">
-    <div style="max-width:600px;margin:0 auto">
-      <div class="card" style="padding:24px">
-        <h3 style="font-size:18px;margin-bottom:20px">Account Settings</h3>
-        <div class="form-group"><label class="form-label">Full Name</label><input class="form-input" id="settingsName"></div>
-        <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="settingsEmail" type="email" disabled></div>
-        <div class="account-field"><span class="account-field-label">Miles Balance</span><span class="account-field-value" id="settingsMiles">0</span></div>
-        <div class="account-field"><span class="account-field-label">Loyalty Tier</span><span class="account-field-value" id="settingsTier">Basic</span></div>
-        <button class="btn btn-primary btn-full" id="settingsSave" style="margin-top:16px">Save Changes</button>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section style="padding:60px 24px;display:none" id="contactSection">
-  <div class="section-header">
-    <div class="section-tag">Get In Touch</div>
-    <h2 class="section-title">Contact Express Airways</h2>
-    <p class="section-desc">We're here to help with any questions or concerns</p>
-  </div>
-  <div style="max-width:600px;margin:0 auto">
-    <div class="card" style="padding:24px">
-      <div class="form-group"><label class="form-label">Your Name</label><input class="form-input" id="contactName" placeholder="Full name"></div>
-      <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="contactEmail" type="email" placeholder="your@email.com"></div>
-      <div class="form-group"><label class="form-label">Message</label><textarea class="form-input" id="contactMessage" rows="4" placeholder="How can we help you?"></textarea></div>
-      <button class="btn btn-primary btn-full" id="contactSubmit">Send Message</button>
-    </div>
-  </div>
-</section>
-
-<section style="padding:60px 24px;display:none" id="travelAgentSection">
-  <div class="section-header">
-    <div class="section-tag">Partner Program</div>
-    <h2 class="section-title">Third-Party Travel Agent Registration</h2>
-    <p class="section-desc">Register as a travel agent to access exclusive booking privileges</p>
-  </div>
-  <div class="travel-agent-form">
-    <div class="form-group"><label class="form-label">Full Name</label><input class="form-input" id="agentName" placeholder="Your full name"></div>
-    <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="agentEmail" type="email" placeholder="your@agency.com"></div>
-    <div class="form-group"><label class="form-label">Agency Name</label><input class="form-input" id="agentAgency" placeholder="Agency name"></div>
-    <button class="btn btn-primary btn-full" id="agentSubmit">Register as Travel Agent</button>
-    <p style="font-size:12px;color:var(--text-muted);margin-top:12px;text-align:center">By registering, you agree to our partner terms and conditions.</p>
   </div>
 </section>
 
@@ -317,21 +373,39 @@
   <div class="footer-content">
     <div class="footer-brand">
       <div class="footer-logo">
-        <img src="OIG3.jpg" alt="Express Airways" style="height:28px;width:28px;border-radius:50%;object-fit:cover">
+        <img src="OIG3.jpg" alt="Express Airways">
         <span>Express Airways</span>
       </div>
-      <p class="footer-desc">Next-generation flight services with unified booking, operations, and travel management.</p>
+      <p class="footer-desc">Next-generation flight services with unified booking, operations, and travel management. Sovereign. Global. Reliable.</p>
     </div>
     <div class="footer-links">
-      <div class="footer-col"><h4>Services</h4><a data-section="booking" style="cursor:pointer">Book a Flight</a><a data-section="portal" style="cursor:pointer">My Portal</a><a href="docs/index.html">Operations Hub</a><a href="status/index.html">Status</a></div>
-      <div class="footer-col"><h4>Company</h4><a data-section="contact" style="cursor:pointer">Contact</a><a data-section="travelAgent" style="cursor:pointer">Travel Agents</a></div>
-      <div class="footer-col"><h4>Platform</h4><a href="legal/index.html">Legal Portal</a><a href="admin/index.html">Admin</a><a href="developer/index.html">Dev Portal</a></div>
+      <div class="footer-col">
+        <h4>Services</h4>
+        <a href="flights/index.html">Flights</a>
+        <a href="airports/index.html">Airports</a>
+        <a href="travel/index.html">Travel</a>
+        <a href="holdings/index.html">Holdings</a>
+        <a href="documents/index.html">Documents</a>
+        <a href="ops/index.html">Operations</a>
+        <a href="status/index.html">Status</a>
+        <a href="account/index.html">Account</a>
+        <a href="developer/index.html">Developer</a>
+        <a href="legal/index.html">Legal</a>
+      </div>
+      <div class="footer-col">
+        <h4>Company</h4>
+        <a href="mailto:contact@expressairways.com">Contact</a>
+      </div>
+      <div class="footer-col">
+        <h4>Platform</h4>
+        <a href="legal/index.html">Legal</a>
+        <a href="developer/index.html">Dev Portal</a>
+        <a href="developer/index.html">API Docs</a>
+      </div>
     </div>
   </div>
   <div class="footer-bottom"><p>&copy; 2026 Express Airways. All rights reserved.</p></div>
 </footer>
-
-<div class="toast-container" id="toastContainer"></div>
 
 <div class="modal-overlay hidden" id="authModal">
   <div class="modal modal-sm">
@@ -344,7 +418,7 @@
       <button class="auth-tab active" data-tab="login">Sign In</button>
       <button class="auth-tab" data-tab="signup">Register</button>
     </div>
-    <form id="loginForm" class="active">
+    <form id="loginForm">
       <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="loginEmail" type="email" placeholder="your@email.com" required></div>
       <div class="form-group"><label class="form-label">Password</label><input class="form-input" id="loginPassword" type="password" placeholder="Enter password" required></div>
       <button class="btn btn-primary btn-full" type="submit">Sign In</button>
@@ -359,7 +433,356 @@
   </div>
 </div>
 
-<script>var EA_TRACKER={API_URL:'https://script.google.com/macros/s/AKfycbyfr1k04IqvPSHND5I47ZowM8EAUmBuFR4pKJVWDdsB0ZCr4pMrCLxFME1v70aLbyWo/exec',initialized:false,init(e){if(this.initialized)return;this.initialized=true;this.page=e||window.location.pathname;this.fingerprint=this.getFingerprint();this.getIP().then(ip=>{this.ip=ip;this.send()});this.send()},getFingerprint(){const e=document.createElement('canvas');e.width=200;e.height=50;const t=e.getContext('2d');t.textBaseline='top';t.font='14px Arial';t.fillStyle='#f60';t.fillRect(125,1,62,20);t.fillStyle='#069';t.fillText('EA'+navigator.userAgent.length,2,15);t.fillStyle='rgba(102,204,0,0.7)';t.fillText('ExpressAirways',4,17);const n=e.toDataURL();let r='';try{const i=document.createElement('canvas').getContext('webgl');if(i){const o=i.getExtension('WEBGL_debug_renderer_info');if(o)r=i.getParameter(o.UNMASKED_RENDERER_WEBGL)+'|'+i.getParameter(o.UNMASKED_VENDOR_WEBGL)}}catch(e){}const a=window.screen.width+'x'+window.screen.height+'x'+window.screen.colorDepth,s=Intl.DateTimeFormat().resolvedOptions().timeZone,l=navigator.language,c=navigator.userAgent,u=[n,r,a,s,l,c].join('|||');let d=0;for(let e=0;e<u.length;e++){const t=u.charCodeAt(e);d=(d<<5)-d+t;d|=0}return Math.abs(d).toString(16)},async getIP(){try{const e=await fetch('https://api.ipify.org?format=json',{cache:'no-store'});return(await e.json()).ip}catch(e){return''}},send(){const e={action:'track',fingerprint:this.fingerprint,ip:this.ip,ua:navigator.userAgent,screen:window.screen.width+'x'+window.screen.height+'x'+window.screen.colorDepth,tz:Intl.DateTimeFormat().resolvedOptions().timeZone,lang:navigator.language,page:this.page,user:window.currentUser?(window.currentUser.email||window.currentUser.Email||''):''},t=Object.entries(e).map(([e,t])=>encodeURIComponent(e)+'='+encodeURIComponent(t||'')).join('&');fetch(this.API_URL+'?'+t+'&t='+Date.now(),{mode:'no-cors'}).catch(()=>{})}};</script>
-<script src="js/script.js"></script>
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+(function(){
+  'use strict';
+
+  var API = 'https://script.google.com/macros/s/AKfycbyfr1k04IqvPSHND5I47ZowM8EAUmBuFR4pKJVWDdsB0ZCr4pMrCLxFME1v70aLbyWo/exec';
+
+  function $(id){return document.getElementById(id)}
+  function qs(s){return document.querySelector(s)}
+  function qsa(s){return document.querySelectorAll(s)}
+  function hideEl(id){var el=$(id);if(el)el.classList.add('hidden')}
+  function showEl(id){var el=$(id);if(el)el.classList.remove('hidden')}
+  function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML}
+
+  /* ---- EA_TRACKER ---- */
+  window.EA_TRACKER={
+    API_URL:API,
+    initialized:false,
+    init:function(page){
+      if(this.initialized)return;
+      this.initialized=true;
+      this.page=page||window.location.pathname;
+      this.fingerprint=this.getFingerprint();
+      var self=this;
+      this.getIP().then(function(ip){self.ip=ip;self.send()});
+      this.send();
+    },
+    getFingerprint:function(){
+      var c=document.createElement('canvas');c.width=200;c.height=50;
+      var t=c.getContext('2d');t.textBaseline='top';t.font='14px Arial';
+      t.fillStyle='#f60';t.fillRect(125,1,62,20);
+      t.fillStyle='#069';t.fillText('EA'+navigator.userAgent.length,2,15);
+      t.fillStyle='rgba(102,204,0,0.7)';t.fillText('ExpressAirways',4,17);
+      var n=c.toDataURL();var r='';
+      try{var i=document.createElement('canvas').getContext('webgl');if(i){var o=i.getExtension('WEBGL_debug_renderer_info');if(o)r=i.getParameter(o.UNMASKED_RENDERER_WEBGL)+'|'+i.getParameter(o.UNMASKED_VENDOR_WEBGL)}}catch(e){}
+      var a=window.screen.width+'x'+window.screen.height+'x'+window.screen.colorDepth,s=Intl.DateTimeFormat().resolvedOptions().timeZone,l=navigator.language,c=navigator.userAgent,u=[n,r,a,s,l,c].join('|||');var d=0;
+      for(var e=0;e<u.length;e++){var p=u.charCodeAt(e);d=(d<<5)-d+p;d|=0}
+      return Math.abs(d).toString(16);
+    },
+    getIP:function(){
+      return fetch('https://api.ipify.org?format=json',{cache:'no-store'}).then(function(r){return r.json()}).then(function(d){return d.ip}).catch(function(){return''});
+    },
+    send:function(){
+      var self=this;
+      var e={action:'track',fingerprint:this.fingerprint,ip:this.ip||'',ua:navigator.userAgent,screen:window.screen.width+'x'+window.screen.height+'x'+window.screen.colorDepth,tz:Intl.DateTimeFormat().resolvedOptions().timeZone,lang:navigator.language,page:this.page};
+      var q=Object.entries(e).map(function(kv){return encodeURIComponent(kv[0])+'='+encodeURIComponent(kv[1]||'')}).join('&');
+      fetch(this.API_URL+'?'+q+'&t='+Date.now(),{mode:'no-cors'}).catch(function(){});
+    }
+  };
+
+  /* ---- AUTH ---- */
+  var AUTH_KEY='ea_session';
+  var authListeners=[];
+  function authGetUser(){
+    try{var raw=localStorage.getItem(AUTH_KEY);if(!raw)return null;var data=JSON.parse(raw);if(data&&data.user&&data.expires>Date.now())return data.user;if(data&&data.user){localStorage.removeItem(AUTH_KEY)}return null}catch(e){return null}
+  }
+  function authSetUser(user){
+    if(!user){localStorage.removeItem(AUTH_KEY);authNotify(null);return}
+    var data={user:user,expires:Date.now()+604800000};
+    localStorage.setItem(AUTH_KEY,JSON.stringify(data));
+    authNotify(user);
+  }
+  function authLogout(){localStorage.removeItem(AUTH_KEY);authNotify(null)}
+  function authNotify(user){for(var i=0;i<authListeners.length;i++){try{authListeners[i](user)}catch(e){}}}
+  function authOnChange(fn){authListeners.push(fn)}
+  window.addEventListener('storage',function(e){if(e.key===AUTH_KEY){authNotify(e.newValue?(JSON.parse(e.newValue).user||null):null)}});
+
+  /* ---- API ---- */
+  function api(method,params,body){
+    for(var i=0;i<=1;i++){
+      try{
+        var url=method==='GET'?API+'?'+new URLSearchParams(params)+'&t='+Date.now():API+'?t='+Date.now();
+        var controller=new AbortController();
+        var timeout=setTimeout(function(){controller.abort()},15000);
+        var opts={method:method,cache:'no-store',headers:{},signal:controller.signal};
+        if(method==='POST'){opts.headers['Content-Type']='application/json';opts.body=JSON.stringify(body||{})}
+        var r=await fetch(url,opts);
+        clearTimeout(timeout);
+        if(!r.ok)throw new Error('HTTP '+r.status);
+        return await r.json();
+      }catch(e){
+        if(i===1)return null;
+        await new Promise(function(r){setTimeout(r,1000*(i+1))});
+      }
+    }
+    return null;
+  }
+  function get(params){return api('GET',params)}
+  function post(body){return api('GET',body)}
+
+  /* ---- TOAST ---- */
+  function Toast(type,message,duration){
+    duration=duration||(type==='error'?10000:type==='success'?8000:type==='warning'?8000:6000);
+    var container=$('toastContainer');if(!container)return;
+    var icons={success:'\u2713',error:'\u2715',warning:'\u26A0',info:'\u2139'};
+    var t=document.createElement('div');
+    t.className='toast '+type;
+    t.innerHTML='<span>'+(icons[type]||'')+'</span><span>'+message+'</span>';
+    container.appendChild(t);
+    setTimeout(function(){t.style.animation='toastOut 0.3s ease forwards';setTimeout(function(){t.remove()},300)},duration);
+  }
+
+  /* ---- STATE ---- */
+  var currentUser=authGetUser();
+  var liveUsers=0;
+
+  /* ---- AUDIT TRACKING ---- */
+  function audit(eventType,data){
+    data=data||{};
+    data.action='audit.event';
+    data.event=eventType;
+    data.page=window.location.pathname;
+    data.ts=Date.now();
+    data.user=currentUser?(currentUser.email||currentUser.Email||''):'';
+    var q=Object.entries(data).map(function(kv){return encodeURIComponent(kv[0])+'='+encodeURIComponent(String(kv[1]||''))}).join('&');
+    fetch(API+'?'+q,{mode:'no-cors'}).catch(function(){});
+  }
+
+  function auditDebounced(fn,ms){
+    var timer;
+    return function(){clearTimeout(timer);timer=setTimeout(fn,ms)};
+  }
+
+  /* ---- LIVE USERS ---- */
+  function fetchLiveUsers(){
+    get({action:'users.online'}).then(function(d){
+      if(d&&d.success&&d.count!=null){liveUsers=d.count;updateStats()}
+    }).catch(function(){});
+  }
+
+  /* ---- SITE STATS ---- */
+  function fetchSiteStats(){
+    get({action:'getStats'}).then(function(d){
+      if(d&&(d.success||d.status==='success')){
+        var s=d.data||d.stats||d;
+        var fe=$('statFlights');if(fe){var fv=s.dailyFlights||s.flights;fe.textContent=fv!=null?fv.toLocaleString():'N/A';}
+        var de=$('statDestinations');if(de){var dv=s.destinations||s.routes;de.textContent=dv!=null?dv.toLocaleString():'N/A';}
+      }
+    }).catch(function(){});
+  }
+
+  /* ---- HEARTBEAT ---- */
+  function heartbeat(){
+    get({action:'heartbeat',user:currentUser?(currentUser.email||currentUser.Email||''):''}).catch(function(){});
+  }
+
+  /* ---- UPDATE UI ---- */
+  function updateStats(){
+    var el=$('statUsers');if(el)el.textContent=liveUsers.toLocaleString();
+  }
+
+  function updateNavAuth(){
+    hideEl('loginBtn');hideEl('signupBtn');hideEl('userMenu');
+    if(currentUser){
+      showEl('userMenu');
+      var init=(currentUser.name||'U').split(' ').map(function(w){return w[0]}).join('').toUpperCase().slice(0,2);
+      var ni=$('avatarInitials');if(ni)ni.textContent=init||'U';
+      var dn=$('dropdownName');if(dn)dn.textContent=currentUser.name||'User';
+      var de=$('dropdownEmail');if(de)de.textContent=currentUser.email||'';
+    }else{
+      showEl('loginBtn');showEl('signupBtn');
+    }
+  }
+
+  function checkLoginwall(){
+    if(currentUser){hideEl('loginwall')}else{showEl('loginwall')}
+  }
+
+  async function login(email,password){
+    var btn=qs('#loginForm button[type="submit"]');if(btn){btn.classList.add('loading');btn.disabled=true}
+    var d=await post({action:'login',email:email,password:password});if(btn){btn.classList.remove('loading');btn.disabled=false}
+    if(d&&d.success){
+      currentUser=d.user;authSetUser(d.user);updateNavAuth();checkLoginwall();hideEl('authModal');
+      document.body.style.overflow='';Toast('success','Welcome back, '+(d.user.name||'')+'!');
+      audit('login',{email:email});return true;
+    }
+    Toast('error',d&&d.message?d.message:'Login failed');return false;
+  }
+
+  async function signup(name,email,password){
+    var btn=qs('#signupForm button[type="submit"]');if(btn){btn.classList.add('loading');btn.disabled=true}
+    var d=await post({action:'signup',fullName:name,email:email,password:password});if(btn){btn.classList.remove('loading');btn.disabled=false}
+    if(d&&d.success){Toast('success','Account created! Please sign in.');switchAuthTab('login',qsa('#authModal .auth-tab'));return true}
+    Toast('error',d&&d.message?d.message:'Signup failed');return false
+  }
+
+  async function loginwallLogin(email,password){
+    var btn=$('loginwallLoginForm').querySelector('button[type="submit"]');btn.classList.add('loading');btn.disabled=true;
+    var d=await post({action:'login',email:email,password:password});btn.classList.remove('loading');btn.disabled=false;
+    if(d&&d.success){
+      currentUser=d.user;authSetUser(d.user);updateNavAuth();checkLoginwall();
+      Toast('success','Welcome back, '+(d.user.name||'')+'!');
+      audit('login',{email:email,source:'loginwall'});return true;
+    }
+    Toast('error',d&&d.message?d.message:'Login failed');return false;
+  }
+
+  async function loginwallSignup(name,email,password){
+    var btn=$('loginwallSignupForm').querySelector('button[type="submit"]');btn.classList.add('loading');btn.disabled=true;
+    var d=await post({action:'signup',fullName:name,email:email,password:password});btn.classList.remove('loading');btn.disabled=false;
+    if(d&&d.success){Toast('success','Account created! Please sign in.');switchAuthTab('login',qsa('#loginwall .auth-tab'));return true}
+    Toast('error',d&&d.message?d.message:'Signup failed');return false;
+  }
+
+  function logout(){
+    currentUser=null;authLogout();updateNavAuth();checkLoginwall();Toast('info','Signed out');
+    audit('logout');hideEl('authModal');document.body.style.overflow='';
+  }
+
+  function switchAuthTab(tab,tabs){
+    tabs.forEach(function(t){t.classList.toggle('active',t.dataset.tab===tab)});
+    var container=tabs[0].closest('.loginwall-content')||tabs[0].closest('.modal');
+    if(container){
+      qsa('.auth-tabs+form',container).forEach(function(f){f.classList.add('hidden')});
+      var target=container.querySelector('#'+(tab==='login'?'loginwallLoginForm':'loginwallSignupForm'))||
+                 container.querySelector('#'+(tab==='login'?'loginForm':'signupForm'));
+      if(target)target.classList.remove('hidden');
+    }
+  }
+
+  function showModal(id){
+    var el=$(id);if(!el)return;el.classList.remove('hidden');document.body.style.overflow='hidden';
+    function handler(e){if(e.target===el){hideModal(id);el.removeEventListener('click',handler)}}
+    el.addEventListener('click',handler);
+  }
+  function hideModal(id){
+    var el=$(id);if(el)el.classList.add('hidden');document.body.style.overflow='';
+  }
+
+  window.showModal=showModal;window.hideModal=hideModal;
+
+  /* ---- INIT ---- */
+  document.addEventListener('DOMContentLoaded',function(){
+    EA_TRACKER.API_URL=API;
+    EA_TRACKER.init('/');
+    audit('pageview',{referrer:document.referrer});
+
+    currentUser=authGetUser();
+    updateNavAuth();
+    checkLoginwall();
+
+    authOnChange(function(u){
+      currentUser=u;
+      if(u){updateNavAuth();checkLoginwall();Toast('info','Session restored')}
+      else{updateNavAuth();checkLoginwall();Toast('info','Signed out from another tab')}
+    });
+
+    /* Live users */
+    fetchLiveUsers();
+    setInterval(fetchLiveUsers,10000);
+
+    /* Site stats */
+    fetchSiteStats();
+    setInterval(fetchSiteStats,60000);
+
+    /* Heartbeat */
+    heartbeat();
+    setInterval(heartbeat,60000);
+
+    /* Audit tracking - clicks */
+    document.addEventListener('click',function(e){
+      var target=e.target;
+      var text=target.textContent||target.innerText||'';
+      var tag=target.tagName||'';
+      audit('click',{tag:tag,text:text.trim().slice(0,50)});
+    });
+
+    /* Audit tracking - scroll */
+    var lastScrollPos=0;
+    document.addEventListener('scroll',function(){
+      var now=Date.now();
+      if(now-lastScrollPos<3000)return;
+      lastScrollPos=now;
+      audit('scroll',{y:window.scrollY,maxY:document.documentElement.scrollHeight-window.innerHeight});
+    });
+
+    /* Hamburger */
+    $('hamburgerBtn').addEventListener('click',function(){
+      $('navLinks').classList.toggle('open');
+    });
+
+    /* User menu dropdown */
+    var ud=$('userMenu');
+    if(ud){
+      ud.addEventListener('click',function(e){
+        e.stopPropagation();
+        var dd=qs('.user-dropdown');
+        if(!dd)return;
+        dd.classList.toggle('hidden');
+        if(!dd.classList.contains('hidden')){
+          setTimeout(function(){
+            function close(){dd.classList.add('hidden');document.removeEventListener('click',close)}
+            document.addEventListener('click',close);
+          },100);
+        }
+      });
+    }
+
+    /* Loginwall auth tabs */
+    qsa('#loginwall .auth-tab').forEach(function(tab){
+      tab.addEventListener('click',function(){switchAuthTab(tab.dataset.tab,qsa('#loginwall .auth-tab'))});
+    });
+
+    /* Loginwall login */
+    $('loginwallLoginForm').addEventListener('submit',function(e){
+      e.preventDefault();
+      loginwallLogin($('loginwallEmail').value.trim(),$('loginwallPassword').value);
+    });
+
+    /* Loginwall signup */
+    $('loginwallSignupForm').addEventListener('submit',function(e){
+      e.preventDefault();
+      var name=$('loginwallName').value.trim();
+      var email=$('loginwallEmail2').value.trim();
+      var pw=$('loginwallPassword2').value;
+      if(!name||!email||!pw)return Toast('error','Fill in all fields');
+      if(pw.length<8)return Toast('error','Password must be 8+ characters');
+      loginwallSignup(name,email,pw);
+    });
+
+    /* Modal login */
+    $('loginBtn').addEventListener('click',function(){showModal('authModal');switchAuthTab('login',qsa('#authModal .auth-tab'))});
+    $('signupBtn').addEventListener('click',function(){showModal('authModal');switchAuthTab('signup',qsa('#authModal .auth-tab'))});
+    qs('#authModal .modal-close').addEventListener('click',function(){hideModal('authModal')});
+    qsa('#authModal .auth-tab').forEach(function(tab){tab.addEventListener('click',function(){switchAuthTab(tab.dataset.tab,qsa('#authModal .auth-tab'))})});
+
+    $('loginForm').addEventListener('submit',function(e){
+      e.preventDefault();
+      login($('loginEmail').value.trim(),$('loginPassword').value);
+    });
+    $('signupForm').addEventListener('submit',function(e){
+      e.preventDefault();
+      var name=$('signupName').value.trim(),email=$('signupEmail').value.trim(),pw=$('signupPassword').value,cf=$('signupConfirm').value;
+      if(!name||!email||!pw||!cf)return Toast('error','Fill in all fields');
+      if(pw!==cf)return Toast('error','Passwords do not match');
+      if(pw.length<8)return Toast('error','Password must be 8+ characters');
+      signup(name,email,pw);
+    });
+
+    $('logoutBtn').addEventListener('click',function(e){e.preventDefault();logout()});
+
+    /* Hide global loader */
+    function hideGlobalLoader(){var el=$('globalLoader');if(el)el.classList.add('fade-out');setTimeout(function(){if(el)el.style.display='none'},600)}
+    setTimeout(hideGlobalLoader,3000);
+
+    /* Close hamburger on link click */
+    qsa('.nav-links a').forEach(function(a){a.addEventListener('click',function(){$('navLinks').classList.remove('open')})});
+  });
+})();
+</script>
 </body>
 </html>

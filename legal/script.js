@@ -1,203 +1,35 @@
-const API = 'https://script.google.com/macros/s/AKfycbyfr1k04IqvPSHND5I47ZowM8EAUmBuFR4pKJVWDdsB0ZCr4pMrCLxFME1v70aLbyWo/exec';
-const STORAGE_KEY = 'ea_legal_token';
-
-let currentUser = null;
-let currentToken = null;
-let currentCase = null;
-
-EA_TRACKER.API_URL = API;
-EA_TRACKER.init('/legal/');
-
-function toast(msg, type) {
-  const container = document.getElementById('toastContainer');
-  const icons = { success: '\u2713', error: '\u2715', warning: '\u26A0', info: '\u2139' };
-  const t = document.createElement('div');
-  t.className = 'toast ' + (type || 'info');
-  t.innerHTML = '<span>' + (icons[type] || '') + '</span><span>' + msg + '</span>';
-  container.appendChild(t);
-  setTimeout(() => { t.style.animation = 'toastOut 0.3s ease forwards'; setTimeout(() => t.remove(), 300); }, 6000);
-}
-
-function showLoading(on) { document.getElementById('loadingOverlay')?.classList.toggle('hidden', !on); }
-
-async function api(action, payload) {
-  const params = new URLSearchParams({ action, ...payload });
-  showLoading(true);
-  try {
-    const r = await fetch(API + '?' + params.toString() + '&t=' + Date.now(), { cache: 'no-store' });
-    const d = await r.json();
-    if (!d.success && d.message) toast(d.message, 'error');
-    return d;
-  } catch(e) { toast('Connection error', 'error'); return { success: false }; }
-  finally { showLoading(false); }
-}
-
-function updateSession(isAuth) {
-  const el = document.getElementById('sessionStatus');
-  if (isAuth && currentUser) {
-    el.textContent = currentUser.FullName + ' authenticated';
-    el.className = 'session-badge authenticated';
-  } else {
-    el.textContent = 'Unauthenticated';
-    el.className = 'session-badge';
-  }
-}
-
-async function restoreSession() {
-  const token = localStorage.getItem(STORAGE_KEY);
-  if (!token) return;
-  currentToken = token;
-  const result = await api('sessionInfo', { token });
-  if (result.success && result.user) {
-    currentUser = result.user;
-    updateSession(true);
-    loadCases();
-    loadAudit();
-  } else { clearSession(); }
-}
-
-function clearSession() {
-  localStorage.removeItem(STORAGE_KEY);
-  currentToken = null;
-  currentUser = null;
-  updateSession(false);
-}
-
-async function loadCases() {
-  if (!currentToken) {
-    renderCases([]);
-    return;
-  }
-  const result = await api('getActiveCases', { token: currentToken });
-  if (result.success) {
-    if (result.user) { currentUser = result.user; updateSession(true); }
-    renderCases(result.cases || []);
-  } else renderCases([]);
-}
-
-function renderCases(items) {
-  const container = document.getElementById('caseCards');
-  container.innerHTML = '';
-  document.getElementById('caseCount').textContent = 'Cases ' + items.length;
-  if (!items.length) { container.innerHTML = '<div class="card" style="text-align:center;padding:40px;color:var(--text-muted)">No cases available</div>'; return; }
-  items.forEach((item, idx) => {
-    const card = document.createElement('div');
-    card.className = 'case-card animate-in';
-    card.style.animationDelay = (idx * 0.05) + 's';
-    card.innerHTML = '<div class="case-card-title">' + esc(item.Title || 'Case') + '</div>' +
-      '<p style="color:var(--text-secondary);font-size:0.9rem;margin-bottom:12px">' + esc(item.Charges || item.Description || '') + '</p>' +
-      '<div class="case-card-meta"><span><b>Docket</b> ' + esc(item.ExternalDocket || item.CaseID || '—') + '</span><span><b>Status</b> ' + esc(item.Status || 'Filed') + '</span></div>';
-    card.onclick = () => openCase(item);
-    container.appendChild(card);
-  });
-}
-
-function openCase(item) {
-  currentCase = item;
-  document.getElementById('caseDetail').classList.remove('hidden');
-  document.getElementById('caseTitle').textContent = item.Title || 'Case file';
-  document.getElementById('caseMeta').textContent = (item.Classification || '') + ' \u00B7 ' + (item.Status || 'Filed');
-  document.getElementById('caseStatusBadge').textContent = item.Status || 'Filed';
-  document.getElementById('caseDocket').textContent = item.ExternalDocket || item.InternalRef || item.CaseID || '—';
-  document.getElementById('caseClassification').textContent = item.Classification || '—';
-  document.getElementById('casePlaintiff').textContent = item.Plaintiff || item.Prosecution || '—';
-  document.getElementById('caseDefendant').textContent = item.Defendant || '—';
-  document.getElementById('caseJudge').textContent = item.AssignedJudge || '—';
-  document.getElementById('caseFilingDate').textContent = item.FilingDate || '—';
-  document.getElementById('caseDescription').textContent = item.Charges || item.Description || 'The tribunal file includes claims, evidence, participants, and procedural directives.';
-
-  const evidence = item.Evidence || [];
-  const el = document.getElementById('evidenceList');
-  if (evidence.length) {
-    el.innerHTML = evidence.map(e => '<div class="evidence-item"><strong>' + esc(e.id || e.EvidenceID || 'Evidence') + '</strong><p style="color:var(--text-secondary);font-size:0.85rem;margin-top:4px">' + esc(e.title || e.Title || e.Type || '') + '</p></div>').join('');
-  } else {
-    el.innerHTML = '<div style="color:var(--text-muted);font-size:0.85rem">No evidence records</div>';
-  }
-
-  const isJudge = item.isJudge || (currentUser && currentUser.FullName === item.AssignedJudge) || (currentUser && /judge/i.test(currentUser.SystemRole || ''));
-  document.getElementById('verdictSection').classList.toggle('hidden', !isJudge);
-  loadAudit(item.CaseID);
-}
-
-async function loadAudit(caseId) {
-  if (!currentToken) { document.getElementById('auditLog').innerHTML = '<div style="padding:12px;color:var(--text-muted)">Authenticate to view audit logs</div>'; return; }
-  const result = await api('fetchAudit', { token: currentToken, caseId });
-  if (result.success) {
-    const log = document.getElementById('auditLog');
-    if (!result.audit || !result.audit.length) { log.innerHTML = '<div style="padding:12px;color:var(--text-muted)">No audit events</div>'; return; }
-    log.innerHTML = result.audit.slice(0, 15).map(a =>
-      '<div class="audit-item"><strong>' + esc(a.Action || 'Audit') + '</strong> \u2014 ' + esc(a.User || a.UserName || 'System') + (a.CaseID ? ' \u00B7 ' + esc(a.CaseID) : '') + '<div style="color:var(--text-muted);font-size:0.8rem;margin-top:4px">' + esc(a.Details || a.Message || '') + '</div><time style="color:var(--text-muted);font-size:0.75rem;display:block;margin-top:4px">' + esc(a.Timestamp || a.CreatedAt || '') + '</time></div>'
-    ).join('');
-  }
-}
-
-function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
-
-document.addEventListener('DOMContentLoaded', () => {
-  restoreSession();
-
-  document.getElementById('heroSignIn').onclick = () => { switchTab('login'); document.querySelector('aside .card')?.scrollIntoView({ behavior: 'smooth' }); setTimeout(() => document.getElementById('loginEmail')?.focus(), 500); };
-  document.getElementById('heroRegister').onclick = () => { switchTab('signup'); document.querySelector('aside .card')?.scrollIntoView({ behavior: 'smooth' }); setTimeout(() => document.getElementById('signupName')?.focus(), 500); };
-
-  document.querySelectorAll('.auth-tab').forEach(tab => {
-    tab.addEventListener('click', () => switchTab(tab.dataset.tab));
-  });
-
-  document.getElementById('loginForm').addEventListener('submit', async e => {
-    e.preventDefault();
-    const email = document.getElementById('loginEmail').value.trim();
-    const password = document.getElementById('loginPassword').value;
-    if (!email || !password) return toast('Email and password required', 'error');
-    const result = await api('login', { email, password });
-    if (result.success) {
-      currentToken = result.token || '';
-      currentUser = result.user;
-      localStorage.setItem(STORAGE_KEY, currentToken);
-      updateSession(true);
-      toast('Authentication successful', 'success');
-      loadCases();
-      loadAudit();
-    }
-  });
-
-  document.getElementById('signupForm').addEventListener('submit', async e => {
-    e.preventDefault();
-    const name = document.getElementById('signupName').value.trim();
-    const email = document.getElementById('signupEmail').value.trim();
-    const password = document.getElementById('signupPassword').value;
-    if (!name || !email || !password) return toast('All fields required', 'error');
-    const result = await api('register', { fullName: name, email, password });
-    if (result.success) {
-      toast('Account created. Sign in to proceed.', 'success');
-      switchTab('login');
-    }
-  });
-
-  document.getElementById('refreshCases').onclick = loadCases;
-
-  document.getElementById('submitVerdict').addEventListener('click', async () => {
-    if (!currentCase) return toast('Select a case first', 'error');
-    const reasoning = document.getElementById('verdictReasoning').value.trim();
-    if (!reasoning) return toast('Judicial reasoning required', 'error');
-    const result = await api('submitVerdict', {
-      token: currentToken,
-      caseId: currentCase.CaseID,
-      verdictOutcome: document.getElementById('verdictOutcome').value,
-      sentenceSummary: document.getElementById('sentenceSummary').value.trim(),
-      verdictReasoning: reasoning,
-      audioLink: document.getElementById('audioLink').value.trim()
-    });
-    if (result.success) {
-      toast('Verdict recorded', 'success');
-      loadCases();
-    }
-  });
+var EA_API='https://script.google.com/macros/s/AKfycbyfr1k04IqvPSHND5I47ZowM8EAUmBuFR4pKJVWDdsB0ZCr4pMrCLxFME1v70aLbyWo/exec';
+var EA_TRACKER={API_URL:EA_API,initialized:false,init:function(page){if(this.initialized)return;this.initialized=true;this.page=page||window.location.pathname;this.fingerprint=this.getFingerprint();var self=this;this.getIP().then(function(ip){self.ip=ip;self.send()});this.send()},getFingerprint:function(){var c=document.createElement('canvas');c.width=200;c.height=50;var t=c.getContext('2d');t.textBaseline='top';t.font='14px Arial';t.fillStyle='#f60';t.fillRect(125,1,62,20);t.fillStyle='#069';t.fillText('EA'+navigator.userAgent.length,2,15);t.fillStyle='rgba(102,204,0,0.7)';t.fillText('ExpressAirways',4,17);var n=c.toDataURL();var r='';try{var gl=document.createElement('canvas').getContext('webgl');if(gl){var ext=gl.getExtension('WEBGL_debug_renderer_info');if(ext)r=gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)+'|'+gl.getParameter(ext.UNMASKED_VENDOR_WEBGL)}}catch(e){}var a=window.screen.width+'x'+window.screen.height+'x'+window.screen.colorDepth;var tz=Intl.DateTimeFormat().resolvedOptions().timeZone;var lang=navigator.language;var ua=navigator.userAgent;var s=[n,r,a,tz,lang,ua].join('|||');var h=0;for(var i=0;i<s.length;i++){var c2=s.charCodeAt(i);h=(h<<5)-h+c2;h|=0}return Math.abs(h).toString(16)},getIP:function(){return fetch('https://api.ipify.org?format=json',{cache:'no-store'}).then(function(r){return r.json()}).then(function(d){return d.ip}).catch(function(){return''})},send:function(){var params={action:'audit.event',event:'pageview',page:this.page,fingerprint:this.fingerprint,ip:this.ip,ua:navigator.userAgent,screen:window.screen.width+'x'+window.screen.height,tz:Intl.DateTimeFormat().resolvedOptions().timeZone,lang:navigator.language};var qs=Object.entries(params).map(function(kv){return encodeURIComponent(kv[0])+'='+encodeURIComponent(kv[1]||'')}).join('&');fetch(EA_API+'?'+qs+'&t='+Date.now(),{mode:'no-cors'}).catch(function(){})}};
+var EA_AUTH={KEY:'ea_session',getUser:function(){try{var raw=localStorage.getItem(this.KEY);if(!raw)return null;var data=JSON.parse(raw);if(data&&data.user&&data.expires>Date.now())return data.user;if(data&&data.user)localStorage.removeItem(this.KEY);return null}catch(e){return null}},setUser:function(user){if(!user){localStorage.removeItem(this.KEY);return}var data={user:user,expires:Date.now()+604800000};localStorage.setItem(this.KEY,JSON.stringify(data))},logout:function(){localStorage.removeItem(this.KEY);this._notify(null)},_listeners:[],onChange:function(fn){this._listeners.push(fn)},_notify:function(user){for(var i=0;i<this._listeners.length;i++){try{this._listeners[i](user)}catch(e){}}}};
+window.addEventListener('storage',function(e){if(e.key===EA_AUTH.KEY){try{var data=JSON.parse(e.newValue);EA_AUTH._notify(data?data.user:null)}catch(ex){EA_AUTH._notify(null)}}});
+function Toast(type,message){var container=document.getElementById('toastContainer');if(!container)return;var icons={success:'\u2713',error:'\u2715',warning:'\u26A0',info:'\u2139'};var t=document.createElement('div');t.className='toast '+type;t.innerHTML='<span>'+(icons[type]||'')+'</span><span>'+message+'</span>';container.appendChild(t);var dur=type==='error'?10000:type==='success'?8000:6000;setTimeout(function(){t.style.animation='toastOut 0.3s ease forwards';setTimeout(function(){t.remove()},300)},dur)}
+function $(id){return document.getElementById(id)}
+function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML}
+function show(el){if(el)el.classList.remove('hidden')}
+function hide(el){if(el)el.classList.add('hidden')}
+function qs(s){return document.querySelector(s)}
+function qsa(s){return document.querySelectorAll(s)}
+function btnLoading(el){if(!el)return;if(el.dataset._orig===undefined)el.dataset._orig=el.innerHTML;el.classList.add('loading');el.disabled=true}
+function btnReset(el){if(!el)return;el.classList.remove('loading');el.disabled=false}
+async function api(action,extra){var p={action:action};if(extra)for(var k in extra)p[k]=extra[k];var qs2=Object.entries(p).map(function(kv){return encodeURIComponent(kv[0])+'='+encodeURIComponent(kv[1]||'')}).join('&');try{var c=new AbortController();var t=setTimeout(function(){c.abort()},15000);var r=await fetch(EA_API+'?'+qs2+'&t='+Date.now(),{cache:'no-store',signal:c.signal});clearTimeout(t);if(!r.ok)throw new Error('HTTP '+r.status);return await r.json()}catch(e){console.error('EA API Error:',e);return null}}
+function auditEvent(eventType,detail){try{var params={action:'audit.event',event:eventType,page:window.location.pathname,fingerprint:EA_TRACKER.fingerprint,detail:detail||'',user:currentUser?currentUser.email:''};var qs3=Object.entries(params).map(function(kv){return encodeURIComponent(kv[0])+'='+encodeURIComponent(kv[1]||'')}).join('&');fetch(EA_API+'?'+qs3+'&t='+Date.now(),{mode:'no-cors'}).catch(function(e){console.error('Audit failed:',e)})}catch(e){console.error('Audit error:',e)}}
+var currentUser=null;
+function updateLegalAuthUI(){if(currentUser){hide($('loginwall'));show($('userMenu'));show($('logoutBtn'));$('avatarInitials').textContent=(currentUser.name||'U').charAt(0).toUpperCase();$('dropdownName').textContent=currentUser.name||'User';$('dropdownEmail').textContent=currentUser.email||'';loadCases()}else{show($('loginwall'));hide($('userMenu'));hide($('logoutBtn'))}}
+async function login(email,pw){btnLoading(qs('#loginForm button[type="submit"]'));var d=await api('login',{email:email,password:pw});btnReset(qs('#loginForm button[type="submit"]'));if(d&&d.success){currentUser=d.user;EA_AUTH.setUser(d.user);updateLegalAuthUI();Toast('success','Welcome, '+d.user.name);auditEvent('legal_login',email)}else{Toast('error',d&&d.message?d.message:'Login failed')}}
+async function register(name,email,pw){btnLoading(qs('#registerForm button[type="submit"]'));var d=await api('signup',{fullName:name,email:email,password:pw});btnReset(qs('#registerForm button[type="submit"]'));if(d&&d.success){Toast('success','Account created. Please sign in.');switchAuthTab('login')}else{Toast('error',d&&d.message?d.message:'Registration failed')}}
+function logoutUser(){currentUser=null;EA_AUTH.logout();updateLegalAuthUI();Toast('info','Signed out');auditEvent('legal_logout','')}
+function switchAuthTab(tab){qsa('.auth-tab').forEach(function(t){t.classList.toggle('active',t.dataset.tab===tab)});hide($('loginForm'));hide($('registerForm'));show(tab==='login'?$('loginForm'):$('registerForm'))}
+function switchLegalTab(tab){qsa('#legalTabs .tab').forEach(function(t){t.classList.toggle('active',t.dataset.tab===tab)});hide($('tabTerms'));hide($('tabPrivacy'));hide($('tabCases'));hide($('tabCompliance'));show($('tab'+tab.charAt(0).toUpperCase()+tab.slice(1)));auditEvent('legal_tab',tab)}
+async function loadCases(){if(!currentUser){$('casesContainer').innerHTML='<p style="color:var(--text-muted);text-align:center;padding:20px">Sign in to view cases.</p>';return}$('casesContainer').innerHTML='<p style="color:var(--text-muted);text-align:center;padding:20px">Loading cases...</p>';var d=await api('getActiveCases',{});if(d&&d.success&&d.cases&&d.cases.length>0){var html='<div class="table-wrap"><table><thead><tr><th>Title</th><th>Type</th><th>Status</th><th>Filed</th><th>Actions</th></tr></thead><tbody>';d.cases.forEach(function(c){html+='<tr><td>'+esc(c.Title||c.title||'Case')+'</td><td>'+esc(c.Type||c.type||'—')+'</td><td>'+esc(c.Status||c.status||'Active')+'</td><td>'+esc(c.FilingDate||c.filingDate||c.CreatedAt||c.createdAt||'—')+'</td><td><button class="btn btn-sm btn-ghost" onclick="showCaseDetail(\''+esc(String(c.CaseID||c.caseID||''))+'\')">View</button></td></tr>'});html+='</tbody></table></div>';$('casesContainer').innerHTML=html}else{$('casesContainer').innerHTML='<p style="color:var(--text-muted);text-align:center;padding:20px">No active cases found.</p>'}}
+function showCaseDetail(id){if(!id)return;var modal=$('caseDetailModal');$('caseModalTitle').textContent='Case #'+esc(id);$('caseModalMeta').textContent='Case details from Express Airways legal system';$('caseModalGrid').innerHTML='<div><span class="info-label">Case ID</span><span>'+esc(id)+'</span></div><div><span class="info-label">Status</span><span>Active</span></div><div><span class="info-label">Jurisdiction</span><span>Express Airways Legal</span></div><div><span class="info-label">Filed</span><span>'+new Date().toLocaleDateString()+'</span></div>';$('caseModalDesc').textContent='Detailed case information for case '+id+'. Full case docket available upon authorized request.';modal.classList.remove('hidden');auditEvent('case_view',id)}
+document.addEventListener('DOMContentLoaded',function(){EA_TRACKER.init('/legal/');var savedUser=EA_AUTH.getUser();if(savedUser){currentUser=savedUser;updateLegalAuthUI()}else{show($('loginwall'));hideGlobalLoader()}auditEvent('pageview','/legal/');setInterval(function(){api('heartbeat',{user:currentUser?currentUser.email:''}).catch(function(e){console.error('Heartbeat failed:',e)})},60000);
+var scrollDepth=0;window.addEventListener('scroll',function(){var d=Math.round((window.scrollY+window.innerHeight)/document.documentElement.scrollHeight*100);if(d>scrollDepth+10){scrollDepth=d;auditEvent('scroll',d+'%')}});
+qsa('.auth-tab').forEach(function(t){t.addEventListener('click',function(){switchAuthTab(this.dataset.tab)})});
+$('loginForm').addEventListener('submit',function(e){e.preventDefault();login($('loginEmail').value.trim(),$('loginPassword').value)});
+$('registerForm').addEventListener('submit',function(e){e.preventDefault();var n=$('regName').value.trim();var em=$('regEmail').value.trim();var pw=$('regPassword').value;if(!n||!em||!pw)return Toast('error','Fill in all fields');if(pw.length<8)return Toast('error','Password must be 8+');register(n,em,pw)});
+$('logoutBtn').addEventListener('click',logoutUser);
+$('dropdownLogout').addEventListener('click',logoutUser);
+$('userAvatarBtn').addEventListener('click',function(e){e.stopPropagation();var dd=$('userDropdown');dd.classList.toggle('hidden');if(!dd.classList.contains('hidden')){setTimeout(function(){document.addEventListener('click',function closeDd(){dd.classList.add('hidden');document.removeEventListener('click',closeDd)})},100)}});
+qsa('#legalTabs .tab').forEach(function(t){t.addEventListener('click',function(){switchLegalTab(this.dataset.tab)})});
+document.addEventListener('click',function(e){auditEvent('click',e.target.tagName+':'+(e.target.textContent||'').trim().slice(0,50))});
 });
-
-function switchTab(tab) {
-  document.querySelectorAll('.auth-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
-  document.getElementById('loginForm').classList.toggle('hidden', tab !== 'login');
-  document.getElementById('signupForm').classList.toggle('hidden', tab !== 'signup');
-  document.getElementById('loginForm').classList.toggle('active', tab === 'login');
-  document.getElementById('signupForm').classList.toggle('active', tab === 'signup');
-}

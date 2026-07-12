@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Error Codes - Express Airways</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#080c1a;color:#e8edf5;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;min-height:100vh}
+.nav{background:#0d1326;padding:0 24px;display:flex;align-items:center;height:64px;border-bottom:1px solid #1a2240;position:sticky;top:0;z-index:100}
+.nav-logo{font-size:20px;font-weight:800;background:linear-gradient(135deg,#4f8cff,#00d4aa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-decoration:none;margin-right:40px}
+.nav-links{display:flex;gap:24px;list-style:none}
+.nav-links a{color:#8892b0;text-decoration:none;font-size:14px;font-weight:500;transition:color .2s}
+.nav-links a:hover{color:#4f8cff}
+.nav-links a.active{color:#4f8cff}
+.container{max-width:1280px;margin:0 auto;padding:32px 24px}
+.header{text-align:center;margin-bottom:40px}
+.header h1{font-size:36px;font-weight:800;margin-bottom:8px;background:linear-gradient(135deg,#4f8cff,#00d4aa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.header p{color:#8892b0;font-size:16px}
+.controls{display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap;align-items:center}
+.search-box{flex:1;min-width:240px;padding:12px 16px;border-radius:8px;border:1px solid #1a2240;background:#0d1326;color:#e8edf5;font-size:14px;outline:none;transition:border .2s}
+.search-box:focus{border-color:#4f8cff}
+.search-box::placeholder{color:#4a5580}
+.filters{display:flex;gap:8px;flex-wrap:wrap}
+.filter-btn{padding:8px 16px;border-radius:6px;border:1px solid #1a2240;background:transparent;color:#8892b0;font-size:13px;cursor:pointer;transition:all .2s;white-space:nowrap}
+.filter-btn:hover{border-color:#4f8cff;color:#4f8cff}
+.filter-btn.active{background:linear-gradient(135deg,#4f8cff,#00d4aa);border-color:transparent;color:#fff}
+.summary{display:flex;gap:24px;margin-bottom:24px;flex-wrap:wrap}
+.summary-card{background:#0d1326;border:1px solid #1a2240;border-radius:8px;padding:16px 24px;flex:1;min-width:140px;text-align:center}
+.summary-card .number{font-size:28px;font-weight:800;color:#4f8cff}
+.summary-card .label{color:#8892b0;font-size:13px;margin-top:4px}
+.table-wrap{overflow-x:auto;border-radius:8px;border:1px solid #1a2240}
+table{width:100%;border-collapse:collapse;font-size:14px}
+thead{background:#0d1326}
+th{padding:14px 16px;text-align:left;font-weight:600;color:#8892b0;font-size:13px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #1a2240;cursor:pointer;user-select:none;white-space:nowrap}
+th:hover{color:#4f8cff}
+th .sort{display:inline-block;margin-left:4px;opacity:.4}
+th .sort.active{opacity:1;color:#4f8cff}
+td{padding:14px 16px;border-bottom:1px solid #1a2240;transition:background .15s}
+tbody tr{transition:background .15s}
+tbody tr:hover{background:#0d1326}
+tbody tr.expanded{background:#0a1022}
+.code-badge{display:inline-block;padding:3px 10px;border-radius:4px;font-weight:700;font-size:12px;letter-spacing:.3px}
+.badge-client{background:#1a2a6a;color:#6b9fff}
+.badge-auth{background:#4a1a1a;color:#ff6b6b}
+.badge-resource{background:#1a3a1a;color:#6bff6b}
+.badge-rate{background:#3a2a1a;color:#ffb86b}
+.badge-server{background:#3a1a3a;color:#ff6bff}
+.badge-validation{background:#1a2a3a;color:#6bcfff}
+.badge-data{background:#2a1a3a;color:#b86bff}
+.badge-security{background:#3a1a1a;color:#ff4444}
+.badge-business{background:#2a3a1a;color:#aaff6b}
+.status-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:12px;font-weight:600}
+.status-2xx{background:#1a3a1a;color:#6bff6b}
+.status-4xx{background:#3a2a1a;color:#ffb86b}
+.status-5xx{background:#3a1a1a;color:#ff6b6b}
+.expand-btn{background:none;border:1px solid #1a2240;color:#8892b0;border-radius:4px;padding:4px 10px;font-size:12px;cursor:pointer;transition:all .2s}
+.expand-btn:hover{border-color:#4f8cff;color:#4f8cff}
+.resolution-row{display:none}
+.resolution-row.visible{display:table-row}
+.resolution-cell{padding:16px 24px;background:#0a1022}
+.resolution-box{border-left:3px solid #4f8cff;padding:12px 16px;background:#0d1326;border-radius:0 6px 6px 0}
+.resolution-box h4{color:#4f8cff;font-size:14px;margin-bottom:6px}
+.resolution-box p{color:#8892b0;font-size:13px;line-height:1.6}
+.empty-state{text-align:center;padding:48px 24px;color:#4a5580}
+.empty-state p{font-size:16px}
+@media(max-width:768px){
+  .container{padding:16px}
+  .header h1{font-size:26px}
+  .controls{flex-direction:column}
+  .search-box{min-width:100%}
+  .filters{justify-content:center}
+  .summary{gap:12px}
+  .summary-card{padding:12px 16px;min-width:100px}
+  .summary-card .number{font-size:22px}
+  th,td{padding:10px 12px;font-size:13px}
+  .nav{padding:0 12px}
+  .nav-links{gap:12px}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="../index.html" class="nav-logo">Express Airways</a>
+  <ul class="nav-links">
+    <li><a href="../index.html">Home</a></li>
+    <li><a href="../flights.html">Flights</a></li>
+    <li><a href="../bookings.html">Bookings</a></li>
+    <li><a href="../support.html">Support</a></li>
+    <li><a href="index.html" class="active">Error Codes</a></li>
+  </ul>
+</nav>
+
+<div class="container">
+  <div class="header">
+    <h1>Error Code Reference</h1>
+    <p>Complete reference of Express Airways error codes — search, filter, and find resolutions</p>
+  </div>
+
+  <div class="summary">
+    <div class="summary-card"><div class="number" id="totalCodes">0</div><div class="label">Total Error Codes</div></div>
+    <div class="summary-card"><div class="number" id="clientCount">0</div><div class="label">Client Errors</div></div>
+    <div class="summary-card"><div class="number" id="authCount">0</div><div class="label">Auth Errors</div></div>
+    <div class="summary-card"><div class="number" id="serverCount">0</div><div class="label">Server Errors</div></div>
+    <div class="summary-card"><div class="number" id="securityCount">0</div><div class="label">Security Errors</div></div>
+  </div>
+
+  <div class="controls">
+    <input type="text" class="search-box" id="searchBox" placeholder="Search error codes, names, or descriptions..." oninput="filterErrors()">
+    <div class="filters" id="filterTabs">
+      <button class="filter-btn active" data-cat="all" onclick="setFilter('all')">All</button>
+      <button class="filter-btn" data-cat="client" onclick="setFilter('client')">Client</button>
+      <button class="filter-btn" data-cat="auth" onclick="setFilter('auth')">Auth</button>
+      <button class="filter-btn" data-cat="resource" onclick="setFilter('resource')">Resource</button>
+      <button class="filter-btn" data-cat="rate" onclick="setFilter('rate')">Rate Limit</button>
+      <button class="filter-btn" data-cat="server" onclick="setFilter('server')">Server</button>
+      <button class="filter-btn" data-cat="validation" onclick="setFilter('validation')">Validation</button>
+      <button class="filter-btn" data-cat="data" onclick="setFilter('data')">Data</button>
+      <button class="filter-btn" data-cat="security" onclick="setFilter('security')">Security</button>
+      <button class="filter-btn" data-cat="business" onclick="setFilter('business')">Business</button>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th onclick="sortBy('code')">Code <span class="sort" id="sort-code">&#9650;</span></th>
+          <th onclick="sortBy('name')">Name <span class="sort" id="sort-name">&#9650;</span></th>
+          <th onclick="sortBy('category')">Category <span class="sort" id="sort-category">&#9650;</span></th>
+          <th onclick="sortBy('description')">Description <span class="sort" id="sort-description">&#9650;</span></th>
+          <th onclick="sortBy('status')">HTTP Status <span class="sort" id="sort-status">&#9650;</span></th>
+          <th style="width:80px;text-align:center">Details</th>
+        </tr>
+      </thead>
+      <tbody id="errorTableBody"></tbody>
+    </table>
+  </div>
+  <div class="empty-state" id="emptyState" style="display:none">
+    <p>No error codes match your search criteria. Try adjusting your filters.</p>
+  </div>
+</div>
+
+<script>
+const errors = [
+  {code:'E100',name:'Bad Request',category:'client',catLabel:'Client Error',status:400,statusLabel:'400 Bad Request',desc:'The server cannot process the request due to invalid syntax or malformed data.',resolution:'Check your request parameters and ensure all data is properly formatted. Verify JSON/XML syntax if applicable. Review API documentation for correct request structure.'},
+  {code:'E101',name:'Invalid Parameters',category:'client',catLabel:'Client Error',status:400,statusLabel:'400 Bad Request',desc:'One or more request parameters are invalid or have unexpected values.',resolution:'Review the list of required and optional parameters. Ensure all parameter values meet the specified format and constraints.'},
+  {code:'E102',name:'Missing Required Field',category:'client',catLabel:'Client Error',status:400,statusLabel:'400 Bad Request',desc:'A required field is missing from the request payload.',resolution:'Check the request body for all required fields. Add the missing field and resubmit the request.'},
+  {code:'E103',name:'Invalid Email Format',category:'client',catLabel:'Client Error',status:400,statusLabel:'400 Bad Request',desc:'The provided email address does not match the expected format.',resolution:'Enter a valid email address (e.g., user@example.com). Check for typos or unsupported special characters.'},
+  {code:'E104',name:'Invalid Airport Code',category:'client',catLabel:'Client Error',status:400,statusLabel:'400 Bad Request',desc:'The airport code provided is not a valid IATA/ICAO code.',resolution:'Use a valid 3-letter IATA airport code (e.g., JFK, LHR, HND). Check the airport code reference for valid codes.'},
+  {code:'E105',name:'Invalid Date Format',category:'client',catLabel:'Client Error',status:400,statusLabel:'400 Bad Request',desc:'The date provided does not match the expected format.',resolution:'Use the format YYYY-MM-DD for dates. Ensure the date is valid (e.g., not February 30).'},
+  {code:'E106',name:'Invalid Phone Number',category:'client',catLabel:'Client Error',status:400,statusLabel:'400 Bad Request',desc:'The phone number provided is not valid.',resolution:'Provide a phone number in international format starting with + followed by country code and number (e.g., +1234567890).'},
+  {code:'E107',name:'Invalid Passport Format',category:'client',catLabel:'Client Error',status:400,statusLabel:'400 Bad Request',desc:'The passport number does not match the expected format.',resolution:'Verify the passport number format for the issuing country. Passport numbers typically contain 6-9 alphanumeric characters.'},
+  {code:'E108',name:'Invalid Cabin Class',category:'client',catLabel:'Client Error',status:400,statusLabel:'400 Bad Request',desc:'The specified cabin class is not recognized or not available.',resolution:'Use a valid cabin class: economy, premium_economy, business, or first.'},
+  {code:'E109',name:'Invalid Service Type',category:'client',catLabel:'Client Error',status:400,statusLabel:'400 Bad Request',desc:'The requested service type is not recognized.',resolution:'Check the list of available service types and use a valid service type identifier.'},
+  {code:'E110',name:'Invalid Currency Code',category:'client',catLabel:'Client Error',status:400,statusLabel:'400 Bad Request',desc:'The currency code is not a valid ISO 4217 code.',resolution:'Use a valid 3-letter ISO 4217 currency code (e.g., USD, EUR, GBP, JPY).'},
+  {code:'E111',name:'Invalid Amount',category:'client',catLabel:'Client Error',status:400,statusLabel:'400 Bad Request',desc:'The monetary amount provided is invalid or out of range.',resolution:'Ensure the amount is a positive number with up to 2 decimal places. Check minimum and maximum allowed values.'},
+  {code:'E112',name:'Invalid Pagination',category:'client',catLabel:'Client Error',status:400,statusLabel:'400 Bad Request',desc:'Pagination parameters are invalid or out of range.',resolution:'Use positive integer values for page and limit parameters. Ensure limit does not exceed the maximum allowed (typically 100).'},
+  {code:'E113',name:'Invalid Sort Order',category:'client',catLabel:'Client Error',status:400,statusLabel:'400 Bad Request',desc:'The sort order parameter is not recognized.',resolution:'Use valid sort order values: asc for ascending or desc for descending.'},
+  {code:'E114',name:'Invalid Filter',category:'client',catLabel:'Client Error',status:400,statusLabel:'400 Bad Request',desc:'The filter parameter or value is not valid for this endpoint.',resolution:'Check the list of supported filters for this endpoint and ensure filter values are correctly formatted.'},
+  {code:'E115',name:'Invalid Search Query',category:'client',catLabel:'Client Error',status:400,statusLabel:'400 Bad Request',desc:'The search query contains invalid characters or syntax.',resolution:'Remove special characters from the search query. Use only alphanumeric characters and hyphens.'},
+  {code:'E116',name:'Invalid Booking Reference',category:'client',catLabel:'Client Error',status:400,statusLabel:'400 Bad Request',desc:'The booking reference format is invalid.',resolution:'Booking references are 6-character alphanumeric codes. Check your booking confirmation email for the correct reference.'},
+  {code:'E117',name:'Invalid Flight Number',category:'client',catLabel:'Client Error',status:400,statusLabel:'400 Bad Request',desc:'The flight number format is not valid.',resolution:'Flight numbers consist of the airline code (2 chars) followed by 1-4 digits (e.g., EA1234).'},
+  {code:'E118',name:'Invalid API Key Format',category:'client',catLabel:'Client Error',status:400,statusLabel:'400 Bad Request',desc:'The API key does not match the expected format.',resolution:'API keys are 32-character hexadecimal strings. Verify you have copied the entire key without extra spaces.'},
+  {code:'E119',name:'Invalid Session Token',category:'client',catLabel:'Client Error',status:400,statusLabel:'400 Bad Request',desc:'The session token provided has an invalid format.',resolution:'Ensure the session token is a valid JWT or session identifier. Try signing out and signing in again to obtain a new token.'},
+  {code:'E120',name:'Invalid User ID',category:'client',catLabel:'Client Error',status:400,statusLabel:'400 Bad Request',desc:'The user ID format is not recognized.',resolution:'User IDs are numeric identifiers. Check that you are using the correct user ID from your account profile.'},
+  {code:'E121',name:'Invalid Case ID',category:'client',catLabel:'Client Error',status:400,statusLabel:'400 Bad Request',desc:'The support case ID format is invalid.',resolution:'Case IDs are alphanumeric strings. Verify the case ID from your support ticket or email correspondence.'},
+  {code:'E122',name:'Invalid Document ID',category:'client',catLabel:'Client Error',status:400,statusLabel:'400 Bad Request',desc:'The document ID format is not valid.',resolution:'Document IDs follow a specific format. Check the document ID from your document management portal.'},
+  {code:'E123',name:'Invalid Evidence ID',category:'client',catLabel:'Client Error',status:400,statusLabel:'400 Bad Request',desc:'The evidence ID format is invalid.',resolution:'Evidence IDs are system-generated identifiers. Verify the evidence ID from the case management system.'},
+  {code:'E124',name:'Invalid Verdict ID',category:'client',catLabel:'Client Error',status:400,statusLabel:'400 Bad Request',desc:'The verdict ID format is not recognized.',resolution:'Verdict IDs are system-generated. Check the verdict ID from the case resolution documentation.'},
+  {code:'E125',name:'Invalid Promotion Code',category:'client',catLabel:'Client Error',status:400,statusLabel:'400 Bad Request',desc:'The promotion code format is invalid.',resolution:'Promotion codes are alphanumeric and may be case-sensitive. Check the code for typos and ensure it has not expired.'},
+  {code:'E126',name:'Invalid Seat Selection',category:'client',catLabel:'Client Error',status:400,statusLabel:'400 Bad Request',desc:'The selected seat is not valid for this flight or aircraft.',resolution:'Use the seat map to select an available seat. Seats are identified by row number and letter (e.g., 12A).'},
+  {code:'E127',name:'Invalid Passenger Count',category:'client',catLabel:'Client Error',status:400,statusLabel:'400 Bad Request',desc:'The number of passengers specified is invalid.',resolution:'Specify between 1 and 9 passengers per booking. For larger groups, contact the group booking department.'},
+  {code:'E128',name:'Invalid Weight Limit',category:'client',catLabel:'Client Error',status:400,statusLabel:'400 Bad Request',desc:'The specified weight exceeds the allowed limit.',resolution:'Check the baggage weight allowance for your ticket class and route. Reduce the weight to within the allowed limit.'},
+  {code:'E129',name:'Invalid Dimension Limit',category:'client',catLabel:'Client Error',status:400,statusLabel:'400 Bad Request',desc:'The baggage dimensions exceed the allowed limits.',resolution:'Ensure baggage dimensions do not exceed the maximum allowed (typically 158cm total linear dimensions for checked bags).'},
+  {code:'E200',name:'Unauthorized',category:'auth',catLabel:'Auth Error',status:401,statusLabel:'401 Unauthorized',desc:'Authentication is required but was not provided or is invalid.',resolution:'Sign in to your Express Airways account and provide valid authentication credentials. Include your session token or API key in the request header.'},
+  {code:'E201',name:'Invalid Credentials',category:'auth',catLabel:'Auth Error',status:401,statusLabel:'401 Unauthorized',desc:'The provided credentials do not match any registered account.',resolution:'Check your email/username and password for typos. Use the "Forgot Password" option to reset your credentials if needed.'},
+  {code:'E202',name:'Account Suspended',category:'auth',catLabel:'Auth Error',status:403,statusLabel:'403 Forbidden',desc:'This account has been temporarily suspended.',resolution:'Contact Express Airways support to resolve the suspension. Suspensions are typically due to policy violations or security concerns.'},
+  {code:'E203',name:'Account Banned',category:'auth',catLabel:'Auth Error',status:403,statusLabel:'403 Forbidden',desc:'This account has been permanently banned due to severe policy violations.',resolution:'Review the Express Airways Terms of Service. You may appeal the ban by contacting the support team.'},
+  {code:'E204',name:'Session Expired',category:'auth',catLabel:'Auth Error',status:401,statusLabel:'401 Unauthorized',desc:'Your session has expired and needs to be renewed.',resolution:'Sign in again to create a new session. Sessions typically expire after 24 hours of inactivity.'},
+  {code:'E205',name:'Invalid Token',category:'auth',catLabel:'Auth Error',status:401,statusLabel:'401 Unauthorized',desc:'The authentication token provided is invalid.',resolution:'Obtain a new token by signing in again. If the problem persists, clear your browser cache and cookies.'},
+  {code:'E206',name:'Token Revoked',category:'auth',catLabel:'Auth Error',status:401,statusLabel:'401 Unauthorized',desc:'The token has been revoked and can no longer be used.',resolution:'A new token is required. Sign in to generate a fresh token. Tokens may be revoked due to security events or password changes.'},
+  {code:'E207',name:'Insufficient Permissions',category:'auth',catLabel:'Auth Error',status:403,statusLabel:'403 Forbidden',desc:'Your account does not have the required permissions for this action.',resolution:'Contact your account administrator to request elevated permissions. Different roles have different access levels.'},
+  {code:'E208',name:'Admin Access Required',category:'auth',catLabel:'Auth Error',status:403,statusLabel:'403 Forbidden',desc:'This action requires administrator-level access.',resolution:'Sign in with an administrator account. Standard user accounts cannot perform administrative operations.'},
+  {code:'E209',name:'Verification Required',category:'auth',catLabel:'Auth Error',status:401,statusLabel:'401 Unauthorized',desc:'Additional verification is required to complete this action.',resolution:'Complete the verification process (email verification, phone verification, or identity verification) before proceeding.'},
+  {code:'E210',name:'Password Too Weak',category:'auth',catLabel:'Auth Error',status:400,statusLabel:'400 Bad Request',desc:'The chosen password does not meet security requirements.',resolution:'Passwords must be at least 8 characters and contain uppercase, lowercase, number, and special character.'},
+  {code:'E211',name:'Password Expired',category:'auth',catLabel:'Auth Error',status:401,statusLabel:'401 Unauthorized',desc:'Your password has expired and must be changed.',resolution:'Reset your password immediately. Expired passwords cannot be used to sign in.'},
+  {code:'E212',name:'Too Many Login Attempts',category:'auth',catLabel:'Auth Error',status:429,statusLabel:'429 Too Many Requests',desc:'Too many failed login attempts have been detected.',resolution:'Wait 15 minutes before trying again. Use the "Forgot Password" option if you cannot remember your credentials.'},
+  {code:'E213',name:'Account Locked',category:'auth',catLabel:'Auth Error',status:403,statusLabel:'403 Forbidden',desc:'The account has been locked due to security concerns.',resolution:'Contact support to unlock your account. Accounts are locked after multiple failed authentication attempts.'},
+  {code:'E214',name:'Email Not Verified',category:'auth',catLabel:'Auth Error',status:403,statusLabel:'403 Forbidden',desc:'The email address on this account has not been verified.',resolution:'Check your email for a verification link. Click the link to verify your email address before proceeding.'},
+  {code:'E215',name:'Device Not Recognized',category:'auth',catLabel:'Auth Error',status:401,statusLabel:'401 Unauthorized',desc:'This device is not recognized as a trusted device.',resolution:'Complete the device verification process. You may need to provide a verification code sent to your registered email or phone.'},
+  {code:'E216',name:'Time Restriction Active',category:'auth',catLabel:'Auth Error',status:403,statusLabel:'403 Forbidden',desc:'Access is restricted during the current time period.',resolution:'Try again during permitted hours. Time restrictions may vary by account type and region.'},
+  {code:'E217',name:'Date Restriction Active',category:'auth',catLabel:'Auth Error',status:403,statusLabel:'403 Forbidden',desc:'Access is restricted on the current date.',resolution:'Try again on a different date. Date restrictions may apply to certain operations or account types.'},
+  {code:'E218',name:'Location Restriction Active',category:'auth',catLabel:'Auth Error',status:403,statusLabel:'403 Forbidden',desc:'Access is restricted from your current geographic location.',resolution:'Access may be limited in certain regions due to regulatory requirements. Try accessing from a different location.'},
+  {code:'E219',name:'Security Question Mismatch',category:'auth',catLabel:'Auth Error',status:401,statusLabel:'401 Unauthorized',desc:'The answer to the security question does not match our records.',resolution:'Try answering your security questions again. Contact support if you have forgotten your security answers.'},
+  {code:'E220',name:'CAPTCHA Failed',category:'auth',catLabel:'Auth Error',status:400,statusLabel:'400 Bad Request',desc:'The CAPTCHA verification was not completed successfully.',resolution:'Complete the CAPTCHA challenge again. Ensure JavaScript is enabled in your browser.'},
+  {code:'E221',name:'Knowledge Check Failed',category:'auth',catLabel:'Auth Error',status:401,statusLabel:'401 Unauthorized',desc:'The knowledge-based verification questions were answered incorrectly.',resolution:'Answer the knowledge-based questions correctly. These questions are based on information associated with your account.'},
+  {code:'E222',name:'Verification Timeout',category:'auth',catLabel:'Auth Error',status:408,statusLabel:'408 Request Timeout',desc:'The verification process timed out before completion.',resolution:'Start the verification process again and complete it within the allotted time window.'},
+  {code:'E223',name:'2FA Required',category:'auth',catLabel:'Auth Error',status:401,statusLabel:'401 Unauthorized',desc:'Two-factor authentication is required but was not provided.',resolution:'Provide your 2FA code from your authenticator app or SMS. If you have lost access to your 2FA method, contact support.'},
+  {code:'E224',name:'Session Hijack Detected',category:'auth',catLabel:'Auth Error',status:401,statusLabel:'401 Unauthorized',desc:'Potential session hijacking has been detected and the session has been terminated.',resolution:'Sign in again immediately. Review your recent account activity for unauthorized access.'},
+  {code:'E225',name:'Credential Leak Detected',category:'auth',catLabel:'Auth Error',status:401,statusLabel:'401 Unauthorized',desc:'Your credentials may have been compromised in a data leak. The account has been secured.',resolution:'Reset your password immediately. Check your email for instructions on securing your account.'},
+  {code:'E300',name:'Not Found',category:'resource',catLabel:'Resource Error',status:404,statusLabel:'404 Not Found',desc:'The requested resource could not be found on the server.',resolution:'Verify the resource identifier and try again. The resource may have been moved or deleted.'},
+  {code:'E301',name:'User Not Found',category:'resource',catLabel:'Resource Error',status:404,statusLabel:'404 Not Found',desc:'The specified user could not be found.',resolution:'Check the user ID for accuracy. The account may have been deleted or deactivated.'},
+  {code:'E302',name:'Booking Not Found',category:'resource',catLabel:'Resource Error',status:404,statusLabel:'404 Not Found',desc:'The booking could not be found with the provided reference.',resolution:'Check the booking reference for typos. Bookings may be removed from the system 90 days after the travel date.'},
+  {code:'E303',name:'Flight Not Found',category:'resource',catLabel:'Resource Error',status:404,statusLabel:'404 Not Found',desc:'The flight could not be found with the provided details.',resolution:'Verify the flight number and date. The flight may have been cancelled or the schedule may have changed.'},
+  {code:'E304',name:'Airport Not Found',category:'resource',catLabel:'Resource Error',status:404,statusLabel:'404 Not Found',desc:'The airport could not be found with the provided code.',resolution:'Use a valid IATA airport code. Check the airport code reference for a complete list.'},
+  {code:'E305',name:'Route Not Found',category:'resource',catLabel:'Resource Error',status:404,statusLabel:'404 Not Found',desc:'The requested route is not available or does not exist.',resolution:'Search for alternative routes between the selected airports. Direct routes may not be available for all city pairs.'},
+  {code:'E306',name:'Document Not Found',category:'resource',catLabel:'Resource Error',status:404,statusLabel:'404 Not Found',desc:'The requested document could not be located.',resolution:'Verify the document ID. Documents may be removed or archived after a certain period.'},
+  {code:'E307',name:'Case Not Found',category:'resource',catLabel:'Resource Error',status:404,statusLabel:'404 Not Found',desc:'The support case could not be found.',resolution:'Check the case ID. Cases may be archived after resolution. Contact support if you need to reference an old case.'},
+  {code:'E308',name:'Evidence Not Found',category:'resource',catLabel:'Resource Error',status:404,statusLabel:'404 Not Found',desc:'The evidence item could not be found.',resolution:'Verify the evidence ID. Evidence may have been removed from the case by an administrator.'},
+  {code:'E309',name:'Verdict Not Found',category:'resource',catLabel:'Resource Error',status:404,statusLabel:'404 Not Found',desc:'The verdict for this case could not be found.',resolution:'The verdict may not have been issued yet. Check the case status for updates.'},
+  {code:'E310',name:'API Key Not Found',category:'resource',catLabel:'Resource Error',status:404,statusLabel:'404 Not Found',desc:'The specified API key could not be found.',resolution:'Generate a new API key from your developer dashboard. API keys may be deleted or revoked.'},
+  {code:'E311',name:'Promotion Not Found',category:'resource',catLabel:'Resource Error',status:404,statusLabel:'404 Not Found',desc:'The promotion code or offer could not be found.',resolution:'Check the promotion code for accuracy. Promotions may have expired or been discontinued.'},
+  {code:'E312',name:'Event Not Found',category:'resource',catLabel:'Resource Error',status:404,statusLabel:'404 Not Found',desc:'The requested event could not be found.',resolution:'Verify the event ID. Events may have ended or been cancelled.'},
+  {code:'E313',name:'Section Not Found',category:'resource',catLabel:'Resource Error',status:404,statusLabel:'404 Not Found',desc:'The page section or content block could not be found.',resolution:'The section may have been removed or renamed. Navigate to the page again to see available sections.'},
+  {code:'E314',name:'Configuration Not Found',category:'resource',catLabel:'Resource Error',status:404,statusLabel:'404 Not Found',desc:'The requested configuration could not be found.',resolution:'Verify the configuration key. Configuration may not have been set up yet for this context.'},
+  {code:'E315',name:'Holding Not Found',category:'resource',catLabel:'Resource Error',status:404,statusLabel:'404 Not Found',desc:'The booking holding could not be found.',resolution:'Booking holdings expire after 15 minutes. Create a new holding if you wish to proceed with the booking.'},
+  {code:'E316',name:'Notification Not Found',category:'resource',catLabel:'Resource Error',status:404,statusLabel:'404 Not Found',desc:'The notification could not be found.',resolution:'Notifications may be automatically deleted after 30 days. Check the notification archive.'},
+  {code:'E317',name:'Message Not Found',category:'resource',catLabel:'Resource Error',status:404,statusLabel:'404 Not Found',desc:'The message could not be found.',resolution:'Messages may be deleted by the sender or receiver. Check your inbox or sent folder.'},
+  {code:'E318',name:'Review Not Found',category:'resource',catLabel:'Resource Error',status:404,statusLabel:'404 Not Found',desc:'The review could not be found.',resolution:'Reviews may be removed if they violate content guidelines. Verify the review ID.'},
+  {code:'E319',name:'Referral Not Found',category:'resource',catLabel:'Resource Error',status:404,statusLabel:'404 Not Found',desc:'The referral could not be found.',resolution:'Check your referral code or link. Referrals may expire after a certain period.'},
+  {code:'E400',name:'Rate Limit Exceeded',category:'rate',catLabel:'Rate Limit Error',status:429,statusLabel:'429 Too Many Requests',desc:'You have exceeded the general rate limit for API requests.',resolution:'Wait the specified retry period (typically 60 seconds) before making additional requests.'},
+  {code:'E401',name:'API Rate Limit',category:'rate',catLabel:'Rate Limit Error',status:429,statusLabel:'429 Too Many Requests',desc:'You have exceeded the API-specific rate limit.',resolution:'Review the API rate limits for your tier. Consider implementing request throttling in your application.'},
+  {code:'E402',name:'Search Rate Limit',category:'rate',catLabel:'Rate Limit Error',status:429,statusLabel:'429 Too Many Requests',desc:'Too many search requests have been made in a short period.',resolution:'Reduce the frequency of search requests. Cache search results where possible.'},
+  {code:'E403',name:'Booking Rate Limit',category:'rate',catLabel:'Rate Limit Error',status:429,statusLabel:'429 Too Many Requests',desc:'Too many booking requests have been made.',resolution:'Slow down booking request frequency. There is a limit on bookings per minute per account.'},
+  {code:'E404',name:'Login Rate Limit',category:'rate',catLabel:'Rate Limit Error',status:429,statusLabel:'429 Too Many Requests',desc:'Too many login attempts from this IP address.',resolution:'Wait before attempting to log in again. Use the "Forgot Password" option if needed.'},
+  {code:'E405',name:'Registration Rate Limit',category:'rate',catLabel:'Rate Limit Error',status:429,statusLabel:'429 Too Many Requests',desc:'Too many registration attempts from this IP address.',resolution:'Wait before attempting to register a new account. There is a limit on registrations per IP.'},
+  {code:'E406',name:'Document Request Limit',category:'rate',catLabel:'Rate Limit Error',status:429,statusLabel:'429 Too Many Requests',desc:'Too many document requests have been made.',resolution:'Reduce the frequency of document requests. Cache document metadata when possible.'},
+  {code:'E407',name:'API Key Creation Limit',category:'rate',catLabel:'Rate Limit Error',status:429,statusLabel:'429 Too Many Requests',desc:'You have reached the maximum number of API keys for your account.',resolution:'Delete unused API keys before creating new ones. Contact support if you need a higher limit.'},
+  {code:'E408',name:'Concurrent Session Limit',category:'rate',catLabel:'Rate Limit Error',status:429,statusLabel:'429 Too Many Requests',desc:'You have reached the maximum number of concurrent sessions.',resolution:'Sign out from other devices or sessions before starting a new one. The maximum is typically 5 concurrent sessions.'},
+  {code:'E409',name:'Request Too Large',category:'rate',catLabel:'Rate Limit Error',status:413,statusLabel:'413 Payload Too Large',desc:'The request payload exceeds the maximum allowed size.',resolution:'Reduce the size of your request payload. The maximum payload size is typically 10MB.'},
+  {code:'E410',name:'Too Many Parameters',category:'rate',catLabel:'Rate Limit Error',status:400,statusLabel:'400 Bad Request',desc:'The request contains too many parameters.',resolution:'Reduce the number of query parameters or request body fields. Consolidate multiple requests if needed.'},
+  {code:'E411',name:'Too Many Results',category:'rate',catLabel:'Rate Limit Error',status:400,statusLabel:'400 Bad Request',desc:'The query would return too many results.',resolution:'Narrow your search criteria or use pagination to limit the number of results per page.'},
+  {code:'E500',name:'Internal Server Error',category:'server',catLabel:'Server Error',status:500,statusLabel:'500 Internal Server Error',desc:'An unexpected error occurred on the server.',resolution:'Our team has been automatically notified. Try again in a few minutes. If the problem persists, contact support.'},
+  {code:'E501',name:'Database Connection Failed',category:'server',catLabel:'Server Error',status:500,statusLabel:'500 Internal Server Error',desc:'The server could not establish a connection to the database.',resolution:'The database service may be temporarily unavailable. Our team has been notified and is working on a fix.'},
+  {code:'E502',name:'Sheet Not Found',category:'server',catLabel:'Server Error',status:500,statusLabel:'500 Internal Server Error',desc:'The spreadsheet data source could not be accessed.',resolution:'Check that the spreadsheet ID and sheet name are correct. The spreadsheet may have been moved or deleted.'},
+  {code:'E503',name:'Cache Unavailable',category:'server',catLabel:'Server Error',status:500,statusLabel:'500 Internal Server Error',desc:'The caching service is not available.',resolution:'Our team has been notified. The system will operate with reduced performance until the cache service is restored.'},
+  {code:'E504',name:'External API Failure',category:'server',catLabel:'Server Error',status:502,statusLabel:'502 Bad Gateway',desc:'An external API call failed to return a valid response.',resolution:'The external service may be experiencing issues. Our team has been alerted. Please try again later.'},
+  {code:'E505',name:'OpenSky API Error',category:'server',catLabel:'Server Error',status:502,statusLabel:'502 Bad Gateway',desc:'The OpenSky Network API returned an error.',resolution:'The OpenSky Network service may be temporarily unavailable. Flight tracking data will resume when the service is restored.'},
+  {code:'E506',name:'GeoNames API Error',category:'server',catLabel:'Server Error',status:502,statusLabel:'502 Bad Gateway',desc:'The GeoNames API returned an error.',resolution:'The GeoNames geolocation service may be experiencing issues. Location data will be restored when the service is available.'},
+  {code:'E507',name:'Open-Meteo API Error',category:'server',catLabel:'Server Error',status:502,statusLabel:'502 Bad Gateway',desc:'The Open-Meteo weather API returned an error.',resolution:'Weather data is temporarily unavailable. Our team has been notified and will restore the service shortly.'},
+  {code:'E508',name:'Exchange Rate API Error',category:'server',catLabel:'Server Error',status:502,statusLabel:'502 Bad Gateway',desc:'The currency exchange rate API returned an error.',resolution:'Currency conversion is temporarily unavailable. Try again later when the exchange rate service is restored.'},
+  {code:'E509',name:'IP Geolocation Error',category:'server',catLabel:'Server Error',status:500,statusLabel:'500 Internal Server Error',desc:'Failed to determine the geographic location of an IP address.',resolution:'The geolocation service may be unavailable. Some location-based features may not work correctly.'},
+  {code:'E510',name:'Script Execution Timeout',category:'server',catLabel:'Server Error',status:500,statusLabel:'500 Internal Server Error',desc:'A server script exceeded the maximum execution time.',resolution:'Our team has been notified. This typically indicates an optimization issue that will be resolved shortly.'},
+  {code:'E511',name:'Memory Limit Exceeded',category:'server',catLabel:'Server Error',status:500,statusLabel:'500 Internal Server Error',desc:'The server exceeded its memory allocation for this request.',resolution:'Reduce the scope of your request. Our team has been notified of the memory issue.'},
+  {code:'E512',name:'Rate Limit Store Full',category:'server',catLabel:'Server Error',status:500,statusLabel:'500 Internal Server Error',desc:'The rate limit tracking store is full and cannot record new requests.',resolution:'Rate limiting has been temporarily disabled. Our team is working to resolve the storage issue.'},
+  {code:'E513',name:'Service Unavailable',category:'server',catLabel:'Server Error',status:503,statusLabel:'503 Service Unavailable',desc:'The service is temporarily unavailable.',resolution:'Try again later. The service may be undergoing maintenance or experiencing high load.'},
+  {code:'E514',name:'Maintenance Mode',category:'server',catLabel:'Server Error',status:503,statusLabel:'503 Service Unavailable',desc:'The system is currently in maintenance mode.',resolution:'The system will be available again once maintenance is complete. Check the status page for estimated completion time.'},
+  {code:'E515',name:'Backup In Progress',category:'server',catLabel:'Server Error',status:503,statusLabel:'503 Service Unavailable',desc:'A system backup is currently in progress.',resolution:'Wait for the backup to complete before making requests. Backups typically take a few minutes.'},
+  {code:'E516',name:'Data Sync Error',category:'server',catLabel:'Server Error',status:500,statusLabel:'500 Internal Server Error',desc:'A data synchronization operation failed.',resolution:'Our team has been notified. Data consistency checks are being performed.'},
+  {code:'E517',name:'Write Conflict',category:'server',catLabel:'Server Error',status:409,statusLabel:'409 Conflict',desc:'A write conflict occurred due to concurrent modifications.',resolution:'Retry the request. If the conflict persists, refresh the data and try again with the latest version.'},
+  {code:'E518',name:'Read Timeout',category:'server',catLabel:'Server Error',status:504,statusLabel:'504 Gateway Timeout',desc:'The server timed out while reading data from a source.',resolution:'The upstream service may be slow. Try again later when system load is lower.'},
+  {code:'E519',name:'Write Timeout',category:'server',catLabel:'Server Error',status:504,statusLabel:'504 Gateway Timeout',desc:'The server timed out while writing data to a destination.',resolution:'The write operation may have partially completed. Check the system status before retrying.'},
+  {code:'E600',name:'Validation Failed',category:'validation',catLabel:'Validation Error',status:400,statusLabel:'400 Bad Request',desc:'The request data failed one or more validation checks.',resolution:'Review the validation errors in the response body and fix each issue before resubmitting.'},
+  {code:'E601',name:'Origin Destination Same',category:'validation',catLabel:'Validation Error',status:400,statusLabel:'400 Bad Request',desc:'The origin and destination airports cannot be the same.',resolution:'Select different airports for departure and arrival. Choose a valid destination different from your origin.'},
+  {code:'E602',name:'Invalid Date Range',category:'validation',catLabel:'Validation Error',status:400,statusLabel:'400 Bad Request',desc:'The specified date range is invalid.',resolution:'Ensure the start date is before the end date. Date ranges cannot exceed 30 days for flight searches.'},
+  {code:'E603',name:'Past Date Selected',category:'validation',catLabel:'Validation Error',status:400,statusLabel:'400 Bad Request',desc:'A past date cannot be selected for this operation.',resolution:'Select a current or future date. Past dates are only valid for booking history lookups.'},
+  {code:'E604',name:'Return Before Departure',category:'validation',catLabel:'Validation Error',status:400,statusLabel:'400 Bad Request',desc:'The return date must be after the departure date.',resolution:'Set the return date to be later than the departure date for round-trip bookings.'},
+  {code:'E605',name:'Too Many Passengers',category:'validation',catLabel:'Validation Error',status:400,statusLabel:'400 Bad Request',desc:'The number of passengers exceeds the maximum allowed.',resolution:'Reduce the number of passengers to 9 or fewer. For larger groups, use the group booking service.'},
+  {code:'E606',name:'Missing Passenger Details',category:'validation',catLabel:'Validation Error',status:400,statusLabel:'400 Bad Request',desc:'Required passenger details have not been provided.',resolution:'Complete all required fields for each passenger: full name, date of birth, nationality, and passport details.'},
+  {code:'E607',name:'Incomplete Booking',category:'validation',catLabel:'Validation Error',status:400,statusLabel:'400 Bad Request',desc:'The booking is incomplete and cannot be processed.',resolution:'Complete all booking steps including passenger details, seat selection, and add-ons before payment.'},
+  {code:'E608',name:'Miles Insufficient',category:'validation',catLabel:'Validation Error',status:400,statusLabel:'400 Bad Request',desc:'You do not have enough loyalty miles for this redemption.',resolution:'Earn more miles through flights or partners, or choose a cash payment option instead.'},
+  {code:'E609',name:'Payment Failed',category:'validation',catLabel:'Validation Error',status:400,statusLabel:'400 Bad Request',desc:'The payment transaction could not be processed.',resolution:'Check your payment details and ensure sufficient funds. Try a different payment method if the issue persists.'},
+  {code:'E610',name:'Terms Not Accepted',category:'validation',catLabel:'Validation Error',status:400,statusLabel:'400 Bad Request',desc:'You must accept the terms and conditions to proceed.',resolution:'Read and accept the terms and conditions by checking the agreement checkbox before continuing.'},
+  {code:'E611',name:'Privacy Not Accepted',category:'validation',catLabel:'Validation Error',status:400,statusLabel:'400 Bad Request',desc:'You must accept the privacy policy to proceed.',resolution:'Read and accept the privacy policy to continue. Your data is handled in accordance with applicable regulations.'},
+  {code:'E612',name:'Policy Not Accepted',category:'validation',catLabel:'Validation Error',status:400,statusLabel:'400 Bad Request',desc:'You must accept the service policy to proceed.',resolution:'Review and accept the applicable policies (baggage, cancellation, refund) before completing the booking.'},
+  {code:'E613',name:'Duplicate Booking',category:'validation',catLabel:'Validation Error',status:409,statusLabel:'409 Conflict',desc:'A duplicate booking was detected.',resolution:'Check your existing bookings before creating a new one. Duplicate bookings are prevented to avoid double charges.'},
+  {code:'E614',name:'Booking Limit Reached',category:'validation',catLabel:'Validation Error',status:400,statusLabel:'400 Bad Request',desc:'You have reached the maximum number of active bookings.',resolution:'Complete or cancel existing bookings before creating new ones. The maximum is 10 active bookings per account.'},
+  {code:'E615',name:'Cabin Not Available',category:'validation',catLabel:'Validation Error',status:400,statusLabel:'400 Bad Request',desc:'The selected travel class is not available on this flight.',resolution:'Choose a different cabin class or search for flights with availability in your preferred class.'},
+  {code:'E700',name:'Data Not Available',category:'data',catLabel:'Data Error',status:404,statusLabel:'404 Not Found',desc:'The requested data is not currently available.',resolution:'The data may not have been generated yet or may have been purged. Try again later or refine your request.'},
+  {code:'E701',name:'No Flights Available',category:'data',catLabel:'Data Error',status:404,statusLabel:'404 Not Found',desc:'No flights match your search criteria.',resolution:'Try different dates, airports, or relax your search filters. Consider nearby airports for more options.'},
+  {code:'E702',name:'No Routes Available',category:'data',catLabel:'Data Error',status:404,statusLabel:'404 Not Found',desc:'No routes are available for the specified airports.',resolution:'Search for alternative routes or connecting flights. Direct routes may not exist between all city pairs.'},
+  {code:'E703',name:'No Weather Data',category:'data',catLabel:'Data Error',status:404,statusLabel:'404 Not Found',desc:'Weather data is not available for the specified location or time.',resolution:'Weather data may not be available for all locations. Check a different location or time.'},
+  {code:'E704',name:'No Exchange Rates',category:'data',catLabel:'Data Error',status:404,statusLabel:'404 Not Found',desc:'Exchange rate data is not available for the specified currency pair.',resolution:'Check that both currency codes are valid. Some currency pairs may not be supported.'},
+  {code:'E705',name:'No Airport Data',category:'data',catLabel:'Data Error',status:404,statusLabel:'404 Not Found',desc:'Airport data is not available for the specified code.',resolution:'The airport code may be incorrect or the airport may not be in our database. Try a different code.'},
+  {code:'E706',name:'No Booking History',category:'data',catLabel:'Data Error',status:404,statusLabel:'404 Not Found',desc:'No booking history was found for this account or criteria.',resolution:'You may not have any bookings yet. Create a new booking or check with a different account.'},
+  {code:'E707',name:'No Documents Available',category:'data',catLabel:'Data Error',status:404,statusLabel:'404 Not Found',desc:'No documents are available for this request.',resolution:'Upload required documents or check that documents have been processed. Document processing may take up to 24 hours.'},
+  {code:'E708',name:'No Cases Available',category:'data',catLabel:'Data Error',status:404,statusLabel:'404 Not Found',desc:'No support cases were found for this account.',resolution:'You may not have any open support cases. Create a new support case if you need assistance.'},
+  {code:'E709',name:'No Audit Data',category:'data',catLabel:'Data Error',status:404,statusLabel:'404 Not Found',desc:'No audit log data is available for the specified criteria.',resolution:'Audit data is retained for 90 days. Broaden your search criteria or check a different time range.'},
+  {code:'E710',name:'No Statistics Available',category:'data',catLabel:'Data Error',status:404,statusLabel:'404 Not Found',desc:'No statistics data is available for the specified criteria.',resolution:'Statistics may not be available for the selected period. Data is typically available after 24 hours.'},
+  {code:'E800',name:'Security Violation',category:'security',catLabel:'Security Error',status:403,statusLabel:'403 Forbidden',desc:'A security policy violation has been detected.',resolution:'Your request has been blocked for security reasons. Review your activities and ensure compliance with security policies.'},
+  {code:'E801',name:'Forbidden Access',category:'security',catLabel:'Security Error',status:403,statusLabel:'403 Forbidden',desc:'Access to this resource is strictly forbidden.',resolution:'You do not have permission to access this resource. Contact your administrator if you need access.'},
+  {code:'E802',name:'IP Blocked',category:'security',catLabel:'Security Error',status:403,statusLabel:'403 Forbidden',desc:'This IP address has been blocked due to security concerns.',resolution:'Your IP has been blocked due to suspicious activity. Contact support if you believe this is an error.'},
+  {code:'E803',name:'VPN Detected',category:'security',catLabel:'Security Error',status:403,statusLabel:'403 Forbidden',desc:'VPN usage has been detected and access is restricted.',resolution:'Disable your VPN or proxy and try again. Some services are restricted when using anonymous connections.'},
+  {code:'E804',name:'Proxy Detected',category:'security',catLabel:'Security Error',status:403,statusLabel:'403 Forbidden',desc:'Proxy server usage has been detected.',resolution:'Disable any proxy services before accessing this resource. Direct connections are required.'},
+  {code:'E805',name:'Tor Detected',category:'security',catLabel:'Security Error',status:403,statusLabel:'403 Forbidden',desc:'Tor network usage has been detected and is not permitted.',resolution:'Access the service without using the Tor network. Tor exit nodes are blocked for security purposes.'},
+  {code:'E806',name:'Suspicious Activity',category:'security',catLabel:'Security Error',status:403,statusLabel:'403 Forbidden',desc:'Suspicious activity has been detected from this account.',resolution:'Your account may have been compromised. Reset your password and contact support immediately.'},
+  {code:'E807',name:'Brute Force Detected',category:'security',catLabel:'Security Error',status:403,statusLabel:'403 Forbidden',desc:'A brute force attack pattern has been detected.',resolution:'Your access has been temporarily blocked. Wait before trying again and ensure you are using correct credentials.'},
+  {code:'E808',name:'SQL Injection Attempt',category:'security',catLabel:'Security Error',status:400,statusLabel:'400 Bad Request',desc:'A potential SQL injection attack has been detected in the request.',resolution:'Remove SQL syntax from your input. Use only expected characters for the field you are filling in.'},
+  {code:'E809',name:'XSS Attempt Detected',category:'security',catLabel:'Security Error',status:400,statusLabel:'400 Bad Request',desc:'A potential cross-site scripting (XSS) attack was detected.',resolution:'Remove HTML/JavaScript tags from your input. Use plain text for form fields.'},
+  {code:'E810',name:'CSRF Token Invalid',category:'security',catLabel:'Security Error',status:400,statusLabel:'400 Bad Request',desc:'The CSRF token is missing or invalid.',resolution:'Refresh the page and try again. The CSRF token ensures the request originated from our application.'},
+  {code:'E811',name:'Request Tampering Detected',category:'security',catLabel:'Security Error',status:400,statusLabel:'400 Bad Request',desc:'Request tampering has been detected.',resolution:'Do not modify request signatures or tokens. Any tampering will invalidate the request.'},
+  {code:'E812',name:'Unauthorized Data Access',category:'security',catLabel:'Security Error',status:403,statusLabel:'403 Forbidden',desc:'An attempt to access data without proper authorization was blocked.',resolution:'You can only access data that belongs to your account or that you have been granted explicit permission to view.'},
+  {code:'E813',name:'Data Exfiltration Attempt',category:'security',catLabel:'Security Error',status:403,statusLabel:'403 Forbidden',desc:'A potential data exfiltration attempt has been detected and blocked.',resolution:'Bulk data extraction is not permitted. If you need large datasets, contact our data services team.'},
+  {code:'E900',name:'Business Rule Violation',category:'business',catLabel:'Business Logic Error',status:400,statusLabel:'400 Bad Request',desc:'The request violates one or more business rules.',resolution:'Review the business rules and adjust your request accordingly. Contact support for clarification on specific rules.'},
+  {code:'E901',name:'Booking Window Closed',category:'business',catLabel:'Business Logic Error',status:400,statusLabel:'400 Bad Request',desc:'The booking window for this flight has closed.',resolution:'Bookings must be made at least 2 hours before departure. Choose a later flight or contact the airport for last-minute options.'},
+  {code:'E902',name:'Check-in Not Available',category:'business',catLabel:'Business Logic Error',status:400,statusLabel:'400 Bad Request',desc:'Online check-in is not yet available for this flight.',resolution:'Online check-in opens 24 hours before departure. Check-in at the airport if your flight departs soon.'},
+  {code:'E903',name:'Seat Already Booked',category:'business',catLabel:'Business Logic Error',status:409,statusLabel:'409 Conflict',desc:'The selected seat has already been booked by another passenger.',resolution:'Choose a different seat from the seat map. Available seats are shown in real-time.'},
+  {code:'E904',name:'Flight Overbooked',category:'business',catLabel:'Business Logic Error',status:409,statusLabel:'409 Conflict',desc:'The flight is overbooked and no seats are available.',resolution:'Consider alternative flights or check for voluntary bumping options with compensation.'},
+  {code:'E905',name:'Aircraft Change',category:'business',catLabel:'Business Logic Error',status:200,statusLabel:'200 OK (Informational)',desc:'The aircraft type has changed for this flight.',resolution:'Your booking is still valid. Check the new aircraft details as seat selection may have changed.'},
+  {code:'E906',name:'Schedule Change',category:'business',catLabel:'Business Logic Error',status:200,statusLabel:'200 OK (Informational)',desc:'The flight schedule has changed.',resolution:'Review the updated departure and arrival times. You may be entitled to compensation or rebooking.'},
+  {code:'E907',name:'Route Suspended',category:'business',catLabel:'Business Logic Error',status:400,statusLabel:'400 Bad Request',desc:'This route has been temporarily suspended.',resolution:'Choose an alternative route or wait for the route to resume. Affected bookings will be rebooked automatically.'},
+  {code:'E908',name:'Promotion Expired',category:'business',catLabel:'Business Logic Error',status:400,statusLabel:'400 Bad Request',desc:'The promotion code has expired.',resolution:'Check the promotion validity period. Browse current offers for available promotions.'},
+  {code:'E909',name:'Promotion Usage Limit',category:'business',catLabel:'Business Logic Error',status:400,statusLabel:'400 Bad Request',desc:'The promotion code has reached its usage limit.',resolution:'The promotion may have a limited number of redemptions. Try a different promotion code.'},
+  {code:'E910',name:'Loyalty Tier Not Eligible',category:'business',catLabel:'Business Logic Error',status:400,statusLabel:'400 Bad Request',desc:'Your loyalty tier is not eligible for this benefit.',resolution:'Benefits are tier-dependent. Check your current tier and the requirements for the desired benefit.'},
+  {code:'E911',name:'Upgrade Not Available',category:'business',catLabel:'Business Logic Error',status:400,statusLabel:'400 Bad Request',desc:'No upgrade options are available for this booking.',resolution:'Upgrades depend on availability. Check closer to departure when more seats may become available.'},
+  {code:'E912',name:'Refund Not Eligible',category:'business',catLabel:'Business Logic Error',status:400,statusLabel:'400 Bad Request',desc:'This booking is not eligible for a refund.',resolution:'Check the fare rules for your ticket. Non-refundable fares may still be eligible for travel credit.'},
+  {code:'E913',name:'Cancellation Window Closed',category:'business',catLabel:'Business Logic Error',status:400,statusLabel:'400 Bad Request',desc:'The cancellation window for this booking has closed.',resolution:'Cancellations must be made at least 24 hours before departure for most fare types.'},
+  {code:'E914',name:'Name Change Not Allowed',category:'business',catLabel:'Business Logic Error',status:400,statusLabel:'400 Bad Request',desc:'Name changes are not permitted on this booking.',resolution:'Name changes are only allowed within 24 hours of booking for most fare types.'},
+  {code:'E915',name:'Destination Travel Advisory Active',category:'business',catLabel:'Business Logic Error',status:400,statusLabel:'400 Bad Request',desc:'A travel advisory is active for the destination.',resolution:'Review the travel advisory details. You may be eligible for rebooking or refund depending on the advisory level.'}
+];
+
+let currentFilter = 'all';
+let currentSort = {key:null,dir:'asc'};
+
+function renderErrors(data) {
+  const tbody = document.getElementById('errorTableBody');
+  const empty = document.getElementById('emptyState');
+  tbody.innerHTML = '';
+  if (data.length === 0) {
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+  data.forEach(function(e) {
+    const catClass = 'badge-'+e.category;
+    const statusClass = e.status >= 500 ? 'status-5xx' : e.status >= 400 ? 'status-4xx' : 'status-2xx';
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td><span class="code-badge '+catClass+'">'+e.code+'</span></td>' +
+      '<td><strong>'+e.name+'</strong></td>' +
+      '<td>'+e.catLabel+'</td>' +
+      '<td>'+e.desc+'</td>' +
+      '<td><span class="status-badge '+statusClass+'">'+e.statusLabel+'</span></td>' +
+      '<td style="text-align:center"><button class="expand-btn" onclick="toggleRow(this,\''+e.code+'\')">&#9660;</button></td>';
+    tbody.appendChild(tr);
+    const resTr = document.createElement('tr');
+    resTr.className = 'resolution-row';
+    resTr.id = 'res-'+e.code;
+    resTr.innerHTML = '<td colspan="6" class="resolution-cell"><div class="resolution-box"><h4>Resolution</h4><p>'+e.resolution+'</p></div></td>';
+    tbody.appendChild(resTr);
+  });
+}
+
+function toggleRow(btn, code) {
+  const row = document.getElementById('res-'+code);
+  const isVisible = row.classList.contains('visible');
+  row.classList.toggle('visible');
+  btn.innerHTML = isVisible ? '&#9660;' : '&#9650;';
+  btn.closest('tr').classList.toggle('expanded');
+}
+
+function getFilteredData() {
+  const query = document.getElementById('searchBox').value.toLowerCase().trim();
+  let data = errors;
+  if (currentFilter !== 'all') {
+    data = data.filter(function(e) { return e.category === currentFilter; });
+  }
+  if (query) {
+    data = data.filter(function(e) {
+      return e.code.toLowerCase().includes(query) ||
+        e.name.toLowerCase().includes(query) ||
+        e.desc.toLowerCase().includes(query) ||
+        e.catLabel.toLowerCase().includes(query) ||
+        e.statusLabel.includes(query);
+    });
+  }
+  if (currentSort.key) {
+    const key = currentSort.key;
+    const dir = currentSort.dir === 'asc' ? 1 : -1;
+    data.sort(function(a, b) {
+      let va = a[key], vb = b[key];
+      if (typeof va === 'string') va = va.toLowerCase();
+      if (typeof vb === 'string') vb = vb.toLowerCase();
+      if (va < vb) return -1 * dir;
+      if (va > vb) return 1 * dir;
+      return 0;
+    });
+  }
+  return data;
+}
+
+function filterErrors() {
+  renderErrors(getFilteredData());
+}
+
+function setFilter(cat) {
+  currentFilter = cat;
+  document.querySelectorAll('.filter-btn').forEach(function(btn) {
+    btn.classList.toggle('active', btn.dataset.cat === cat);
+  });
+  renderErrors(getFilteredData());
+}
+
+function sortBy(key) {
+  if (currentSort.key === key) {
+    currentSort.dir = currentSort.dir === 'asc' ? 'desc' : 'asc';
+  } else {
+    currentSort.key = key;
+    currentSort.dir = 'asc';
+  }
+  document.querySelectorAll('.sort').forEach(function(s) {
+    s.classList.remove('active');
+  });
+  const el = document.getElementById('sort-'+key);
+  if (el) {
+    el.classList.add('active');
+    el.innerHTML = currentSort.dir === 'asc' ? '&#9650;' : '&#9660;';
+  }
+  renderErrors(getFilteredData());
+}
+
+function updateCounts() {
+  document.getElementById('totalCodes').textContent = errors.length;
+  document.getElementById('clientCount').textContent = errors.filter(function(e){return e.category==='client';}).length;
+  document.getElementById('authCount').textContent = errors.filter(function(e){return e.category==='auth';}).length;
+  document.getElementById('serverCount').textContent = errors.filter(function(e){return e.category==='server';}).length;
+  document.getElementById('securityCount').textContent = errors.filter(function(e){return e.category==='security';}).length;
+}
+
+updateCounts();
+renderErrors(errors);
+</script>
+</body>
+</html>

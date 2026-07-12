@@ -2,159 +2,262 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Express Airways - Developer Portal</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Express Airways Developer Portal</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
-<style>:root{--bg-primary:#080c1a;--bg-secondary:#0d1230;--bg-card:rgba(13,18,48,0.7);--bg-glass:rgba(255,255,255,0.04);--bg-glass-hover:rgba(255,255,255,0.08);--text-primary:#f0f4ff;--text-secondary:#8892b0;--text-muted:#555d7a;--accent:#4f8cff;--accent-glow:rgba(79,140,255,0.3);--accent-gradient:linear-gradient(135deg,#4f8cff,#00d4aa);--success:#00d4aa;--warning:#fbbf24;--danger:#ef4444;--danger-glow:rgba(239,68,68,0.3);--border:rgba(255,255,255,0.06);--border-active:rgba(79,140,255,0.3);--radius-sm:8px;--radius-md:12px;--radius-lg:20px;--radius-xl:28px;--shadow-sm:0 2px 8px rgba(0,0,0,0.3);--shadow-md:0 8px 32px rgba(0,0,0,0.4);--shadow-lg:0 16px 48px rgba(0,0,0,0.5);--font-sans:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;--font-mono:'JetBrains Mono',monospace;--transition:0.3s cubic-bezier(0.4,0,0.2,1);--nav-height:72px}*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}*:focus-visible{outline:2px solid var(--accent);outline-offset:2px}html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}body{font-family:var(--font-sans);background:var(--bg-primary);color:var(--text-primary);line-height:1.6;overflow-x:hidden;min-height:100vh;-webkit-tap-highlight-color:transparent}a{color:var(--accent);text-decoration:none}a:hover{color:#7ab7ff}::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08);border-radius:3px}::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.15)}.hidden{display:none!important}.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border:none;border-radius:var(--radius-sm);font-size:14px;font-weight:600;cursor:pointer;transition:var(--transition);white-space:nowrap;font-family:var(--font-sans)}.btn-sm{padding:7px 14px;font-size:13px}.btn-lg{padding:14px 28px;font-size:16px;border-radius:var(--radius-md)}.btn-full{width:100%;justify-content:center}.btn-primary{background:var(--accent-gradient);color:#fff;box-shadow:0 0 20px var(--accent-glow)}.btn-primary:hover{transform:translateY(-1px);box-shadow:0 0 30px var(--accent-glow)}.btn-outline{background:transparent;color:var(--text-primary);border:1px solid var(--border)}.btn-outline:hover{background:var(--bg-glass);border-color:var(--accent)}.btn-glass{background:var(--bg-glass);color:var(--text-primary);backdrop-filter:blur(10px);border:1px solid var(--border)}.btn-glass:hover{background:var(--bg-glass-hover);transform:translateY(-1px)}.btn-ghost{background:transparent;color:var(--text-secondary);padding:8px;border-radius:var(--radius-sm)}.btn-ghost:hover{background:var(--bg-glass);color:var(--text-primary)}.btn:disabled{opacity:.4;cursor:not-allowed;transform:none}.card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem;backdrop-filter:blur(10px);transition:var(--transition)}.card:hover{border-color:var(--border-active);box-shadow:var(--shadow-md)}.toast-container{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}.toast{display:flex;align-items:center;gap:10px;padding:14px 20px;border-radius:var(--radius-md);background:var(--bg-secondary);border:1px solid var(--border);box-shadow:var(--shadow-md);font-size:13px;font-weight:500;pointer-events:auto;animation:toastIn .35s ease forwards;max-width:400px;min-width:280px}@keyframes toastIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}@keyframes toastOut{from{opacity:1}to{opacity:0;transform:translateX(100%)}}.toast.success{border-left:3px solid var(--success)}.toast.error{border-left:3px solid var(--danger)}.toast.warning{border-left:3px solid var(--warning)}.toast.info{border-left:3px solid var(--accent)}.navbar{position:fixed;top:0;left:0;right:0;height:var(--nav-height);display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:rgba(8,12,26,0.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);z-index:100}.nav-brand{display:flex;align-items:center;gap:10px}.nav-title{font-size:18px;font-weight:700;letter-spacing:-.3px}.nav-badge{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;padding:2px 8px;border-radius:4px;background:var(--accent-gradient);color:#fff;line-height:1.4}.nav-links{display:flex;align-items:center;gap:4px}.nav-link{font-size:14px;font-weight:500;color:var(--text-secondary);padding:8px 16px;border-radius:var(--radius-sm);transition:var(--transition);cursor:pointer}.nav-link:hover,.nav-link.active{color:var(--text-primary);background:var(--bg-glass)}.nav-actions{display:flex;align-items:center;gap:8px}.hero{position:relative;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:var(--nav-height) 24px 40px;overflow:hidden}.hero-bg{position:absolute;inset:0;z-index:0}.hero-gradient{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(79,140,255,0.15),transparent),radial-gradient(ellipse 60% 50% at 80% 100%,rgba(0,212,170,0.1),transparent),radial-gradient(ellipse 50% 50% at 20% 100%,rgba(79,140,255,0.08),transparent)}.hero-content{position:relative;z-index:1;text-align:center;max-width:900px}.hero-title{font-size:clamp(36px,7vw,72px);font-weight:800;letter-spacing:-2px;line-height:1.1;margin-bottom:20px}.hero-title-accent{background:var(--accent-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}.hero-subtitle{font-size:18px;color:var(--text-secondary);max-width:600px;margin:0 auto 32px;line-height:1.7}.hero-actions{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;margin-bottom:48px}.section-header{text-align:center;margin-bottom:56px}.section-tag{display:inline-block;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:12px}.section-title{font-size:36px;font-weight:700;letter-spacing:-1px;margin-bottom:12px}.section-desc{font-size:16px;color:var(--text-secondary);max-width:500px;margin:0 auto}.footer{border-top:1px solid var(--border);padding:60px 24px 24px}.footer-content{max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;gap:48px;flex-wrap:wrap}.footer-brand{max-width:280px}.footer-logo{display:flex;align-items:center;gap:10px;font-size:18px;font-weight:700;margin-bottom:12px}.footer-desc{font-size:13px;color:var(--text-muted);line-height:1.7}.footer-links{display:flex;gap:48px}.footer-col h4{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:16px}.footer-col a{display:block;font-size:14px;color:var(--text-secondary);margin-bottom:10px;transition:var(--transition);cursor:pointer}.footer-col a:hover{color:var(--text-primary)}.footer-bottom{max-width:1200px;margin:40px auto 0;padding-top:20px;border-top:1px solid var(--border);text-align:center;font-size:12px;color:var(--text-muted)}@media(max-width:768px){:root{--nav-height:60px}.nav-links{display:none}.hero-title{font-size:32px}.footer-content{flex-direction:column;gap:32px}.footer-links{flex-wrap:wrap;gap:24px}}</style>
+<style>
+:root{--bg-primary:#080c1a;--bg-secondary:#0b1423;--bg-card:#0e1724;--bg-glass:rgba(255,255,255,0.04);--text-primary:#f0f4ff;--text-secondary:#8892b0;--text-muted:#4a5674;--border:rgba(255,255,255,0.07);--border-active:rgba(79,140,255,0.3);--accent:#4f8cff;--accent-glow:rgba(79,140,255,0.2);--accent-gradient:linear-gradient(135deg,#4f8cff,#00d4aa);--success:#00d4aa;--warning:#fbbf24;--danger:#ef4444;--radius-sm:8px;--radius-md:12px;--radius-lg:16px;--radius-xl:24px;--nav-height:64px;--transition:all 0.3s cubic-bezier(0.4,0,0.2,1);--shadow-md:0 8px 32px rgba(0,0,0,0.3);--shadow-lg:0 12px 50px rgba(0,0,0,0.4);--font-sans:'Plus Jakarta Sans',sans-serif;--font-mono:'JetBrains Mono',monospace}
+*{margin:0;padding:0;box-sizing:border-box}html{scroll-behavior:smooth}body{background:var(--bg-primary);color:var(--text-primary);font-family:var(--font-sans);min-height:100vh;overflow-x:hidden;line-height:1.6}
+::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-track{background:var(--bg-primary)}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}::-webkit-scrollbar-thumb:hover{background:var(--text-muted)}
+.hidden{display:none!important}
+#globalLoader{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:var(--bg-primary);transition:opacity .6s ease}
+#globalLoader.fade-out{opacity:0;pointer-events:none}
+.loader-content{text-align:center}.loader-text{color:var(--text-muted);font-size:14px;margin-top:16px}
+.spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.navbar{position:fixed;top:0;left:0;right:0;height:var(--nav-height);display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:rgba(8,12,26,0.9);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);z-index:100}
+.nav-brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit}.nav-brand img{height:32px;width:32px;border-radius:50%;object-fit:cover}
+.nav-title{font-size:18px;font-weight:700;letter-spacing:-0.5px}
+.nav-badge{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;padding:3px 10px;border-radius:6px;background:var(--accent-gradient);color:#fff}
+.nav-links{display:flex;gap:4px;overflow-x:auto;max-width:60%}
+.nav-links::-webkit-scrollbar{display:none}
+.nav-link{padding:8px 14px;font-size:13px;font-weight:500;color:var(--text-secondary);text-decoration:none;border-radius:var(--radius-sm);transition:var(--transition);white-space:nowrap}
+.nav-link:hover{color:var(--text-primary);background:var(--bg-glass)}
+.nav-actions{display:flex;align-items:center;gap:8px}
+.dropdown-nav{position:relative;display:inline-flex}
+.dropdown-nav:hover .dropdown-menu{opacity:1;visibility:visible;transform:translateY(0)}
+.dropdown-menu{position:absolute;top:100%;left:0;min-width:200px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:8px;z-index:200;opacity:0;visibility:hidden;transform:translateY(-8px);transition:all .2s ease;box-shadow:var(--shadow-lg)}
+.dropdown-menu a{display:block;padding:8px 12px;font-size:13px;color:var(--text-secondary);text-decoration:none;border-radius:6px;transition:var(--transition)}
+.dropdown-menu a:hover{background:var(--bg-glass);color:var(--text-primary)}
+.hero{min-height:60vh;padding:var(--nav-height) 24px 0;display:flex;align-items:center;justify-content:center;text-align:center}
+.hero h1{font-size:clamp(28px,5vw,48px);font-weight:800;margin-bottom:12px}
+.hero-accent{background:var(--accent-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero p{color:var(--text-secondary);font-size:16px;max-width:600px;margin:0 auto}
+.card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px;margin-bottom:16px}
+.card-title{font-size:16px;font-weight:700;margin-bottom:16px}
+.form-group{margin-bottom:16px}
+.form-label{display:block;font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.8px}
+.form-input{width:100%;padding:11px 14px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg-primary);color:var(--text-primary);font-size:14px;font-family:var(--font-sans);transition:var(--transition)}
+.form-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
+.form-input::placeholder{color:var(--text-muted)}
+textarea.form-input{resize:vertical;min-height:80px;font-family:var(--font-mono);font-size:13px}
+select.form-input{cursor:pointer;-webkit-appearance:none;appearance:none;padding-right:36px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14'%3E%3Cpath fill='%2364748b' d='M3 5l4 4 4-4'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:11px 24px;border-radius:var(--radius-sm);font-size:14px;font-weight:700;border:none;cursor:pointer;transition:var(--transition);font-family:var(--font-sans);text-decoration:none;position:relative}
+.btn-primary{background:var(--accent-gradient);color:#fff}
+.btn-primary:hover{box-shadow:0 4px 24px var(--accent-glow);transform:translateY(-1px)}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text-secondary)}
+.btn-outline:hover{border-color:var(--accent);color:var(--text-primary)}
+.btn-ghost{background:transparent;color:var(--text-secondary)}
+.btn-ghost:hover{background:var(--bg-glass);color:var(--text-primary)}
+.btn-sm{padding:8px 16px;font-size:13px}
+.btn-lg{padding:14px 28px;font-size:15px}
+.btn-full{width:100%}
+.btn-danger{background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff}
+.btn.loading{color:transparent!important;pointer-events:none}
+.btn.loading::after{content:'';position:absolute;width:16px;height:16px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:btnSpin .6s linear infinite;top:50%;left:50%;margin:-8px 0 0 -8px}
+@keyframes btnSpin{to{transform:rotate(360deg)}}
+.auth-tabs{display:flex;gap:4px;background:var(--bg-card);border-radius:var(--radius-sm);padding:3px;margin-bottom:24px}
+.auth-tab{flex:1;text-align:center;padding:10px;font-size:13px;font-weight:600;border:none;background:transparent;color:var(--text-secondary);border-radius:6px;cursor:pointer;transition:var(--transition)}
+.auth-tab.active{background:var(--accent-gradient);color:#fff}
+.tabs{display:flex;gap:4px;background:var(--bg-card);border-radius:var(--radius-sm);padding:3px;margin-bottom:24px;flex-wrap:wrap}
+.tab{padding:10px 20px;font-size:13px;font-weight:600;border:none;background:transparent;color:var(--text-secondary);border-radius:6px;cursor:pointer;transition:var(--transition)}
+.tab:hover{color:var(--text-primary);background:var(--bg-glass)}
+.tab.active{background:var(--accent-gradient);color:#fff}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);z-index:1000;display:flex;align-items:center;justify-content:center;padding:24px;opacity:0;visibility:hidden;transition:all .3s ease}
+.modal-overlay:not(.hidden){opacity:1;visibility:visible}
+.modal-overlay:not(.hidden) .modal{transform:translateY(0);opacity:1}
+.modal{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-xl);padding:32px;max-width:520px;width:100%;max-height:90vh;overflow-y:auto;position:relative;transform:translateY(20px);opacity:0;transition:all .3s ease}
+.modal-lg{max-width:720px}
+.modal-xl{max-width:900px}
+.modal-close{position:absolute;top:12px;right:16px;background:none;border:none;color:var(--text-muted);font-size:24px;cursor:pointer;padding:4px;line-height:1;transition:var(--transition)}
+.modal-close:hover{color:var(--text-primary)}
+.modal-header{margin-bottom:20px}
+.modal-header h3{font-size:20px;font-weight:700;margin-bottom:4px}
+.modal-header p{font-size:14px;color:var(--text-secondary)}
+.toast-container{position:fixed;top:80px;right:24px;z-index:5000;display:flex;flex-direction:column;gap:8px;max-width:360px}
+.toast{display:flex;align-items:center;gap:10px;padding:14px 18px;border-radius:var(--radius-md);font-size:14px;font-weight:500;animation:toastIn .3s ease;background:var(--bg-card);border:1px solid var(--border);backdrop-filter:blur(12px);color:var(--text-primary)}
+.toast.success{border-color:rgba(0,212,170,0.3)}.toast.error{border-color:rgba(239,68,68,0.3)}.toast.warning{border-color:rgba(251,191,36,0.3)}.toast.info{border-color:rgba(79,140,255,0.3)}
+@keyframes toastIn{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
+@keyframes toastOut{from{opacity:1;transform:translateX(0)}to{opacity:0;transform:translateX(40px)}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.footer{margin-top:80px;padding:40px 24px 24px;border-top:1px solid var(--border);background:var(--bg-secondary)}
+.footer-content{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:2fr 3fr;gap:40px}
+.footer-brand .footer-logo{display:flex;align-items:center;gap:8px;font-size:18px;font-weight:700;margin-bottom:12px}
+.footer-logo img{height:28px;width:28px;border-radius:50%;object-fit:cover}
+.footer-desc{font-size:13px;color:var(--text-muted);line-height:1.6}
+.footer-links{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+.footer-col h4{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:12px}
+.footer-col a{display:block;font-size:13px;color:var(--text-secondary);text-decoration:none;padding:4px 0;transition:var(--transition)}
+.footer-col a:hover{color:var(--text-primary)}
+.footer-bottom{max-width:1200px;margin:24px auto 0;padding-top:16px;border-top:1px solid var(--border);text-align:center;font-size:12px;color:var(--text-muted)}
+.loginwall-overlay{position:fixed;inset:0;background:rgba(8,12,26,0.85);backdrop-filter:blur(12px);z-index:500;display:flex;align-items:center;justify-content:center;padding:24px}
+.loginwall-overlay.hidden{display:none}
+.loginwall-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-xl);padding:40px;max-width:440px;width:100%;text-align:center;animation:fadeIn .4s ease}
+.loginwall-card h2{font-size:24px;font-weight:800;margin-bottom:8px}
+.loginwall-card p{color:var(--text-secondary);font-size:14px;margin-bottom:24px}
+.portal-section{display:none;animation:fadeIn .3s ease}
+.portal-section.active{display:block}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;margin-bottom:24px}
+.stat-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:20px;text-align:center}
+.stat-number{font-size:28px;font-weight:800;background:var(--accent-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.stat-label{font-size:11px;color:var(--text-muted);margin-top:4px;text-transform:uppercase;letter-spacing:1px}
+.key-tag{padding:2px 8px;border-radius:4px;background:var(--bg-glass);font-family:var(--font-mono);font-size:12px}
+pre{background:var(--bg-primary);border:1px solid var(--border);border-radius:var(--radius-sm);padding:16px;font-family:var(--font-mono);font-size:13px;overflow-x:auto;max-height:400px;overflow-y:auto;white-space:pre-wrap;word-break:break-all;line-height:1.5}
+code{font-family:var(--font-mono);font-size:13px}
+.endpoint-card{padding:16px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);margin-bottom:8px;transition:var(--transition)}
+.endpoint-card:hover{border-color:var(--border-active)}
+.endpoint-method{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;font-family:var(--font-mono);text-transform:uppercase}
+.method-get{background:rgba(0,212,170,0.15);color:var(--success)}
+.method-post{background:rgba(79,140,255,0.15);color:var(--accent)}
+.user-menu{position:relative;cursor:pointer}
+.user-avatar{display:flex;align-items:center;gap:6px;padding:4px 10px 4px 4px;border-radius:100px;background:var(--bg-glass);border:1px solid var(--border)}
+.avatar-initials{width:28px;height:28px;border-radius:50%;background:var(--accent-gradient);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff}
+.user-dropdown{position:absolute;top:calc(100%+8px);right:0;width:220px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:8px;z-index:200;box-shadow:var(--shadow-lg)}
+.dropdown-header{padding:8px 12px}
+.dropdown-name{font-size:14px;font-weight:600}
+.dropdown-email{display:block;font-size:12px;color:var(--text-muted);margin-top:2px}
+.dropdown-divider{height:1px;background:var(--border);margin:4px 0}
+.dropdown-item{display:block;padding:8px 12px;font-size:13px;color:var(--text-secondary);border-radius:6px;cursor:pointer;text-decoration:none;transition:var(--transition)}
+.dropdown-item:hover{background:var(--bg-glass);color:var(--text-primary)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+table th{background:var(--bg-secondary);padding:10px 12px;text-align:left;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-secondary);border-bottom:1px solid var(--border)}
+table td{padding:8px 12px;border-bottom:1px solid var(--border)}
+table tr:hover td{background:var(--bg-glass)}
+.table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius-md)}
+.status-badge{display:inline-block;padding:2px 10px;border-radius:6px;font-size:11px;font-weight:700;text-transform:uppercase}
+.status-badge.active{background:rgba(0,212,170,0.15);color:var(--success)}
+.status-badge.inactive{background:rgba(251,191,36,0.15);color:var(--warning)}
+.status-badge.removed{background:rgba(239,68,68,0.15);color:var(--danger)}
+.search-input{padding:10px 14px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg-primary);color:var(--text-primary);font-size:14px;min-width:240px;transition:var(--transition)}
+.search-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
+@media(max-width:768px){
+  .footer-content{grid-template-columns:1fr}
+  .footer-links{grid-template-columns:1fr 1fr}
+  .nav-links{max-width:40%}
+  .modal{padding:24px;margin:12px}
+  .stats-grid{grid-template-columns:repeat(2,1fr)}
+}
+</style>
 </head>
 <body>
 
-<nav class="navbar">
-  <a href="../index.html" class="nav-brand" style="text-decoration:none;color:inherit;cursor:pointer">
-    <img src="OIG3.jpg" alt="Express Airways" style="height:32px;width:32px;border-radius:50%;object-fit:cover">
-    <span class="nav-title">Express Airways</span>
-    <span class="nav-badge">Dev</span>
-  </a>
-  <div class="nav-links">
-    <a href="../index.html" class="nav-link">Home</a>
-    <a href="../docs/index.html" class="nav-link">Ops Hub</a>
-    <a href="../status/index.html" class="nav-link">Status</a>
-    <a href="../legal/index.html" class="nav-link">Legal</a>
-    <a href="../admin/index.html" class="nav-link">Admin</a>
+<div id="globalLoader"><div class="loader-content"><div class="spinner" style="width:40px;height:40px;border-width:3px;margin:0 auto"></div><p class="loader-text">Connecting to Express Airways servers...</p></div></div>
+
+<div id="loginwall" class="loginwall-overlay">
+  <div class="loginwall-card">
+    <div style="font-size:48px;margin-bottom:16px">&#128187;</div>
+    <h2>Express Airways Developer Portal</h2>
+    <p>Sign in to manage your API keys, explore endpoints, and integrate with our platform.</p>
+    <div class="auth-tabs">
+      <button class="auth-tab active" data-tab="login">Sign In</button>
+      <button class="auth-tab" data-tab="register">Register</button>
+    </div>
+    <form id="loginForm">
+      <div class="form-group"><input type="email" class="form-input" id="loginEmail" placeholder="Email address" required></div>
+      <div class="form-group"><input type="password" class="form-input" id="loginPassword" placeholder="Password" required></div>
+      <button type="submit" class="btn btn-primary btn-full">Sign In</button>
+    </form>
+    <form id="registerForm" class="hidden">
+      <div class="form-group"><input class="form-input" id="regName" placeholder="Full name" required></div>
+      <div class="form-group"><input type="email" class="form-input" id="regEmail" placeholder="Email address" required></div>
+      <div class="form-group"><input type="password" class="form-input" id="regPassword" placeholder="Password (8+ characters)" required minlength="8"></div>
+      <button type="submit" class="btn btn-primary btn-full">Create Account</button>
+    </form>
   </div>
-  <div class="nav-actions" id="devNavActions">
-    <button class="btn btn-outline btn-sm" id="devGetStartedBtn">Get API Key</button>
+</div>
+
+<nav class="navbar">
+  <a href="../index.html" class="nav-brand"><img src="OIG3.jpg" alt="EA"><span class="nav-title">Express Airways</span><span class="nav-badge">DEV</span></a>
+  <div class="nav-links">
+    <div class="dropdown-nav"><a href="#" class="nav-link">Flight Ops</a><div class="dropdown-menu"><a href="../flights/index.html">Flights</a><a href="../routes/index.html">Routes</a><a href="../cargo/index.html">Cargo</a></div></div>
+    <div class="dropdown-nav"><a href="#" class="nav-link">Airports</a><div class="dropdown-menu"><a href="../airports/index.html">Airport Guide</a><a href="../maps/index.html">Maps</a><a href="../parking/index.html">Parking</a><a href="../lounge/index.html">Lounges</a><a href="../weather/index.html">Weather</a></div></div>
+    <div class="dropdown-nav"><a href="#" class="nav-link">Travel</a><div class="dropdown-menu"><a href="../hotels/index.html">Hotels</a><a href="../currency/index.html">Currency</a><a href="../insurance/index.html">Insurance</a><a href="../passports/index.html">Passports</a></div></div>
+    <div class="dropdown-nav"><a href="#" class="nav-link">Company</a><div class="dropdown-menu"><a href="../holdings/index.html">Holdings</a></div></div>
+    <div class="dropdown-nav"><a href="#" class="nav-link">Account</a><div class="dropdown-menu"><a href="../account/index.html">Login</a><a href="../account/index.html">Register</a><a href="../account/index.html">Profile</a><a href="../miles/index.html">Miles</a></div></div>
+    <div class="dropdown-nav"><a href="#" class="nav-link">More</a><div class="dropdown-menu"><a href="../status/index.html">Status</a><a href="../docs/index.html">Documents</a><a href="../ops/index.html">Operations</a><a href="../legal/index.html">Legal</a><a href="../developer/index.html">Developer</a></div></div>
+  </div>
+  <div class="nav-actions">
+    <button class="btn btn-sm btn-ghost" id="logoutBtn" style="display:none;color:var(--danger)">Sign Out</button>
+    <div class="user-menu" id="userMenu" style="display:none;position:relative;cursor:pointer">
+      <div class="user-avatar" id="userAvatarBtn" style="display:flex;align-items:center;gap:6px;padding:4px 10px 4px 4px;border-radius:100px;background:var(--bg-glass);border:1px solid var(--border)">
+        <div class="avatar-initials" id="avatarInitials" style="width:28px;height:28px;border-radius:50%;background:var(--accent-gradient);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff">U</div>
+      </div>
+      <div class="user-dropdown hidden" id="userDropdown" style="position:absolute;top:calc(100%+8px);right:0;width:220px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:8px;z-index:200;box-shadow:var(--shadow-lg)">
+        <div class="dropdown-header" style="padding:8px 12px"><span class="dropdown-name" id="dropdownName" style="font-size:14px;font-weight:600">Developer</span><span class="dropdown-email" id="dropdownEmail" style="display:block;font-size:12px;color:var(--text-muted);margin-top:2px">dev@email.com</span></div>
+        <div class="dropdown-divider" style="height:1px;background:var(--border);margin:4px 0"></div>
+        <a class="dropdown-item" id="dropdownLogout" style="display:block;padding:8px 12px;font-size:13px;color:var(--danger);border-radius:6px;cursor:pointer;text-decoration:none">Sign Out</a>
+      </div>
+    </div>
   </div>
 </nav>
 
-<section class="hero" id="heroSection">
-  <div class="hero-bg"><div class="hero-gradient"></div></div>
-  <div class="hero-content">
-    <div class="hero-badge" style="display:inline-flex;align-items:center;gap:8px;background:var(--bg-glass);border:1px solid var(--border);border-radius:100px;padding:6px 16px;font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:16px">
-      <span style="width:6px;height:6px;border-radius:50%;background:var(--success);display:inline-block"></span>
-      Developer Portal v1.0
-    </div>
-    <h1 class="hero-title">Build with <span class="hero-title-accent">Express Airways</span></h1>
-    <p class="hero-subtitle">Integrate flight data, system status, and aviation services into your applications with our public API. Free for everyone.</p>
-    <div class="hero-actions">
-      <button class="btn btn-primary btn-lg" id="heroGetStarted">Get Your API Key</button>
-      <button class="btn btn-outline btn-lg" id="heroViewDocs">View Documentation</button>
-    </div>
+<section class="hero">
+  <div>
+    <h1>Express Airways <span class="hero-accent">Developer Portal</span></h1>
+    <p>API documentation, key management, and endpoint explorer for developers</p>
   </div>
 </section>
 
-<div class="section" id="keySection" style="display:none;padding:80px 24px">
-  <div class="section-header">
-    <div class="section-tag">API Key</div>
-    <h2 class="section-title">Your Developer Key</h2>
-    <p class="section-desc">Manage your API keys for Express Airways services</p>
+<main style="max-width:1100px;margin:-60px auto 40px;padding:0 24px;position:relative;z-index:2">
+  <div class="tabs" id="devTabs">
+    <button class="tab active" data-tab="docs">API Documentation</button>
+    <button class="tab" data-tab="keys">My API Keys</button>
+    <button class="tab" data-tab="explorer">Endpoints Explorer</button>
   </div>
-  <div class="key-form card" id="registerForm" style="max-width:500px;margin:0 auto 32px">
-    <h3 style="font-size:18px;font-weight:700;margin-bottom:16px;text-align:center">Register for an API Key</h3>
-    <div class="form-group"><label class="form-label">Your Name</label><input class="form-input" id="regName" placeholder="Full name"></div>
-    <div class="form-group"><label class="form-label">Email Address</label><input class="form-input" id="regEmail" type="email" placeholder="you@example.com"></div>
-    <button class="btn btn-primary btn-full" id="regKeyBtn">Generate API Key</button>
-    <button class="btn btn-ghost btn-sm" id="switchToLookupBtn" style="margin-top:12px;width:100%;font-size:13px;color:var(--accent)">Already have a key? Look it up</button>
-  </div>
-  <div class="key-panel card" id="keyPanel" style="display:none;max-width:700px;margin:0 auto 32px">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px">
-      <h3 style="font-size:18px;font-weight:700">Your API Key</h3>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn btn-sm btn-outline" id="copyKeyBtn">Copy</button>
-        <button class="btn btn-sm btn-outline" id="regenKeyBtn">Regenerate</button>
-        <button class="btn btn-sm btn-outline" id="reactivateKeyBtn" style="display:none;border-color:var(--warning);color:var(--warning)">Reactivate</button>
-        <button class="btn btn-sm btn-outline" id="revokeKeyBtn" style="border-color:var(--danger);color:var(--danger)">Revoke</button>
-      </div>
-    </div>
-    <div class="key-display" id="keyDisplay" style="background:var(--bg-primary);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 16px;font-family:var(--font-mono);font-size:13px;word-break:break-all;margin-bottom:16px;user-select:all">—</div>
-    <div class="key-stats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px">
-      <div class="key-stat"><span class="key-stat-label">Status</span><span class="key-stat-value" id="keyStatus" style="color:var(--success)">Active</span></div>
-      <div class="key-stat"><span class="key-stat-label">Requests</span><span class="key-stat-value" id="keyRequests">0</span></div>
-      <div class="key-stat"><span class="key-stat-label">Created</span><span class="key-stat-value" id="keyCreated">—</span></div>
-      <div class="key-stat"><span class="key-stat-label">Last Used</span><span class="key-stat-value" id="keyLastUsed">—</span></div>
-    </div>
-  </div>
-  <div class="key-email card" id="keyEmailSection" style="display:none;max-width:500px;margin:0 auto 32px;text-align:center">
-    <p style="color:var(--text-secondary);margin-bottom:12px">Enter the email you registered with to manage your key:</p>
-    <div style="display:flex;gap:12px;max-width:400px;margin:0 auto">
-      <input class="form-input" id="lookupEmail" type="email" placeholder="your@email.com" style="flex:1">
-      <button class="btn btn-primary" id="lookupKeyBtn">Look Up</button>
-    </div>
-    <button class="btn btn-ghost btn-sm" id="registerNewKeyBtn" style="margin-top:12px;color:var(--accent)">Don't have a key? Register here</button>
-  </div>
-</div>
 
-<div class="section" id="docsSection" style="padding:80px 24px;background:var(--bg-secondary)">
-  <div class="section-header">
-    <div class="section-tag">Documentation</div>
-    <h2 class="section-title">API Reference</h2>
-    <p class="section-desc">Public endpoints available with your API key</p>
-  </div>
-  <div style="max-width:900px;margin:0 auto">
-    <div class="endpoint-filters" style="display:flex;gap:8px;margin-bottom:32px;flex-wrap:wrap;justify-content:center">
-      <button class="btn btn-sm btn-primary" data-filter="all">All</button>
-      <button class="btn btn-sm btn-outline" data-filter="GET">GET</button>
-      <button class="btn btn-sm btn-outline" data-filter="public">Public</button>
-      <button class="btn btn-sm btn-outline" data-filter="protected">Key Required</button>
-    </div>
-    <div id="endpointsList"></div>
-    <div class="card" style="margin-top:32px;text-align:center">
-      <h3 style="font-size:18px;font-weight:700;margin-bottom:12px">Rate Limits</h3>
-      <p style="color:var(--text-secondary);font-size:14px">100 requests per hour per key &middot; Max 3 keys per email &middot; Keys auto-deactivate after 3 days of inactivity &middot; Removed after 6 days total</p>
-    </div>
-    <div class="card" style="margin-top:16px">
-      <h3 style="font-size:18px;font-weight:700;margin-bottom:12px">Code Examples</h3>
-      <div class="tabs" style="display:flex;gap:4px;margin-bottom:16px">
-        <button class="code-tab btn btn-sm btn-primary" data-lang="javascript">JavaScript</button>
-        <button class="code-tab btn btn-sm btn-outline" data-lang="python">Python</button>
-        <button class="code-tab btn btn-sm btn-outline" data-lang="curl">cURL</button>
-      </div>
-      <pre id="codeExample" style="background:var(--bg-primary);border:1px solid var(--border);border-radius:var(--radius-sm);padding:16px;font-family:var(--font-mono);font-size:13px;overflow-x:auto;white-space:pre-wrap;word-break:break-all"><code>// JavaScript example
-fetch('https://script.google.com/macros/s/AKfycbyfr1k04IqvPSHND5I47ZowM8EAUmBuFR4pKJVWDdsB0ZCr4pMrCLxFME1v70aLbyWo/exec?action=dev.apiStatus&key=YOUR_API_KEY')
-  .then(r => r.json())
-  .then(console.log);</code></pre>
-      <button class="btn btn-ghost btn-sm" id="copyExampleBtn" style="margin-top:8px">Copy Example</button>
+  <div id="tabDocs" class="portal-section active">
+    <div class="card">
+      <div class="card-title">API Endpoints</div>
+      <p style="color:var(--text-secondary);font-size:14px;margin-bottom:16px">Complete list of available API endpoints. Base URL: <code style="background:var(--bg-glass);padding:2px 6px;border-radius:4px"><?php echo htmlspecialchars($EA_API); ?></code></p>
+      <div id="endpointsList"><p style="color:var(--text-muted);text-align:center;padding:20px">Loading endpoints...</p></div>
     </div>
   </div>
-</div>
 
-<div class="section" id="consoleSection" style="padding:80px 24px">
-  <div class="section-header">
-    <div class="section-tag">Console</div>
-    <h2 class="section-title">API Playground</h2>
-    <p class="section-desc">Test endpoints live with your key</p>
-  </div>
-  <div class="card" style="max-width:800px;margin:0 auto">
-    <div class="form-group">
-      <label class="form-label">API Key</label>
-      <input class="form-input" id="consoleKey" placeholder="Paste your API key">
-    </div>
-    <div class="form-group">
-      <label class="form-label">Endpoint</label>
-      <select class="form-input" id="consoleEndpoint">
-        <option value="dev.apiStatus">dev.apiStatus — System Status</option>
-        <option value="dev.apiStats">dev.apiStats — Aggregate Statistics</option>
-        <option value="dev.apiAirports">dev.apiAirports — Airport Directory</option>
-        <option value="dev.apiFare">dev.apiFare — Fare Calculator</option>
-        <option value="getSystemStatus">getSystemStatus — Public Status</option>
-        <option value="getConfig">getConfig — System Config</option>
-      </select>
-    </div>
-    <div class="form-group" id="consoleExtraParams" style="display:none">
-      <div style="display:flex;gap:12px;flex-wrap:wrap">
-        <div style="flex:1;min-width:120px"><label class="form-label">Origin</label><input class="form-input" id="consoleOrigin" placeholder="JFK"></div>
-        <div style="flex:1;min-width:120px"><label class="form-label">Destination</label><input class="form-input" id="consoleDest" placeholder="LAX"></div>
-        <div style="flex:1;min-width:80px"><label class="form-label">Cabin</label><select class="form-input" id="consoleCabin"><option value="">Default</option><option value="Economy">Economy</option><option value="Business">Business</option><option value="FirstClass">First Class</option></select></div>
-        <div style="flex:1;min-width:80px"><label class="form-label">Pax</label><input class="form-input" id="consolePax" type="number" value="1" min="1"></div>
+  <div id="tabKeys" class="portal-section">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:12px">
+      <h3 style="font-size:18px;font-weight:700">My API Keys</h3>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-primary btn-sm" id="createKeyBtn">+ New Key</button>
+        <button class="btn btn-outline btn-sm" id="refreshKeysBtn">Refresh</button>
       </div>
     </div>
-    <button class="btn btn-primary btn-full" id="consoleSendBtn">Send Request</button>
-    <div id="consoleResult" style="display:none;margin-top:16px">
-      <h4 style="font-size:14px;font-weight:600;margin-bottom:8px">Response</h4>
-      <pre id="consoleResponse" style="background:var(--bg-primary);border:1px solid var(--border);border-radius:var(--radius-sm);padding:16px;font-family:var(--font-mono);font-size:12px;overflow-x:auto;max-height:400px;overflow-y:auto;white-space:pre-wrap;word-break:break-all"></pre>
+    <div class="stats-grid" id="keyStats" style="grid-template-columns:repeat(4,1fr)">
+      <div class="stat-card"><div class="stat-number" id="statTotal">0</div><div class="stat-label">Total</div></div>
+      <div class="stat-card"><div class="stat-number" style="color:var(--success);-webkit-text-fill-color:var(--success)" id="statActive">0</div><div class="stat-label">Active</div></div>
+      <div class="stat-card"><div class="stat-number" style="color:var(--warning);-webkit-text-fill-color:var(--warning)" id="statInactive">0</div><div class="stat-label">Inactive</div></div>
+      <div class="stat-card"><div class="stat-number" style="color:var(--danger);-webkit-text-fill-color:var(--danger)" id="statRemoved">0</div><div class="stat-label">Removed</div></div>
+    </div>
+    <div id="keysTableContainer"><p style="color:var(--text-muted);text-align:center;padding:20px">Sign in to view your API keys.</p></div>
+  </div>
+
+  <div id="tabExplorer" class="portal-section">
+    <div class="card">
+      <div class="card-title">API Endpoint Explorer</div>
+      <div style="margin-bottom:16px"><input class="search-input" id="explorerSearch" placeholder="Search endpoints..." style="width:100%"></div>
+      <div id="explorerResults"></div>
+      <div id="testResult" style="display:none;margin-top:16px">
+        <h4 style="font-size:14px;font-weight:600;margin-bottom:8px">Response</h4>
+        <pre id="responseOutput"></pre>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div id="createKeyModal" class="modal-overlay hidden">
+  <div class="modal modal-sm">
+    <button class="modal-close" onclick="document.getElementById('createKeyModal').classList.add('hidden')">&times;</button>
+    <div class="modal-header"><h3>Create API Key</h3><p>Generate a new API key for your account</p></div>
+    <div class="form-group"><label class="form-label">Key Name</label><input class="form-input" id="newKeyName" placeholder="My Application"></div>
+    <button class="btn btn-primary btn-full" id="createKeyConfirm">Generate Key</button>
+    <div id="keyResult" style="display:none;margin-top:16px;text-align:center">
+      <div style="font-size:40px;margin-bottom:8px">&#128273;</div>
+      <p style="background:var(--bg-primary);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;font-family:var(--font-mono);font-size:12px;word-break:break-all;user-select:all;margin-bottom:8px" id="newKeyDisplay"></p>
+      <p style="color:var(--warning);font-size:12px;margin-bottom:12px">Copy this key now. You will not see it again.</p>
+      <button class="btn btn-primary btn-sm" id="copyKeyBtn">Copy to Clipboard</button>
+      <button class="btn btn-outline btn-sm" id="keyDoneBtn">Done</button>
     </div>
   </div>
 </div>
@@ -162,12 +265,13 @@ fetch('https://script.google.com/macros/s/AKfycbyfr1k04IqvPSHND5I47ZowM8EAUmBuFR
 <footer class="footer">
   <div class="footer-content">
     <div class="footer-brand">
-      <div class="footer-logo"><img src="OIG3.jpg" alt="Express Airways" style="height:28px;width:28px;border-radius:50%;object-fit:cover"><span>Express Airways</span></div>
-      <p class="footer-desc">Sovereign aviation technology platform. Build, integrate, and innovate.</p>
+      <div class="footer-logo"><img src="OIG3.jpg" alt="EA"><span>Express Airways</span></div>
+      <p class="footer-desc">Next-generation flight services with unified booking, operations, and travel management.</p>
     </div>
     <div class="footer-links">
-      <div class="footer-col"><h4>Navigate</h4><a href="../index.html">Home</a><a href="../docs/index.html">Ops Hub</a><a href="../status/index.html">Status</a></div>
-      <div class="footer-col"><h4>Platform</h4><a href="../legal/index.html">Legal Portal</a><a href="../admin/index.html">Admin</a></div>
+      <div class="footer-col"><h4>Services</h4><a href="../flights/index.html">Flight Tracker</a><a href="../weather/index.html">Weather</a><a href="../routes/index.html">Routes</a><a href="../airports/index.html">Airports</a><a href="../bookings/index.html">Bookings</a></div>
+      <div class="footer-col"><h4>Company</h4><a href="../holdings/index.html">Holdings</a><a href="../legal/index.html">Legal</a></div>
+      <div class="footer-col"><h4>Support</h4><a href="../status/index.html">Status</a><a href="../docs/index.html">Documents</a><a href="../developer/index.html">Developer</a></div>
     </div>
   </div>
   <div class="footer-bottom"><p>&copy; 2026 Express Airways. All rights reserved.</p></div>
@@ -175,7 +279,59 @@ fetch('https://script.google.com/macros/s/AKfycbyfr1k04IqvPSHND5I47ZowM8EAUmBuFR
 
 <div class="toast-container" id="toastContainer"></div>
 
-<script>var EA_TRACKER={API_URL:'https://script.google.com/macros/s/AKfycbyfr1k04IqvPSHND5I47ZowM8EAUmBuFR4pKJVWDdsB0ZCr4pMrCLxFME1v70aLbyWo/exec',initialized:false,init(e){if(this.initialized)return;this.initialized=true;this.page=e||window.location.pathname;this.fingerprint=this.getFingerprint();this.getIP().then(ip=>{this.ip=ip;this.send()});this.send()},getFingerprint(){const e=document.createElement('canvas');e.width=200;e.height=50;const t=e.getContext('2d');t.textBaseline='top';t.font='14px Arial';t.fillStyle='#f60';t.fillRect(125,1,62,20);t.fillStyle='#069';t.fillText('EA'+navigator.userAgent.length,2,15);t.fillStyle='rgba(102,204,0,0.7)';t.fillText('ExpressAirways',4,17);const n=e.toDataURL();let r='';try{const i=document.createElement('canvas').getContext('webgl');if(i){const o=i.getExtension('WEBGL_debug_renderer_info');if(o)r=i.getParameter(o.UNMASKED_RENDERER_WEBGL)+'|'+i.getParameter(o.UNMASKED_VENDOR_WEBGL)}}catch(e){}const a=window.screen.width+'x'+window.screen.height+'x'+window.screen.colorDepth,s=Intl.DateTimeFormat().resolvedOptions().timeZone,l=navigator.language,c=navigator.userAgent,u=[n,r,a,s,l,c].join('|||');let d=0;for(let e=0;e<u.length;e++){const t=u.charCodeAt(e);d=(d<<5)-d+t;d|=0}return Math.abs(d).toString(16)},async getIP(){try{const e=await fetch('https://api.ipify.org?format=json',{cache:'no-store'});return(await e.json()).ip}catch(e){return''}},send(){const e={action:'track',fingerprint:this.fingerprint,ip:this.ip,ua:navigator.userAgent,screen:window.screen.width+'x'+window.screen.height+'x'+window.screen.colorDepth,tz:Intl.DateTimeFormat().resolvedOptions().timeZone,lang:navigator.language,page:this.page,user:window.currentUser?(window.currentUser.email||window.currentUser.Email||''):''},t=Object.entries(e).map(([e,t])=>encodeURIComponent(e)+'='+encodeURIComponent(t||'')).join('&');fetch(this.API_URL+'?'+t+'&t='+Date.now(),{mode:'no-cors'}).catch(()=>{})}};</script>
-<script src="script.js"></script>
+<script>function hideGlobalLoader(){var el=document.getElementById('globalLoader');if(el)el.classList.add('fade-out');setTimeout(function(){if(el)el.style.display='none'},600)};setTimeout(hideGlobalLoader,15000)</script>
+<script>
+var EA_API='https://script.google.com/macros/s/AKfycbyfr1k04IqvPSHND5I47ZowM8EAUmBuFR4pKJVWDdsB0ZCr4pMrCLxFME1v70aLbyWo/exec';
+var EA_TRACKER={API_URL:EA_API,initialized:false,init:function(page){if(this.initialized)return;this.initialized=true;this.page=page||window.location.pathname;this.fingerprint=this.getFingerprint();var self=this;this.getIP().then(function(ip){self.ip=ip;self.send()});this.send()},getFingerprint:function(){var c=document.createElement('canvas');c.width=200;c.height=50;var t=c.getContext('2d');t.textBaseline='top';t.font='14px Arial';t.fillStyle='#f60';t.fillRect(125,1,62,20);t.fillStyle='#069';t.fillText('EA'+navigator.userAgent.length,2,15);t.fillStyle='rgba(102,204,0,0.7)';t.fillText('ExpressAirways',4,17);var n=c.toDataURL();var r='';try{var gl=document.createElement('canvas').getContext('webgl');if(gl){var ext=gl.getExtension('WEBGL_debug_renderer_info');if(ext)r=gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)+'|'+gl.getParameter(ext.UNMASKED_VENDOR_WEBGL)}}catch(e){}var a=window.screen.width+'x'+window.screen.height+'x'+window.screen.colorDepth;var tz=Intl.DateTimeFormat().resolvedOptions().timeZone;var lang=navigator.language;var ua=navigator.userAgent;var s=[n,r,a,tz,lang,ua].join('|||');var h=0;for(var i=0;i<s.length;i++){var c2=s.charCodeAt(i);h=(h<<5)-h+c2;h|=0}return Math.abs(h).toString(16)},getIP:function(){return fetch('https://api.ipify.org?format=json',{cache:'no-store'}).then(function(r){return r.json()}).then(function(d){return d.ip}).catch(function(){return''})},send:function(){var params={action:'audit.event',event:'pageview',page:this.page,fingerprint:this.fingerprint,ip:this.ip,ua:navigator.userAgent,screen:window.screen.width+'x'+window.screen.height,tz:Intl.DateTimeFormat().resolvedOptions().timeZone,lang:navigator.language};var qs=Object.entries(params).map(function(kv){return encodeURIComponent(kv[0])+'='+encodeURIComponent(kv[1]||'')}).join('&');fetch(EA_API+'?'+qs+'&t='+Date.now(),{mode:'no-cors'}).catch(function(){})}};
+var EA_AUTH={KEY:'ea_session',getUser:function(){try{var raw=localStorage.getItem(this.KEY);if(!raw)return null;var data=JSON.parse(raw);if(data&&data.user&&data.expires>Date.now())return data.user;if(data&&data.user)localStorage.removeItem(this.KEY);return null}catch(e){return null}},setUser:function(user){if(!user){localStorage.removeItem(this.KEY);return}var data={user:user,expires:Date.now()+604800000};localStorage.setItem(this.KEY,JSON.stringify(data))},logout:function(){localStorage.removeItem(this.KEY);this._notify(null)},_listeners:[],onChange:function(fn){this._listeners.push(fn)},_notify:function(user){for(var i=0;i<this._listeners.length;i++){try{this._listeners[i](user)}catch(e){}}}};
+window.addEventListener('storage',function(e){if(e.key===EA_AUTH.KEY){try{var data=JSON.parse(e.newValue);EA_AUTH._notify(data?data.user:null)}catch(ex){EA_AUTH._notify(null)}}});
+function Toast(type,message){var container=document.getElementById('toastContainer');if(!container)return;var icons={success:'\u2713',error:'\u2715',warning:'\u26A0',info:'\u2139'};var t=document.createElement('div');t.className='toast '+type;t.innerHTML='<span>'+(icons[type]||'')+'</span><span>'+message+'</span>';container.appendChild(t);var dur=type==='error'?10000:type==='success'?8000:6000;setTimeout(function(){t.style.animation='toastOut 0.3s ease forwards';setTimeout(function(){t.remove()},300)},dur)}
+function $(id){return document.getElementById(id)}
+function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML}
+function show(el){if(el)el.classList.remove('hidden')}
+function hide(el){if(el)el.classList.add('hidden')}
+function qs(s){return document.querySelector(s)}
+function qsa(s){return document.querySelectorAll(s)}
+function btnLoading(el){if(!el)return;if(el.dataset._orig===undefined)el.dataset._orig=el.innerHTML;el.classList.add('loading');el.disabled=true}
+function btnReset(el){if(!el)return;el.classList.remove('loading');el.disabled=false}
+async function api(action,extra){var p={action:action};if(extra)for(var k in extra)p[k]=extra[k];var qs2=Object.entries(p).map(function(kv){return encodeURIComponent(kv[0])+'='+encodeURIComponent(kv[1]||'')}).join('&');try{var c=new AbortController();var t=setTimeout(function(){c.abort()},15000);var r=await fetch(EA_API+'?'+qs2+'&t='+Date.now(),{cache:'no-store',signal:c.signal});clearTimeout(t);if(!r.ok)throw new Error('HTTP '+r.status);return await r.json()}catch(e){console.error('EA API Error:',e);return null}}
+function auditEvent(eventType,detail){try{var params={action:'audit.event',event:eventType,page:window.location.pathname,fingerprint:EA_TRACKER.fingerprint,detail:detail||'',user:currentUser?currentUser.email:''};var qs3=Object.entries(params).map(function(kv){return encodeURIComponent(kv[0])+'='+encodeURIComponent(kv[1]||'')').join('&');fetch(EA_API+'?'+qs3+'&t='+Date.now(),{mode:'no-cors'}).catch(function(e){console.error('Audit failed:',e)})}catch(e){console.error('Audit error:',e)}}
+var currentUser=null;
+var allKeys=[];
+var allEndpoints=[];
+var endpointsCache=[];
+function updateDevAuthUI(){if(currentUser){hide($('loginwall'));show($('userMenu'));show($('logoutBtn'));$('avatarInitials').textContent=(currentUser.name||'U').charAt(0).toUpperCase();$('dropdownName').textContent=currentUser.name||'Developer';$('dropdownEmail').textContent=currentUser.email||'';loadKeys();loadEndpoints()}else{show($('loginwall'));hide($('userMenu'));hide($('logoutBtn'));$('keysTableContainer').innerHTML='<p style="color:var(--text-muted);text-align:center;padding:20px">Sign in to view your API keys.</p>'}}
+async function login(email,pw){btnLoading(qs('#loginForm button[type="submit"]'));var d=await api('login',{email:email,password:pw});btnReset(qs('#loginForm button[type="submit"]'));if(d&&d.success){currentUser=d.user;EA_AUTH.setUser(d.user);updateDevAuthUI();Toast('success','Welcome, '+d.user.name);auditEvent('dev_login',email)}else{Toast('error',d&&d.message?d.message:'Login failed')}}
+async function register(name,email,pw){btnLoading(qs('#registerForm button[type="submit"]'));var d=await api('signup',{fullName:name,email:email,password:pw});btnReset(qs('#registerForm button[type="submit"]'));if(d&&d.success){Toast('success','Account created. Please sign in.');switchAuthTab('login')}else{Toast('error',d&&d.message?d.message:'Registration failed')}}
+function logoutUser(){currentUser=null;EA_AUTH.logout();updateDevAuthUI();Toast('info','Signed out');auditEvent('dev_logout','')}
+function switchAuthTab(tab){qsa('.auth-tab').forEach(function(t){t.classList.toggle('active',t.dataset.tab===tab)});hide($('loginForm'));hide($('registerForm'));show(tab==='login'?$('loginForm'):$('registerForm'))}
+function switchDevTab(tab){qsa('#devTabs .tab').forEach(function(t){t.classList.toggle('active',t.dataset.tab===tab)});hide($('tabDocs'));hide($('tabKeys'));hide($('tabExplorer'));show($('tab'+tab.charAt(0).toUpperCase()+tab.slice(1)));auditEvent('dev_tab',tab)}
+async function loadEndpoints(){if(!currentUser)return;var d=await api('dev.listEndpoints',{});if(d&&d.success&&d.endpoints){endpointsCache=d.endpoints;renderEndpoints(d.endpoints)}else{var fallback=[{name:'dev.apiStatus',method:'GET',desc:'Check API system status'},{name:'dev.apiStats',method:'GET',desc:'Get aggregate API statistics'},{name:'dev.apiAirports',method:'GET',desc:'Airport directory lookup'},{name:'dev.apiFare',method:'GET',desc:'Calculate flight fare'},{name:'getSystemStatus',method:'GET',desc:'Public system status'},{name:'getConfig',method:'GET',desc:'System configuration'},{name:'login',method:'GET',desc:'Authenticate user'},{name:'signup',method:'GET',desc:'Register new user'},{name:'getUser',method:'GET',desc:'Get user profile'},{name:'getUserBookings',method:'GET',desc:'Get user bookings'},{name:'getActiveCases',method:'GET',desc:'Get active legal cases'},{name:'fetchAudit',method:'GET',desc:'Fetch audit log entries'}];endpointsCache=fallback;renderEndpoints(fallback)}}
+function renderEndpoints(endpoints){if(!endpoints||endpoints.length===0){$('endpointsList').innerHTML='<p style="color:var(--text-muted);text-align:center;padding:20px">No endpoints available.</p>';return}var html='';endpoints.forEach(function(ep){var name=ep.name||ep.action||ep.endpoint||'Unknown';var method=(ep.method||'GET').toUpperCase();var desc=ep.description||ep.desc||ep.Description||'';var methodClass=method==='GET'?'method-get':'method-post';html+='<div class="endpoint-card"><div style="display:flex;align-items:center;gap:10px;margin-bottom:4px"><span class="endpoint-method '+methodClass+'">'+method+'</span><code style="font-size:14px;font-weight:600">'+esc(name)+'</code></div><p style="color:var(--text-secondary);font-size:13px">'+esc(desc)+'</p></div>'});$('endpointsList').innerHTML=html}
+async function loadKeys(){if(!currentUser)return;var d=await api('dev.listKeys',{email:currentUser.email});if(d&&d.success&&d.keys){allKeys=d.keys;renderKeys(d.keys)}else{allKeys=[];renderKeys([])}}
+function renderKeys(keys){var total=0,active=0,inactive=0,removed=0;keys.forEach(function(k){total++;if(k.status==='active')active++;else if(k.status==='inactive')inactive++;else if(k.status==='removed')removed++});$('statTotal').textContent=total;$('statActive').textContent=active;$('statInactive').textContent=inactive;$('statRemoved').textContent=removed;if(keys.length===0){$('keysTableContainer').innerHTML='<div style="text-align:center;padding:40px;color:var(--text-muted)"><p style="font-size:16px;margin-bottom:8px">No API keys yet</p><p style="font-size:13px">Create your first key to get started.</p></div>';return}var html='<div class="table-wrap"><table><thead><tr><th>Key</th><th>Name</th><th>Status</th><th>Created</th><th>Last Used</th><th>Requests</th><th style="width:160px">Actions</th></tr></thead><tbody>';keys.forEach(function(k){var keyStr=k.key||k.apiKey||'';var name=k.name||k.Name||'—';var status=k.status||k.Status||'active';var created=k.createdAt||k.CreatedAt||'—';var lastUsed=k.lastUsed||k.LastUsed||'—';var requests=k.requestCount||k.RequestCount||0;var statusClass=status==='active'?'active':status==='inactive'?'inactive':'removed';html+='<tr><td><span class="key-tag">'+esc(keyStr.substring(0,20))+'...</span></td><td>'+esc(name)+'</td><td><span class="status-badge '+statusClass+'">'+esc(status.charAt(0).toUpperCase()+status.slice(1))+'</span></td><td style="white-space:nowrap">'+esc(created)+'</td><td style="white-space:nowrap">'+esc(lastUsed)+'</td><td>'+requests+'</td><td style="white-space:nowrap"><button class="btn btn-sm btn-ghost key-action" data-action="copy" data-key="'+esc(keyStr)+'">Copy</button>'+(status==='active'?'<button class="btn btn-sm btn-ghost key-action" data-action="revoke" data-key="'+esc(keyStr)+'" style="color:var(--warning)">Revoke</button>':'')+(status==='inactive'?'<button class="btn btn-sm btn-ghost key-action" data-action="reactivate" data-key="'+esc(keyStr)+'" style="color:var(--success)">Activate</button>':'')+'<button class="btn btn-sm btn-ghost key-action" data-action="delete" data-key="'+esc(keyStr)+'" style="color:var(--danger)">Delete</button></td></tr>'});html+='</tbody></table></div>';$('keysTableContainer').innerHTML=html;$('keysTableContainer').querySelectorAll('.key-action').forEach(function(btn){btn.addEventListener('click',function(){var action=this.dataset.action;var keyVal=this.dataset.key;handleKeyAction(action,keyVal)})})}
+function handleKeyAction(action,keyVal){if(action==='copy'){navigator.clipboard.writeText(keyVal).then(function(){Toast('success','Key copied')}).catch(function(){Toast('error','Failed to copy')});return}if(action==='delete'){if(!confirm('Permanently delete this key?'))return;btnLoading(event.target);api('dev.deleteKey',{key:keyVal,email:currentUser.email}).then(function(d){if(d&&d.success){Toast('success','Key deleted');loadKeys()}else Toast('error',d&&d.message?d.message:'Delete failed')});return}if(action==='revoke'){btnLoading(event.target);api('dev.revokeKey',{key:keyVal,email:currentUser.email}).then(function(d){if(d&&d.success){Toast('warning','Key revoked');loadKeys()}else Toast('error',d&&d.message?d.message:'Revoke failed')});return}if(action==='reactivate'){btnLoading(event.target);api('dev.reactivateKey',{key:keyVal,email:currentUser.email}).then(function(d){if(d&&d.success){Toast('success','Key reactivated');loadKeys()}else Toast('error',d&&d.message?d.message:'Reactivation failed')})}}
+async function createNewKey(){var name=$('newKeyName').value.trim()||'My API Key';btnLoading($('createKeyConfirm'));var d=await api('dev.registerKey',{name:name,email:currentUser.email});btnReset($('createKeyConfirm'));if(d&&d.success&&d.key){$('newKeyName').value='';$('keyResult').style.display='';$('newKeyDisplay').textContent=d.key;$('createKeyConfirm').style.display='none';loadKeys()}else{Toast('error',d&&d.message?d.message:'Key generation failed')}}
+var explorerTimer=null;
+function setupExplorer(){if(endpointsCache.length===0&&currentUser){loadEndpoints()}}$('explorerSearch').addEventListener('input',function(){clearTimeout(explorerTimer);var self=this;explorerTimer=setTimeout(function(){var q=self.value.toLowerCase();var filtered=endpointsCache.filter(function(ep){var name=(ep.name||ep.action||'').toLowerCase();var desc=(ep.description||ep.desc||'').toLowerCase();return name.indexOf(q)>=0||desc.indexOf(q)>=0});renderExplorer(filtered)},300)});
+function renderExplorer(endpoints){if(!endpoints||endpoints.length===0){$('explorerResults').innerHTML='<p style="color:var(--text-muted);text-align:center;padding:20px">No matching endpoints.</p>';return}var html='';endpoints.forEach(function(ep){var name=ep.name||ep.action||ep.endpoint||'Unknown';var method=(ep.method||'GET').toUpperCase();var desc=ep.description||ep.desc||'';var methodClass=method==='GET'?'method-get':'method-post';html+='<div class="endpoint-card" style="cursor:pointer" onclick="testEndpoint(\''+esc(name)+'\')"><div style="display:flex;align-items:center;gap:10px;margin-bottom:4px"><span class="endpoint-method '+methodClass+'">'+method+'</span><code style="font-size:14px;font-weight:600">'+esc(name)+'</code><span style="margin-left:auto;font-size:12px;color:var(--accent)">Test &#x25B6;</span></div><p style="color:var(--text-secondary);font-size:13px">'+esc(desc)+'</p></div>'});$('explorerResults').innerHTML=html}
+async function testEndpoint(name){if(!name)return;var email=currentUser?currentUser.email:'';$('testResult').style.display='';$('responseOutput').textContent='Loading...';auditEvent('endpoint_test',name);var d=await api(name,{email:email});$('responseOutput').textContent=JSON.stringify(d||{error:'No response'},null,2)}
+document.addEventListener('DOMContentLoaded',function(){EA_TRACKER.init('/developer/');var savedUser=EA_AUTH.getUser();if(savedUser){currentUser=savedUser;updateDevAuthUI()}else{show($('loginwall'));hideGlobalLoader()}auditEvent('pageview','/developer/');setInterval(function(){api('heartbeat',{user:currentUser?currentUser.email:''}).catch(function(e){console.error('Heartbeat failed:',e)})},60000);
+var scrollDepth=0;window.addEventListener('scroll',function(){var d=Math.round((window.scrollY+window.innerHeight)/document.documentElement.scrollHeight*100);if(d>scrollDepth+10){scrollDepth=d;auditEvent('scroll',d+'%')}});
+qsa('.auth-tab').forEach(function(t){t.addEventListener('click',function(){switchAuthTab(this.dataset.tab)})});
+$('loginForm').addEventListener('submit',function(e){e.preventDefault();login($('loginEmail').value.trim(),$('loginPassword').value)});
+$('registerForm').addEventListener('submit',function(e){e.preventDefault();var n=$('regName').value.trim();var em=$('regEmail').value.trim();var pw=$('regPassword').value;if(!n||!em||!pw)return Toast('error','Fill in all fields');if(pw.length<8)return Toast('error','Password must be 8+');register(n,em,pw)});
+$('logoutBtn').addEventListener('click',logoutUser);
+$('dropdownLogout').addEventListener('click',logoutUser);
+$('userAvatarBtn').addEventListener('click',function(e){e.stopPropagation();var dd=$('userDropdown');dd.classList.toggle('hidden');if(!dd.classList.contains('hidden')){setTimeout(function(){document.addEventListener('click',function closeDd(){dd.classList.add('hidden');document.removeEventListener('click',closeDd)})},100)}});
+qsa('#devTabs .tab').forEach(function(t){t.addEventListener('click',function(){switchDevTab(this.dataset.tab)})});
+$('createKeyBtn').addEventListener('click',function(){$('keyResult').style.display='none';$('createKeyConfirm').style.display='';$('newKeyName').value='';$('createKeyModal').classList.remove('hidden')});
+$('createKeyConfirm').addEventListener('click',createNewKey);
+$('copyKeyBtn').addEventListener('click',function(){navigator.clipboard.writeText($('newKeyDisplay').textContent).then(function(){Toast('success','Copied')}).catch(function(){Toast('error','Failed')})});
+$('keyDoneBtn').addEventListener('click',function(){$('createKeyModal').classList.add('hidden')});
+$('refreshKeysBtn').addEventListener('click',function(){loadKeys();Toast('info','Keys refreshed')});
+document.addEventListener('click',function(e){auditEvent('click',e.target.tagName+':'+(e.target.textContent||'').trim().slice(0,50))});
+});
+</script>
 </body>
 </html>

@@ -1,264 +1,47 @@
-(function () {
-  'use strict';
-
-  const API = 'https://script.google.com/macros/s/AKfycbyfr1k04IqvPSHND5I47ZowM8EAUmBuFR4pKJVWDdsB0ZCr4pMrCLxFME1v70aLbyWo/exec';
-  const STORAGE_KEY = 'ea_dev_key';
-  const STORAGE_EMAIL = 'ea_dev_email';
-
-  let currentKey = localStorage.getItem(STORAGE_KEY) || '';
-  let currentEmail = localStorage.getItem(STORAGE_EMAIL) || '';
-
-  function $(id) { return document.getElementById(id); }
-
-  function showEl(id) { const el = $(id); if (el) { el.style.display = ''; el.classList.remove('hidden'); } }
-
-  function hideEl(id) { const el = $(id); if (el) { el.style.display = 'none'; el.classList.add('hidden'); } }
-
-  function qs(s) { return document.querySelector(s); }
-
-  function qsa(s) { return document.querySelectorAll(s); }
-
-  function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
-
-  function toast(type, msg) {
-    const c = $('toastContainer');
-    if (!c) return;
-    const t = document.createElement('div');
-    t.className = 'toast ' + type;
-    t.innerHTML = '<span>' + msg + '</span>';
-    c.appendChild(t);
-    const dur = type === 'error' ? 10000 : 8000;
-    setTimeout(() => { t.style.animation = 'toastOut 0.3s ease forwards'; setTimeout(() => t.remove(), 300); }, dur);
-  }
-
-  async function api(action, extra) {
-    const p = new URLSearchParams({ action: action, ...(extra || {}) });
-    try {
-      const r = await fetch(API + '?' + p.toString() + '&t=' + Date.now(), { cache: 'no-store' });
-      return await r.json();
-    } catch (e) { return { success: false, message: 'Network error' }; }
-  }
-
-  async function loadEndpoints() {
-    const d = await api('dev.listEndpoints');
-    if (!d || !d.success) return;
-    const container = $('endpointsList');
-    if (!container) return;
-    container.innerHTML = '';
-    (d.endpoints || []).forEach((ep, i) => {
-      const div = document.createElement('div');
-      div.className = 'endpoint-card card';
-      div.dataset.method = ep.method;
-      div.dataset.auth = ep.auth ? 'protected' : 'public';
-      div.style.marginBottom = '12px';
-      div.style.animationDelay = (i * 0.05) + 's';
-      div.innerHTML = '<div class="endpoint-header" style="display:flex;align-items:center;gap:12px;margin-bottom:8px">' +
-        '<span class="endpoint-method" style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px;background:' + (ep.method === 'GET' ? 'rgba(79,140,255,0.2)' : 'rgba(0,212,170,0.2)') + ';color:' + (ep.method === 'GET' ? 'var(--accent)' : 'var(--success)') + '">' + esc(ep.method) + '</span>' +
-        '<code style="font-size:14px;font-weight:600;font-family:var(--font-mono)">' + esc(ep.name) + '</code>' +
-        '<span style="font-size:10px;padding:2px 8px;border-radius:4px;background:' + (ep.auth ? 'rgba(239,68,68,0.15)' : 'rgba(0,212,170,0.15)') + ';color:' + (ep.auth ? 'var(--danger)' : 'var(--success)') + '">' + (ep.auth ? 'Key Required' : 'Public') + '</span></div>' +
-        '<p style="color:var(--text-secondary);font-size:13px;margin-bottom:8px">' + esc(ep.description || '') + '</p>' +
-        (ep.params ? '<div style="font-size:12px;color:var(--text-muted)">Params: ' + Object.entries(ep.params).map(([k, v]) => '<code style="color:var(--accent)">' + k + '</code>: ' + v).join(', ') + '</div>' : '') +
-        '<button class="btn btn-ghost btn-sm try-btn" data-ep="' + esc(ep.name) + '" style="margin-top:8px;font-size:12px">Try it &rarr;</button></div>';
-      container.appendChild(div);
-    });
-    qsa('.try-btn').forEach(b => b.addEventListener('click', () => {
-      $('consoleEndpoint').value = b.dataset.ep;
-      $('consoleSection').scrollIntoView({ behavior: 'smooth' });
-    }));
-  }
-
-  async function handleKeyRegistration() {
-    const name = $('regName').value.trim();
-    const email = $('regEmail').value.trim();
-    if (!name || !email) return toast('error', 'Name and email required');
-    if (!email.includes('@')) return toast('error', 'Valid email required');
-    const d = await api('dev.registerKey', { name, email });
-    if (d && d.success) {
-      currentKey = d.key;
-      currentEmail = email;
-      localStorage.setItem(STORAGE_KEY, currentKey);
-      localStorage.setItem(STORAGE_EMAIL, currentEmail);
-      showKeyPanel();
-      toast('success', 'API key generated! Copy it now.');
-      loadEndpoints();
-    } else {
-      toast('error', d.message || 'Registration failed');
-      hideEl('registerForm');
-      showEl('keyEmailSection');
-    }
-  }
-
-  async function showKeyPanel() {
-    if (!currentKey) { hideEl('keyPanel'); showEl('keyEmailSection'); return; }
-    const d = await api('dev.getKeyInfo', { key: currentKey });
-    if (!d || !d.success) {
-      hideEl('keyPanel');
-      showEl('keyEmailSection');
-      return;
-    }
-    showEl('keyPanel');
-    hideEl('registerForm');
-    hideEl('keyEmailSection');
-    $('keyDisplay').textContent = d.key;
-    $('keyRequests').textContent = d.requestCount || 0;
-    $('keyCreated').textContent = d.createdAt ? new Date(d.createdAt).toLocaleDateString() : '—';
-    $('keyLastUsed').textContent = d.lastUsed ? new Date(d.lastUsed).toLocaleDateString() : '—';
-    const statusEl = $('keyStatus');
-    statusEl.textContent = d.status.charAt(0).toUpperCase() + d.status.slice(1);
-    statusEl.style.color = d.status === 'active' ? 'var(--success)' : d.status === 'inactive' ? 'var(--warning)' : 'var(--danger)';
-    $('reactivateKeyBtn').style.display = d.status === 'inactive' ? '' : 'none';
-    $('revokeKeyBtn').style.display = d.status === 'removed' ? 'none' : '';
-    hideEl('keyEmailSection');
-  }
-
-  document.addEventListener('DOMContentLoaded', () => {
-    if (currentKey) showKeyPanel();
-
-    $('heroGetStarted').addEventListener('click', () => {
-      if (currentKey) showKeyPanel();
-      else { showEl('keySection'); $('keySection').scrollIntoView({ behavior: 'smooth' }); }
-    });
-    $('heroViewDocs').addEventListener('click', () => $('docsSection').scrollIntoView({ behavior: 'smooth' }));
-    $('devGetStartedBtn').addEventListener('click', () => {
-      if (currentKey) showKeyPanel();
-      else { showEl('keySection'); $('keySection').scrollIntoView({ behavior: 'smooth' }); }
-    });
-
-    $('regKeyBtn').addEventListener('click', handleKeyRegistration);
-
-    $('copyKeyBtn').addEventListener('click', () => {
-      navigator.clipboard.writeText($('keyDisplay').textContent).then(() => toast('success', 'Copied to clipboard')).catch(() => toast('error', 'Failed to copy'));
-    });
-
-    $('regenKeyBtn').addEventListener('click', async () => {
-      if (!confirm('Regenerating will invalidate your current key. Continue?')) return;
-      const d = await api('dev.regenKey', { key: currentKey, email: currentEmail });
-      if (d && d.success) {
-        currentKey = d.key;
-        localStorage.setItem(STORAGE_KEY, currentKey);
-        showKeyPanel();
-        toast('success', 'Key regenerated');
-      } else toast('error', d.message || 'Regeneration failed');
-    });
-
-    $('revokeKeyBtn').addEventListener('click', async () => {
-      if (!confirm('Revoke this API key? This cannot be undone.')) return;
-      const d = await api('dev.revokeKey', { key: currentKey, email: currentEmail });
-      if (d && d.success) {
-        localStorage.removeItem(STORAGE_KEY);
-        localStorage.removeItem(STORAGE_EMAIL);
-        currentKey = '';
-        currentEmail = '';
-        hideEl('keyPanel');
-        showEl('registerForm');
-        showEl('keyEmailSection');
-        toast('warning', 'Key revoked');
-      } else toast('error', d.message || 'Revocation failed');
-    });
-
-    $('reactivateKeyBtn').addEventListener('click', async () => {
-      const d = await api('dev.reactivateKey', { key: currentKey, email: currentEmail });
-      if (d && d.success) {
-        showKeyPanel();
-        toast('success', 'Key reactivated');
-      } else toast('error', d.message || 'Reactivation failed');
-    });
-
-    $('lookupKeyBtn').addEventListener('click', async () => {
-      const email = $('lookupEmail').value.trim();
-      if (!email || !email.includes('@')) return toast('error', 'Valid email required');
-      currentEmail = email;
-      localStorage.setItem(STORAGE_EMAIL, currentEmail);
-      const d = await api('dev.listKeys', { email });
-      if (d && d.success && d.keys && d.keys.length > 0) {
-        const keysHtml = d.keys.map(k =>
-          '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--bg-secondary);border-radius:var(--radius-sm);margin-bottom:8px">' +
-          '<span><code style="font-family:var(--font-mono);font-size:12px">' + esc(k.key.substring(0, 16)) + '...</code><br><small style="color:var(--text-muted)">' + esc(k.name || '—') + ' &middot; ' + esc(k.status) + '</small></span>' +
-          '<button class="btn btn-sm btn-outline" data-lookup-key="' + esc(k.key) + '">Select</button></div>'
-        ).join('');
-        $('keyEmailSection').querySelector('.key-list')?.remove();
-        const listDiv = document.createElement('div');
-        listDiv.className = 'key-list';
-        listDiv.style.marginTop = '16px';
-        listDiv.innerHTML = keysHtml;
-        $('keyEmailSection').appendChild(listDiv);
-        listDiv.querySelectorAll('[data-lookup-key]').forEach(btn => btn.addEventListener('click', function () {
-          currentKey = this.dataset.lookupKey;
-          localStorage.setItem(STORAGE_KEY, currentKey);
-          showKeyPanel();
-        }));
-        toast('success', 'Found ' + d.keys.length + ' key(s)');
-      } else {
-        toast('error', (d && d.message) || 'No keys found for this email');
-      }
-    });
-
-    $('registerNewKeyBtn').addEventListener('click', () => {
-      hideEl('keyEmailSection');
-      showEl('registerForm');
-      $('keySection').scrollIntoView({ behavior: 'smooth' });
-    });
-
-    $('switchToLookupBtn').addEventListener('click', () => {
-      hideEl('registerForm');
-      showEl('keyEmailSection');
-      $('keySection').scrollIntoView({ behavior: 'smooth' });
-    });
-
-    $('consoleSendBtn').addEventListener('click', async () => {
-      const key = $('consoleKey').value.trim();
-      const endpoint = $('consoleEndpoint').value;
-      if (!key && endpoint.startsWith('dev.')) return toast('error', 'API key required for this endpoint');
-      const params = { action: endpoint };
-      if (key) params.key = key;
-      if (endpoint === 'dev.apiFare') {
-        params.origin = $('consoleOrigin').value.trim().toUpperCase();
-        params.destination = $('consoleDest').value.trim().toUpperCase();
-        params.cabin = $('consoleCabin').value;
-        params.passengers = $('consolePax').value || 1;
-      }
-      const qs = new URLSearchParams(params);
-      showEl('consoleResult');
-      $('consoleResponse').textContent = 'Loading...';
-      try {
-        const r = await fetch(API + '?' + qs.toString() + '&t=' + Date.now(), { cache: 'no-store' });
-        const d = await r.json();
-        $('consoleResponse').textContent = JSON.stringify(d, null, 2);
-      } catch (e) {
-        $('consoleResponse').textContent = 'Error: ' + e.message;
-      }
-    });
-
-    $('consoleEndpoint').addEventListener('change', function () {
-      $('consoleExtraParams').style.display = this.value === 'dev.apiFare' ? '' : 'none';
-    });
-
-    $('copyExampleBtn').addEventListener('click', () => {
-      const code = $('codeExample').textContent;
-      navigator.clipboard.writeText(code).then(() => toast('success', 'Copied')).catch(() => toast('error', 'Failed'));
-    });
-
-    qsa('[data-filter]').forEach(btn => btn.addEventListener('click', function () {
-      qsa('[data-filter]').forEach(b => { b.className = 'btn btn-sm ' + (b === this ? 'btn-primary' : 'btn-outline'); });
-      const filter = this.dataset.filter;
-      qsa('.endpoint-card').forEach(c => {
-        if (filter === 'all') { c.style.display = ''; return; }
-        if (filter === 'GET' || filter === 'POST') { c.style.display = c.dataset.method === filter ? '' : 'none'; return; }
-        c.style.display = c.dataset.auth === filter ? '' : 'none';
-      });
-    }));
-
-    qsa('.code-tab').forEach(tab => tab.addEventListener('click', function () {
-      qsa('.code-tab').forEach(t => { t.className = 'code-tab btn btn-sm ' + (t === this ? 'btn-primary' : 'btn-outline'); });
-      const lang = this.dataset.lang;
-      const examples = {
-        javascript: '// JavaScript - Node.js\nconst API = \'https://script.google.com/macros/s/AKfycbyfr1k04IqvPSHND5I47ZowM8EAUmBuFR4pKJVWDdsB0ZCr4pMrCLxFME1v70aLbyWo/exec\';\n\nasync function getStatus(key) {\n  const url = API + \'?action=dev.apiStatus&key=\' + key + \'&t=\' + Date.now();\n  const r = await fetch(url);\n  const d = await r.json();\n  console.log(d);\n}',
-        python: '# Python\nimport requests, time\n\nAPI = \'https://script.google.com/macros/s/AKfycbyfr1k04IqvPSHND5I47ZowM8EAUmBuFR4pKJVWDdsB0ZCr4pMrCLxFME1v70aLbyWo/exec\'\n\ndef get_status(api_key):\n    url = f\'{API}?action=dev.apiStatus&key={api_key}&t={int(time.time()*1000)}\'\n    r = requests.get(url)\n    return r.json()',
-        curl: '# cURL\ncurl \'https://script.google.com/macros/s/AKfycbyfr1k04IqvPSHND5I47ZowM8EAUmBuFR4pKJVWDdsB0ZCr4pMrCLxFME1v70aLbyWo/exec?action=dev.apiStatus&key=YOUR_API_KEY&t=$(date +%s%3N)\''
-      };
-      $('codeExample').querySelector('code').textContent = examples[lang] || examples.javascript;
-    }));
-
-    loadEndpoints();
-  });
-})();
+var EA_API='https://script.google.com/macros/s/AKfycbyfr1k04IqvPSHND5I47ZowM8EAUmBuFR4pKJVWDdsB0ZCr4pMrCLxFME1v70aLbyWo/exec';
+var EA_TRACKER={API_URL:EA_API,initialized:false,init:function(page){if(this.initialized)return;this.initialized=true;this.page=page||window.location.pathname;this.fingerprint=this.getFingerprint();var self=this;this.getIP().then(function(ip){self.ip=ip;self.send()});this.send()},getFingerprint:function(){var c=document.createElement('canvas');c.width=200;c.height=50;var t=c.getContext('2d');t.textBaseline='top';t.font='14px Arial';t.fillStyle='#f60';t.fillRect(125,1,62,20);t.fillStyle='#069';t.fillText('EA'+navigator.userAgent.length,2,15);t.fillStyle='rgba(102,204,0,0.7)';t.fillText('ExpressAirways',4,17);var n=c.toDataURL();var r='';try{var gl=document.createElement('canvas').getContext('webgl');if(gl){var ext=gl.getExtension('WEBGL_debug_renderer_info');if(ext)r=gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)+'|'+gl.getParameter(ext.UNMASKED_VENDOR_WEBGL)}}catch(e){}var a=window.screen.width+'x'+window.screen.height+'x'+window.screen.colorDepth;var tz=Intl.DateTimeFormat().resolvedOptions().timeZone;var lang=navigator.language;var ua=navigator.userAgent;var s=[n,r,a,tz,lang,ua].join('|||');var h=0;for(var i=0;i<s.length;i++){var c2=s.charCodeAt(i);h=(h<<5)-h+c2;h|=0}return Math.abs(h).toString(16)},getIP:function(){return fetch('https://api.ipify.org?format=json',{cache:'no-store'}).then(function(r){return r.json()}).then(function(d){return d.ip}).catch(function(){return''})},send:function(){var params={action:'audit.event',event:'pageview',page:this.page,fingerprint:this.fingerprint,ip:this.ip,ua:navigator.userAgent,screen:window.screen.width+'x'+window.screen.height,tz:Intl.DateTimeFormat().resolvedOptions().timeZone,lang:navigator.language};var qs=Object.entries(params).map(function(kv){return encodeURIComponent(kv[0])+'='+encodeURIComponent(kv[1]||'')}).join('&');fetch(EA_API+'?'+qs+'&t='+Date.now(),{mode:'no-cors'}).catch(function(){})}};
+var EA_AUTH={KEY:'ea_session',getUser:function(){try{var raw=localStorage.getItem(this.KEY);if(!raw)return null;var data=JSON.parse(raw);if(data&&data.user&&data.expires>Date.now())return data.user;if(data&&data.user)localStorage.removeItem(this.KEY);return null}catch(e){return null}},setUser:function(user){if(!user){localStorage.removeItem(this.KEY);return}var data={user:user,expires:Date.now()+604800000};localStorage.setItem(this.KEY,JSON.stringify(data))},logout:function(){localStorage.removeItem(this.KEY);this._notify(null)},_listeners:[],onChange:function(fn){this._listeners.push(fn)},_notify:function(user){for(var i=0;i<this._listeners.length;i++){try{this._listeners[i](user)}catch(e){}}}};
+window.addEventListener('storage',function(e){if(e.key===EA_AUTH.KEY){try{var data=JSON.parse(e.newValue);EA_AUTH._notify(data?data.user:null)}catch(ex){EA_AUTH._notify(null)}}});
+function Toast(type,message){var container=document.getElementById('toastContainer');if(!container)return;var icons={success:'\u2713',error:'\u2715',warning:'\u26A0',info:'\u2139'};var t=document.createElement('div');t.className='toast '+type;t.innerHTML='<span>'+(icons[type]||'')+'</span><span>'+message+'</span>';container.appendChild(t);var dur=type==='error'?10000:type==='success'?8000:6000;setTimeout(function(){t.style.animation='toastOut 0.3s ease forwards';setTimeout(function(){t.remove()},300)},dur)}
+function $(id){return document.getElementById(id)}
+function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML}
+function show(el){if(el)el.classList.remove('hidden')}
+function hide(el){if(el)el.classList.add('hidden')}
+function qs(s){return document.querySelector(s)}
+function qsa(s){return document.querySelectorAll(s)}
+function btnLoading(el){if(!el)return;if(el.dataset._orig===undefined)el.dataset._orig=el.innerHTML;el.classList.add('loading');el.disabled=true}
+function btnReset(el){if(!el)return;el.classList.remove('loading');el.disabled=false}
+async function api(action,extra){var p={action:action};if(extra)for(var k in extra)p[k]=extra[k];var qs2=Object.entries(p).map(function(kv){return encodeURIComponent(kv[0])+'='+encodeURIComponent(kv[1]||'')}).join('&');try{var c=new AbortController();var t=setTimeout(function(){c.abort()},15000);var r=await fetch(EA_API+'?'+qs2+'&t='+Date.now(),{cache:'no-store',signal:c.signal});clearTimeout(t);if(!r.ok)throw new Error('HTTP '+r.status);return await r.json()}catch(e){console.error('EA API Error:',e);return null}}
+function auditEvent(eventType,detail){try{var params={action:'audit.event',event:eventType,page:window.location.pathname,fingerprint:EA_TRACKER.fingerprint,detail:detail||'',user:currentUser?currentUser.email:''};var qs3=Object.entries(params).map(function(kv){return encodeURIComponent(kv[0])+'='+encodeURIComponent(kv[1]||'')}).join('&');fetch(EA_API+'?'+qs3+'&t='+Date.now(),{mode:'no-cors'}).catch(function(e){console.error('Audit failed:',e)})}catch(e){console.error('Audit error:',e)}}
+var currentUser=null;
+var allKeys=[];
+var allEndpoints=[];
+var endpointsCache=[];
+function updateDevAuthUI(){if(currentUser){hide($('loginwall'));show($('userMenu'));show($('logoutBtn'));$('avatarInitials').textContent=(currentUser.name||'U').charAt(0).toUpperCase();$('dropdownName').textContent=currentUser.name||'Developer';$('dropdownEmail').textContent=currentUser.email||'';loadKeys();loadEndpoints()}else{show($('loginwall'));hide($('userMenu'));hide($('logoutBtn'));$('keysTableContainer').innerHTML='<p style="color:var(--text-muted);text-align:center;padding:20px">Sign in to view your API keys.</p>'}}
+async function login(email,pw){btnLoading(qs('#loginForm button[type="submit"]'));var d=await api('login',{email:email,password:pw});btnReset(qs('#loginForm button[type="submit"]'));if(d&&d.success){currentUser=d.user;EA_AUTH.setUser(d.user);updateDevAuthUI();Toast('success','Welcome, '+d.user.name);auditEvent('dev_login',email)}else{Toast('error',d&&d.message?d.message:'Login failed')}}
+async function register(name,email,pw){btnLoading(qs('#registerForm button[type="submit"]'));var d=await api('signup',{fullName:name,email:email,password:pw});btnReset(qs('#registerForm button[type="submit"]'));if(d&&d.success){Toast('success','Account created. Please sign in.');switchAuthTab('login')}else{Toast('error',d&&d.message?d.message:'Registration failed')}}
+function logoutUser(){currentUser=null;EA_AUTH.logout();updateDevAuthUI();Toast('info','Signed out');auditEvent('dev_logout','')}
+function switchAuthTab(tab){qsa('.auth-tab').forEach(function(t){t.classList.toggle('active',t.dataset.tab===tab)});hide($('loginForm'));hide($('registerForm'));show(tab==='login'?$('loginForm'):$('registerForm'))}
+function switchDevTab(tab){qsa('#devTabs .tab').forEach(function(t){t.classList.toggle('active',t.dataset.tab===tab)});hide($('tabDocs'));hide($('tabKeys'));hide($('tabExplorer'));show($('tab'+tab.charAt(0).toUpperCase()+tab.slice(1)));auditEvent('dev_tab',tab)}
+async function loadEndpoints(){if(!currentUser)return;var d=await api('dev.listEndpoints',{});if(d&&d.success&&d.endpoints){endpointsCache=d.endpoints;renderEndpoints(d.endpoints)}else{document.getElementById('endpointsList').innerHTML='<p style="color:var(--text-muted);text-align:center;padding:20px">Unable to load API endpoints. Please try again later.</p>';endpointsCache=[]}}
+function renderEndpoints(endpoints){if(!endpoints||endpoints.length===0){$('endpointsList').innerHTML='<p style="color:var(--text-muted);text-align:center;padding:20px">No endpoints available.</p>';return}var html='';endpoints.forEach(function(ep){var name=ep.name||ep.action||ep.endpoint||'Unknown';var method=(ep.method||'GET').toUpperCase();var desc=ep.description||ep.desc||ep.Description||'';var methodClass=method==='GET'?'method-get':'method-post';html+='<div class="endpoint-card"><div style="display:flex;align-items:center;gap:10px;margin-bottom:4px"><span class="endpoint-method '+methodClass+'">'+method+'</span><code style="font-size:14px;font-weight:600">'+esc(name)+'</code></div><p style="color:var(--text-secondary);font-size:13px">'+esc(desc)+'</p></div>'});$('endpointsList').innerHTML=html}
+async function loadKeys(){if(!currentUser)return;var d=await api('dev.listKeys',{email:currentUser.email});if(d&&d.success&&d.keys){allKeys=d.keys;renderKeys(d.keys)}else{allKeys=[];renderKeys([])}}
+function renderKeys(keys){var total=0,active=0,inactive=0,removed=0;keys.forEach(function(k){total++;if(k.status==='active')active++;else if(k.status==='inactive')inactive++;else if(k.status==='removed')removed++});$('statTotal').textContent=total;$('statActive').textContent=active;$('statInactive').textContent=inactive;$('statRemoved').textContent=removed;if(keys.length===0){$('keysTableContainer').innerHTML='<div style="text-align:center;padding:40px;color:var(--text-muted)"><p style="font-size:16px;margin-bottom:8px">No API keys yet</p><p style="font-size:13px">Create your first key to get started.</p></div>';return}var html='<div class="table-wrap"><table><thead><tr><th>Key</th><th>Name</th><th>Status</th><th>Created</th><th>Last Used</th><th>Requests</th><th style="width:160px">Actions</th></tr></thead><tbody>';keys.forEach(function(k){var keyStr=k.key||k.apiKey||'';var name=k.name||k.Name||'—';var status=k.status||k.Status||'active';var created=k.createdAt||k.CreatedAt||'—';var lastUsed=k.lastUsed||k.LastUsed||'—';var requests=k.requestCount||k.RequestCount||0;var statusClass=status==='active'?'active':status==='inactive'?'inactive':'removed';html+='<tr><td><span class="key-tag">'+esc(keyStr.substring(0,20))+'...</span></td><td>'+esc(name)+'</td><td><span class="status-badge '+statusClass+'">'+esc(status.charAt(0).toUpperCase()+status.slice(1))+'</span></td><td style="white-space:nowrap">'+esc(created)+'</td><td style="white-space:nowrap">'+esc(lastUsed)+'</td><td>'+requests+'</td><td style="white-space:nowrap"><button class="btn btn-sm btn-ghost key-action" data-action="copy" data-key="'+esc(keyStr)+'">Copy</button>'+(status==='active'?'<button class="btn btn-sm btn-ghost key-action" data-action="revoke" data-key="'+esc(keyStr)+'" style="color:var(--warning)">Revoke</button>':'')+(status==='inactive'?'<button class="btn btn-sm btn-ghost key-action" data-action="reactivate" data-key="'+esc(keyStr)+'" style="color:var(--success)">Activate</button>':'')+'<button class="btn btn-sm btn-ghost key-action" data-action="delete" data-key="'+esc(keyStr)+'" style="color:var(--danger)">Delete</button></td></tr>'});html+='</tbody></table></div>';$('keysTableContainer').innerHTML=html;$('keysTableContainer').querySelectorAll('.key-action').forEach(function(btn){btn.addEventListener('click',function(){var action=this.dataset.action;var keyVal=this.dataset.key;handleKeyAction(action,keyVal)})})}
+function handleKeyAction(action,keyVal){if(action==='copy'){navigator.clipboard.writeText(keyVal).then(function(){Toast('success','Key copied')}).catch(function(){Toast('error','Failed to copy')})}if(action==='delete'){if(!confirm('Permanently delete this key?'))return;api('dev.deleteKey',{key:keyVal,email:currentUser.email}).then(function(d){if(d&&d.success){Toast('success','Key deleted');loadKeys()}else Toast('error',d&&d.message?d.message:'Delete failed')})}if(action==='revoke'){api('dev.revokeKey',{key:keyVal,email:currentUser.email}).then(function(d){if(d&&d.success){Toast('warning','Key revoked');loadKeys()}else Toast('error',d&&d.message?d.message:'Revoke failed')})}if(action==='reactivate'){api('dev.reactivateKey',{key:keyVal,email:currentUser.email}).then(function(d){if(d&&d.success){Toast('success','Key reactivated');loadKeys()}else Toast('error',d&&d.message?d.message:'Reactivation failed')})}}
+async function createNewKey(){var name=$('newKeyName').value.trim()||'My API Key';var d=await api('dev.registerKey',{name:name,email:currentUser.email});if(d&&d.success&&d.key){$('newKeyName').value='';$('keyResult').style.display='';$('newKeyDisplay').textContent=d.key;$('createKeyConfirm').style.display='none';Toast('success','Key generated');loadKeys()}else{Toast('error',d&&d.message?d.message:'Key generation failed')}}
+document.addEventListener('DOMContentLoaded',function(){EA_TRACKER.init('/developer/');var savedUser=EA_AUTH.getUser();if(savedUser){currentUser=savedUser;updateDevAuthUI()}else{show($('loginwall'));hideGlobalLoader()}auditEvent('pageview','/developer/');setInterval(function(){api('heartbeat',{user:currentUser?currentUser.email:''}).catch(function(e){console.error('Heartbeat failed:',e)})},60000);
+var scrollDepth=0;window.addEventListener('scroll',function(){var d=Math.round((window.scrollY+window.innerHeight)/document.documentElement.scrollHeight*100);if(d>scrollDepth+10){scrollDepth=d;auditEvent('scroll',d+'%')}});
+qsa('.auth-tab').forEach(function(t){t.addEventListener('click',function(){switchAuthTab(this.dataset.tab)})});
+$('loginForm').addEventListener('submit',function(e){e.preventDefault();login($('loginEmail').value.trim(),$('loginPassword').value)});
+$('registerForm').addEventListener('submit',function(e){e.preventDefault();var n=$('regName').value.trim();var em=$('regEmail').value.trim();var pw=$('regPassword').value;if(!n||!em||!pw)return Toast('error','Fill in all fields');if(pw.length<8)return Toast('error','Password must be 8+');register(n,em,pw)});
+$('logoutBtn').addEventListener('click',logoutUser);
+$('dropdownLogout').addEventListener('click',logoutUser);
+$('userAvatarBtn').addEventListener('click',function(e){e.stopPropagation();var dd=$('userDropdown');dd.classList.toggle('hidden');if(!dd.classList.contains('hidden')){setTimeout(function(){document.addEventListener('click',function closeDd(){dd.classList.add('hidden');document.removeEventListener('click',closeDd)})},100)}});
+qsa('#devTabs .tab').forEach(function(t){t.addEventListener('click',function(){switchDevTab(this.dataset.tab)})});
+$('createKeyBtn').addEventListener('click',function(){$('keyResult').style.display='none';$('createKeyConfirm').style.display='';$('newKeyName').value='';$('createKeyModal').classList.remove('hidden')});
+$('createKeyConfirm').addEventListener('click',createNewKey);
+$('copyKeyBtn').addEventListener('click',function(){navigator.clipboard.writeText($('newKeyDisplay').textContent).then(function(){Toast('success','Copied')}).catch(function(){Toast('error','Failed')})});
+$('keyDoneBtn').addEventListener('click',function(){$('createKeyModal').classList.add('hidden')});
+$('refreshKeysBtn').addEventListener('click',function(){loadKeys();Toast('info','Keys refreshed')});
+document.addEventListener('click',function(e){auditEvent('click',e.target.tagName+':'+(e.target.textContent||'').trim().slice(0,50))});
+});

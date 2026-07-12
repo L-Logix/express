@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Express Airways Airport Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-primary: #080c1a;
+  --bg-secondary: #0d1230;
+  --bg-card: rgba(13, 18, 48, 0.7);
+  --bg-glass: rgba(255, 255, 255, 0.04);
+  --bg-glass-hover: rgba(255, 255, 255, 0.08);
+  --text-primary: #f0f4ff;
+  --text-secondary: #8892b0;
+  --text-muted: #555d7a;
+  --accent: #4f8cff;
+  --accent-glow: rgba(79, 140, 255, 0.3);
+  --accent-gradient: linear-gradient(135deg, #4f8cff, #00d4aa);
+  --success: #00d4aa;
+  --warning: #fbbf24;
+  --danger: #ef4444;
+  --danger-glow: rgba(239, 68, 68, 0.3);
+  --border: rgba(255, 255, 255, 0.06);
+  --border-active: rgba(79, 140, 255, 0.3);
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.3);
+  --shadow-md: 0 8px 32px rgba(0,0,0,0.4);
+  --shadow-lg: 0 16px 48px rgba(0,0,0,0.5);
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --nav-height: 72px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+body {
+  font-family: var(--font-sans);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.6;
+  overflow-x: hidden;
+  min-height: 100vh;
+  -webkit-tap-highlight-color: transparent;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { color: #7ab7ff; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
+.hidden { display: none !important; }
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+  font-family: var(--font-sans);
+}
+.btn-sm { padding: 7px 14px; font-size: 13px; }
+.btn-lg { padding: 14px 28px; font-size: 16px; border-radius: var(--radius-md); }
+.btn-full { width: 100%; justify-content: center; }
+.btn-primary { background: var(--accent-gradient); color: #fff; box-shadow: 0 0 20px var(--accent-glow); }
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 0 30px var(--accent-glow); }
+.btn-outline { background: transparent; color: var(--text-primary); border: 1px solid var(--border); }
+.btn-outline:hover { background: var(--bg-glass); border-color: var(--accent); }
+.btn-glass { background: var(--bg-glass); color: var(--text-primary); backdrop-filter: blur(10px); border: 1px solid var(--border); }
+.btn-glass:hover { background: var(--bg-glass-hover); transform: translateY(-1px); }
+.btn-ghost { background: transparent; color: var(--text-secondary); padding: 8px; border-radius: var(--radius-sm); }
+.btn-ghost:hover { background: var(--bg-glass); color: var(--text-primary); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  backdrop-filter: blur(10px);
+  transition: var(--transition);
+}
+.card:hover { border-color: var(--border-active); box-shadow: var(--shadow-md); }
+.toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-md);
+  font-size: 13px;
+  font-weight: 500;
+  pointer-events: auto;
+  animation: toastIn 0.35s ease forwards;
+  max-width: 400px;
+  min-width: 280px;
+}
+@keyframes toastIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+@keyframes toastOut { from { opacity: 1; } to { opacity: 0; transform: translateX(100%); } }
+.toast.success { border-left: 3px solid var(--success); }
+.toast.error { border-left: 3px solid var(--danger); }
+.toast.warning { border-left: 3px solid var(--warning); }
+.toast.info { border-left: 3px solid var(--accent); }
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(8px);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fadeIn 0.2s ease;
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.modal {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  animation: slideUp 0.3s ease;
+}
+@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.modal-sm { max-width: 480px; padding: 32px; }
+.modal-lg { max-width: 700px; padding: 32px; }
+.modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 28px;
+  cursor: pointer;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  transition: var(--transition);
+  z-index: 1;
+}
+.modal-close:hover { background: var(--bg-glass); color: var(--text-primary); }
+.modal-header { text-align: center; margin-bottom: 24px; }
+.modal-header h3 { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+.modal-header p { font-size: 14px; color: var(--text-secondary); }
+.form-group { margin-bottom: 16px; }
+.form-label { display: block; font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; }
+.form-input {
+  width: 100%;
+  padding: 11px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 14px;
+  transition: var(--transition);
+}
+.form-input::placeholder { color: var(--text-muted); }
+.form-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 20px var(--accent-glow); }
+select.form-input { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238892b0' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px; }
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+#globalLoader {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(8, 12, 26, 0.92);
+  backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+  transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+#globalLoader.fade-out { opacity: 0; visibility: hidden; pointer-events: none; }
+.loader-content { text-align: center; }
+.loader-text { margin-top: 20px; color: var(--text-muted); font-size: 14px; letter-spacing: 1px; text-transform: uppercase; }
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--nav-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  background: rgba(8, 12, 26, 0.85);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  z-index: 100;
+}
+.nav-brand { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+.nav-title { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+.nav-badge { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; padding: 2px 8px; border-radius: 4px; background: var(--accent-gradient); color: #fff; line-height: 1.4; }
+.nav-links { display: flex; align-items: center; gap: 4px; }
+.nav-link { font-size: 14px; font-weight: 500; color: var(--text-secondary); padding: 8px 16px; border-radius: var(--radius-sm); transition: var(--transition); cursor: pointer; }
+.nav-link:hover, .nav-link.active { color: var(--text-primary); background: var(--bg-glass); }
+.nav-actions { display: flex; align-items: center; gap: 8px; }
+.dropdown { position: relative; }
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  min-width: 200px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 8px;
+  box-shadow: var(--shadow-lg);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(4px);
+  transition: var(--transition);
+  z-index: 200;
+}
+.dropdown:hover .dropdown-menu { opacity: 1; visibility: visible; transform: translateY(0); }
+.dropdown-item {
+  display: block;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  transition: var(--transition);
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.dropdown-item:hover { background: var(--bg-glass); color: var(--text-primary); }
+.dropdown-category { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: var(--text-muted); padding: 8px 12px 4px; }
+.user-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  min-width: 160px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 8px;
+  box-shadow: var(--shadow-lg);
+  z-index: 200;
+}
+.user-dropdown .dropdown-item { padding: 6px 12px; }
+.hero {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--nav-height) 24px 40px;
+  overflow: hidden;
+}
+.hero-bg { position: absolute; inset: 0; z-index: 0; }
+.hero-gradient {
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(79,140,255,0.15), transparent),
+              radial-gradient(ellipse 60% 50% at 80% 100%, rgba(0,212,170,0.1), transparent),
+              radial-gradient(ellipse 50% 50% at 20% 100%, rgba(79,140,255,0.08), transparent);
+}
+.hero-content { position: relative; z-index: 1; text-align: center; max-width: 800px; }
+.hero-title { font-size: clamp(36px, 7vw, 72px); font-weight: 800; letter-spacing: -2px; line-height: 1.1; margin-bottom: 20px; }
+.hero-title-accent { background: var(--accent-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.hero-subtitle { font-size: 18px; color: var(--text-secondary); max-width: 600px; margin: 0 auto 32px; line-height: 1.7; }
+.hero-badge { display:inline-flex;align-items:center;gap:8px;padding:6px 16px;border-radius:100px;background:var(--bg-glass);border:1px solid var(--border);font-size:13px;font-weight:600;color:var(--text-secondary);margin-bottom:8px; }
+.hero-actions { display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; margin-bottom: 48px; }
+.hero-stats { display: flex; align-items: center; justify-content: center; gap: 48px; }
+.hero-stat { text-align: center; }
+.hero-stat-number { font-size: 36px; font-weight: 800; letter-spacing: -1px; background: var(--accent-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.hero-stat-label { display: block; font-size: 13px; color: var(--text-muted); margin-top: 4px; font-weight: 500; }
+.section-header { text-align: center; margin-bottom: 56px; }
+.section-tag { display: inline-block; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; color: var(--accent); margin-bottom: 12px; }
+.section-title { font-size: 36px; font-weight: 700; letter-spacing: -1px; margin-bottom: 12px; }
+.section-desc { font-size: 16px; color: var(--text-secondary); max-width: 500px; margin: 0 auto; }
+.footer { border-top: 1px solid var(--border); padding: 60px 24px 24px; }
+.footer-content { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; gap: 48px; flex-wrap: wrap; }
+.footer-brand { max-width: 280px; }
+.footer-logo { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 700; margin-bottom: 12px; }
+.footer-desc { font-size: 13px; color: var(--text-muted); line-height: 1.7; }
+.footer-links { display: flex; gap: 48px; }
+.footer-col h4 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 16px; }
+.footer-col a { display: block; font-size: 14px; color: var(--text-secondary); margin-bottom: 10px; transition: var(--transition); }
+.footer-col a:hover { color: var(--text-primary); }
+.footer-bottom { max-width: 1200px; margin: 40px auto 0; padding-top: 20px; border-top: 1px solid var(--border); text-align: center; font-size: 12px; color: var(--text-muted); }
+.loginwall {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 12, 26, 0.85);
+  backdrop-filter: blur(12px);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 16px;
+}
+.loginwall-content { text-align: center; }
+.loginwall-icon { font-size: 64px; margin-bottom: 16px; }
+.loginwall-title { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+.loginwall-text { font-size: 14px; color: var(--text-secondary); margin-bottom: 24px; max-width: 400px; margin-left: auto; margin-right: auto; }
+.airports-stats { display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px }
+.stat-card { background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:20px;text-align:center;transition:var(--transition) }
+.stat-card:hover { border-color:var(--border-active);transform:translateY(-2px);box-shadow:var(--shadow-md) }
+.stat-value { font-size:28px;font-weight:800;display:block;background:var(--accent-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text }
+.stat-label { font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-top:4px;display:block }
+.airport-card { background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:20px;transition:var(--transition) }
+.airport-card:hover { border-color:var(--border-active);transform:translateY(-2px);box-shadow:var(--shadow-md) }
+.airport-header { display:flex;justify-content:space-between;align-items:center;margin-bottom:12px }
+.airport-code { font-family:var(--font-mono);font-size:22px;font-weight:800;background:var(--accent-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text }
+.airport-country { display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:100px;background:var(--bg-glass);border:1px solid var(--border);font-size:11px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px }
+.airport-name { font-size:16px;font-weight:600;margin-bottom:4px;color:var(--text-primary) }
+.airport-city { font-size:13px;color:var(--text-secondary);margin-bottom:12px }
+.airport-details { display:grid;grid-template-columns:1fr 1fr;gap:8px }
+.airport-detail { background:var(--bg-glass);border-radius:var(--radius-sm);padding:8px 12px;font-size:12px }
+.airport-detail-label { color:var(--text-muted);font-size:10px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;display:block;margin-bottom:2px }
+.airport-detail-value { font-family:var(--font-mono);font-size:13px;color:var(--text-primary) }
+.error-section { padding: 60px 24px; text-align: center; }
+.error-section h2 { font-size: 28px; margin-bottom: 12px; color: var(--danger); }
+.error-section p { color: var(--text-secondary); }
+.btn.loading { position: relative; color: transparent !important; pointer-events: none; }
+.btn.loading::after { content: ''; position: absolute; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: btnSpin .6s linear infinite; top: 50%; left: 50%; margin: -8px 0 0 -8px; }
+@keyframes btnSpin { to { transform: rotate(360deg); } }
+.auth-tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+.auth-tab { flex: 1; padding: 12px; text-align: center; font-size: 14px; font-weight: 600; color: var(--text-secondary); cursor: pointer; transition: var(--transition); border-bottom: 2px solid transparent; background: none; border-top: none; border-left: none; border-right: none; font-family: var(--font-sans); }
+.auth-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.auth-tab:hover { color: var(--text-primary); }
+.form-error { font-size: 12px; color: var(--danger); margin-top: 4px; }
+.weather-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 20px; text-align: center; }
+.weather-temp { font-size: 48px; font-weight: 800; }
+.weather-desc { font-size: 14px; color: var(--text-secondary); text-transform: capitalize; }
+.weather-details { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-top: 12px; }
+.weather-detail-item { background: var(--bg-glass); border-radius: var(--radius-sm); padding: 8px; }
+.currency-row { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 8px; padding: 10px 12px; background: var(--bg-glass); border-radius: var(--radius-sm); margin-bottom: 4px; align-items: center; }
+.currency-code { font-family: var(--font-mono); font-weight: 700; }
+.currency-rate { font-family: var(--font-mono); color: var(--success); }
+.currency-converter { display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: end; }
+@keyframes fadeInUp { from { opacity:0;transform:translateY(20px) } to { opacity:1;transform:translateY(0) } }
+.airport-card { animation:fadeInUp 0.4s ease forwards;opacity:0 }
+.airport-card:nth-child(1) { animation-delay:0.05s }
+.airport-card:nth-child(2) { animation-delay:0.1s }
+.airport-card:nth-child(3) { animation-delay:0.15s }
+.airport-card:nth-child(4) { animation-delay:0.2s }
+.airport-card:nth-child(5) { animation-delay:0.25s }
+.airport-card:nth-child(6) { animation-delay:0.3s }
+.airport-card:nth-child(7) { animation-delay:0.35s }
+.airport-card:nth-child(8) { animation-delay:0.4s }
+.airport-card:nth-child(9) { animation-delay:0.45s }
+.airport-card:nth-child(10) { animation-delay:0.5s }
+@media (max-width: 768px) {
+  :root { --nav-height: 60px; }
+  .nav-links { display: none; }
+  .hero-title { font-size: 32px; }
+  .hero-stats { flex-direction: column; gap: 24px; }
+  .footer-content { flex-direction: column; gap: 32px; }
+  .footer-links { flex-wrap: wrap; gap: 24px; }
+  .airports-stats { grid-template-columns: 1fr; }
+  .currency-converter { grid-template-columns: 1fr; }
+  .weather-details { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div id="globalLoader"><div class="loader-content"><div class="spinner" style="width:40px;height:40px;border-width:3px;margin:0 auto"></div><p class="loader-text">Connecting to Express Airways servers...</p></div></div>
+
+<nav class="navbar">
+  <a href="../index.html" class="nav-brand" style="text-decoration:none;color:inherit">
+    <img src="../OIG3.jpg" alt="Express Airways" style="height:32px;width:32px;border-radius:50%;object-fit:cover">
+    <span class="nav-title">Express Airways</span>
+    <span class="nav-badge">Airports</span>
+  </a>
+  <div class="nav-links">
+    <div class="dropdown">
+      <span class="nav-link">Flight Ops</span>
+      <div class="dropdown-menu">
+        <div class="dropdown-category">Flight Operations</div>
+        <a href="../flights/index.html" class="dropdown-item">Flights</a>
+        <a href="../routes/index.html" class="dropdown-item">Routes</a>
+        <a href="../cargo/index.html" class="dropdown-item">Cargo</a>
+      </div>
+    </div>
+    <div class="dropdown">
+      <span class="nav-link">Airports</span>
+      <div class="dropdown-menu">
+        <div class="dropdown-category">Airport Services</div>
+        <a href="../airports/index.html" class="dropdown-item">Airport Guide</a>
+        <a href="../maps/index.html" class="dropdown-item">Maps</a>
+        <a href="../parking/index.html" class="dropdown-item">Parking</a>
+        <a href="../lounge/index.html" class="dropdown-item">Lounges</a>
+        <a href="../weather/index.html" class="dropdown-item">Weather</a>
+      </div>
+    </div>
+    <div class="dropdown">
+      <span class="nav-link">Travel</span>
+      <div class="dropdown-menu">
+        <div class="dropdown-category">Travel Services</div>
+        <a href="../hotels/index.html" class="dropdown-item">Hotels</a>
+        <a href="../currency/index.html" class="dropdown-item">Currency</a>
+        <a href="../insurance/index.html" class="dropdown-item">Insurance</a>
+        <a href="../passports/index.html" class="dropdown-item">Passports</a>
+      </div>
+    </div>
+    <div class="dropdown">
+      <span class="nav-link">Company</span>
+      <div class="dropdown-menu">
+        <div class="dropdown-category">Corporate</div>
+        <a href="../insights/index.html" class="dropdown-item">Holdings</a>
+      </div>
+    </div>
+    <div class="dropdown">
+      <span class="nav-link">Account</span>
+      <div class="dropdown-menu">
+        <div class="dropdown-category">Account</div>
+        <a href="#" class="dropdown-item" onclick="showAuth();return false">Login</a>
+        <a href="#" class="dropdown-item" onclick="showAuth();return false">Register</a>
+        <a href="../bookings/index.html" class="dropdown-item">Profile</a>
+      </div>
+    </div>
+    <div class="dropdown">
+      <span class="nav-link">More</span>
+      <div class="dropdown-menu">
+        <div class="dropdown-category">More</div>
+        <a href="../status/index.html" class="dropdown-item">Status</a>
+        <a href="../docs/index.html" class="dropdown-item">Documents</a>
+        <a href="../emergency/index.html" class="dropdown-item">Operations</a>
+        <a href="../legal/index.html" class="dropdown-item">Legal</a>
+        <a href="../developer/index.html" class="dropdown-item">Developer</a>
+      </div>
+    </div>
+  </div>
+  <div class="nav-actions">
+    <button class="btn btn-outline btn-sm" id="loginBtn">Sign In</button>
+    <button class="btn btn-primary btn-sm" id="signupBtn">Register</button>
+    <div id="userMenu" class="hidden" style="position:relative;cursor:pointer">
+      <div style="display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:var(--radius-sm);background:var(--bg-glass);border:1px solid var(--border)">
+        <div id="avatarInitials" style="width:28px;height:28px;border-radius:50%;background:var(--accent-gradient);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff">U</div>
+        <span id="dropdownName" style="font-size:13px;font-weight:600">User</span>
+      </div>
+      <div class="user-dropdown hidden">
+        <div class="dropdown-item" id="logoutBtn" style="color:var(--danger)">Sign Out</div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div id="loginwall" class="loginwall">
+  <div class="loginwall-content">
+    <div class="loginwall-icon">🗺️</div>
+    <h2 class="loginwall-title">Sign in Required</h2>
+    <p class="loginwall-text">Please sign in to access Express Airways Airport Guide. Search airports, view terminal maps, check weather, and explore exchange rates.</p>
+    <button class="btn btn-primary btn-lg" onclick="showAuth();return false">Sign In</button>
+  </div>
+</div>
+
+<section class="hero" style="min-height:70vh">
+  <div class="hero-bg"><div class="hero-gradient"></div></div>
+  <div class="hero-content">
+    <div class="hero-badge">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+      Airport Guide & Directory
+    </div>
+    <h1 class="hero-title">Global <span class="hero-title-accent">Airport Guide</span></h1>
+    <p class="hero-subtitle">Comprehensive airport information worldwide — search by code or name, view terminals, parking, lounges, weather, and currency exchange rates.</p>
+  </div>
+</section>
+
+<main style="max-width:1200px;margin:-100px auto 60px;padding:0 24px;position:relative;z-index:2">
+
+  <div class="card" style="margin-bottom:24px;padding:28px">
+    <h3 style="font-size:18px;font-weight:700;margin-bottom:16px;text-align:center">Search Airports</h3>
+    <div style="max-width:500px;margin:0 auto;display:flex;gap:12px">
+      <input class="form-input" id="airportSearch" placeholder="Search by code or name (e.g. JFK, Heathrow)" style="text-align:center;font-family:var(--font-mono)">
+      <button class="btn btn-primary" id="airportSearchBtn">Search</button>
+    </div>
+  </div>
+
+  <div class="airports-stats" id="airportsStats">
+    <div class="stat-card"><span class="stat-value" id="totalAirports">--</span><span class="stat-label">Airports</span></div>
+    <div class="stat-card"><span class="stat-value" id="countriesCovered">--</span><span class="stat-label">Countries</span></div>
+    <div class="stat-card"><span class="stat-value" id="continentsCovered">--</span><span class="stat-label">Continents</span></div>
+  </div>
+
+  <div class="airports-grid" id="airportsGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;margin-top:24px"></div>
+  <div id="airportsPlaceholder" style="text-align:center;padding:80px 24px">
+    <div style="font-size:72px;margin-bottom:16px">🌍</div>
+    <h3 style="font-size:20px;font-weight:700;margin-bottom:8px">Loading Airport Data</h3>
+    <p style="color:var(--text-muted);font-size:14px;max-width:400px;margin:0 auto">Fetching real-time airport information from our global database...</p>
+  </div>
+
+  <div class="card" style="margin-bottom:24px;padding:28px">
+    <h3 style="font-size:18px;font-weight:700;margin-bottom:16px;text-align:center">Airport Weather</h3>
+    <div style="max-width:500px;margin:0 auto 16px;display:flex;gap:12px">
+      <input class="form-input" id="weatherAirportCode" placeholder="Airport code (e.g. JFK)" style="text-align:center;font-family:var(--font-mono);text-transform:uppercase">
+      <button class="btn btn-primary" id="weatherBtn">Get Weather</button>
+    </div>
+    <div id="weatherResult" class="hidden" style="text-align:center"></div>
+  </div>
+
+  <div class="card" style="margin-bottom:24px;padding:28px">
+    <h3 style="font-size:18px;font-weight:700;margin-bottom:16px;text-align:center">Exchange Rates & Converter</h3>
+    <div id="currencyRates" style="max-height:300px;overflow-y:auto;margin-bottom:16px;border:1px solid var(--border);border-radius:var(--radius-md);padding:8px"></div>
+    <div class="currency-converter" style="max-width:600px;margin:0 auto">
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Amount</label>
+        <input class="form-input" id="convAmount" type="number" value="1" style="text-align:center;font-family:var(--font-mono)">
+      </div>
+      <div style="display:flex;gap:8px;align-items:end">
+        <div class="form-group" style="margin-bottom:0;flex:1">
+          <label class="form-label">From</label>
+          <select class="form-input" id="convFrom"></select>
+        </div>
+        <div style="display:flex;align-items:center;padding-bottom:11px;font-size:20px;color:var(--text-muted)">→</div>
+        <div class="form-group" style="margin-bottom:0;flex:1">
+          <label class="form-label">To</label>
+          <select class="form-input" id="convTo"></select>
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:0;display:flex;align-items:flex-end">
+        <button class="btn btn-primary" id="convBtn" style="height:44px;width:100%">Convert</button>
+      </div>
+    </div>
+    <div id="convResult" class="hidden" style="margin-top:16px;text-align:center;font-size:20px;font-weight:700"></div>
+  </div>
+
+  <div class="card" style="padding:28px;text-align:center">
+    <h3 style="font-size:18px;font-weight:700;margin-bottom:16px">Nearby Airports</h3>
+    <div style="max-width:400px;margin:0 auto;display:flex;gap:12px">
+      <input class="form-input" id="nearbyCode" placeholder="Airport code" style="text-align:center;font-family:var(--font-mono);text-transform:uppercase">
+      <button class="btn btn-primary" id="nearbyBtn">Find Nearby</button>
+    </div>
+    <div id="nearbyResult" class="hidden" style="margin-top:16px"></div>
+  </div>
+
+</main>
+
+<footer class="footer">
+  <div class="footer-content">
+    <div class="footer-brand">
+      <div class="footer-logo"><img src="../OIG3.jpg" alt="Express Airways" style="height:28px;width:28px;border-radius:50%;object-fit:cover"><span>Express Airways</span></div>
+      <p class="footer-desc">Complete airport directory with real-time data, weather, exchange rates, and terminal information.</p>
+    </div>
+    <div class="footer-links">
+      <div class="footer-col">
+        <h4>Services</h4>
+        <a href="../airports/index.html">Airport Guide</a>
+        <a href="../flights/index.html">Flights</a>
+        <a href="../routes/index.html">Routes</a>
+        <a href="../weather/index.html">Weather</a>
+        <a href="../maps/index.html">Maps</a>
+        <a href="../parking/index.html">Parking</a>
+        <a href="../lounge/index.html">Lounges</a>
+        <a href="../currency/index.html">Currency</a>
+        <a href="../hotels/index.html">Hotels</a>
+      </div>
+      <div class="footer-col">
+        <h4>Company</h4>
+        <a href="../insights/index.html">Holdings</a>
+        <a href="../index.html#contact">Contact</a>
+      </div>
+      <div class="footer-col">
+        <h4>Platform</h4>
+        <a href="../docs/index.html">Ops Hub</a>
+        <a href="../status/index.html">Status</a>
+        <a href="../legal/index.html">Legal</a>
+        <a href="../developer/index.html">Developer</a>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom"><p>&copy; 2026 Express Airways. All rights reserved.</p></div>
+</footer>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<div id="authModal" class="modal-overlay hidden" style="display:none">
+  <div class="modal modal-sm">
+    <button class="modal-close" onclick="hideAuth()">&times;</button>
+    <div class="modal-header">
+      <h3>Welcome to Express Airways</h3>
+      <p>Sign in or create an account</p>
+    </div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" data-tab="login">Sign In</button>
+      <button class="auth-tab" data-tab="signup">Register</button>
+    </div>
+    <form id="loginForm">
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input class="form-input" id="loginEmail" type="email" placeholder="your@email.com" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input class="form-input" id="loginPassword" type="password" placeholder="Enter password" required>
+      </div>
+      <div id="loginError" class="form-error hidden"></div>
+      <button class="btn btn-primary btn-full btn-lg" type="submit" id="loginSubmitBtn">Sign In</button>
+    </form>
+    <form id="signupForm" class="hidden">
+      <div class="form-group">
+        <label class="form-label">Full Name</label>
+        <input class="form-input" id="signupName" placeholder="John Doe" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input class="form-input" id="signupEmail" type="email" placeholder="your@email.com" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input class="form-input" id="signupPassword" type="password" placeholder="Create password" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Confirm Password</label>
+        <input class="form-input" id="signupConfirm" type="password" placeholder="Confirm password" required>
+      </div>
+      <div id="signupError" class="form-error hidden"></div>
+      <button class="btn btn-primary btn-full btn-lg" type="submit" id="signupSubmitBtn">Create Account</button>
+    </form>
+  </div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+  var API = 'https://script.google.com/macros/s/AKfycbyfr1k04IqvPSHND5I47ZowM8EAUmBuFR4pKJVWDdsB0ZCr4pMrCLxFME1v70aLbyWo/exec';
+
+  var EA_TRACKER = {
+    API_URL: API,
+    initialized: false,
+    init: function(page) {
+      if (this.initialized) return;
+      this.initialized = true;
+      this.page = page || window.location.pathname;
+      this.fingerprint = this.getFingerprint();
+      this.getIP().then(function(ip) { this.ip = ip; this.send(); }.bind(this));
+      this.send();
+    },
+    getFingerprint: function() {
+      var canvas = document.createElement('canvas');
+      canvas.width = 200; canvas.height = 50;
+      var ctx = canvas.getContext('2d');
+      ctx.textBaseline = 'top';
+      ctx.font = '14px Arial';
+      ctx.fillStyle = '#f60';
+      ctx.fillRect(125, 1, 62, 20);
+      ctx.fillStyle = '#069';
+      ctx.fillText('EA' + navigator.userAgent.length, 2, 15);
+      ctx.fillStyle = 'rgba(102, 204, 0, 0.7)';
+      ctx.fillText('ExpressAirways', 4, 17);
+      var canvasFp = canvas.toDataURL();
+      var glFp = '';
+      try {
+        var gl = document.createElement('canvas').getContext('webgl');
+        if (gl) {
+          var ext = gl.getExtension('WEBGL_debug_renderer_info');
+          if (ext) glFp = gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) + '|' + gl.getParameter(ext.UNMASKED_VENDOR_WEBGL);
+        }
+      } catch(e) {}
+      var screenRes = window.screen.width + 'x' + window.screen.height + 'x' + window.screen.colorDepth;
+      var tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      var lang = navigator.language;
+      var ua = navigator.userAgent;
+      var raw = [canvasFp, glFp, screenRes, tz, lang, ua].join('|||');
+      var hash = 0;
+      for (var i = 0; i < raw.length; i++) { var chr = raw.charCodeAt(i); hash = ((hash << 5) - hash) + chr; hash |= 0; }
+      return Math.abs(hash).toString(16);
+    },
+    getIP: function() {
+      return fetch('https://api.ipify.org?format=json', { cache: 'no-store' }).then(function(r) { return r.json(); }).then(function(d) { return d.ip; }).catch(function() { return ''; });
+    },
+    send: function() {
+      var data = {
+        action: 'track',
+        fingerprint: this.fingerprint,
+        ip: this.ip,
+        ua: navigator.userAgent,
+        screen: window.screen.width + 'x' + window.screen.height + 'x' + window.screen.colorDepth,
+        tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        lang: navigator.language,
+        page: this.page,
+        user: window.currentUser ? (window.currentUser.email || '') : ''
+      };
+      var qs = Object.entries(data).map(function(e) { return encodeURIComponent(e[0]) + '=' + encodeURIComponent(e[1] || ''); }).join('&');
+      fetch(this.API_URL + '?' + qs + '&t=' + Date.now(), { mode: 'no-cors' }).catch(function() {});
+    }
+  };
+  window.EA_TRACKER = EA_TRACKER;
+
+  function audit(action, details, element) {
+    var user = (window.currentUser || {}).email || '';
+    var data = { action: 'audit.event', eventType: action, user: user, details: details || '', page: '/airports/', element: element || '', ua: navigator.userAgent, fingerprint: EA_TRACKER.fingerprint || '', ip: EA_TRACKER.ip || '' };
+    fetch(API + '?' + Object.entries(data).map(function(e) { return encodeURIComponent(e[0]) + '=' + encodeURIComponent(e[1]); }).join('&') + '&t=' + Date.now(), { mode: 'no-cors' }).catch(function(){});
+    console.log('[AUDIT]', action, details);
+  }
+
+  document.addEventListener('click', function(e) {
+    var el = e.target;
+    var text = el.textContent || el.innerText || '';
+    audit('click', text.trim().slice(0, 100), (el.tagName || '') + (el.className ? '.' + el.className.split(' ')[0] : ''));
+  });
+
+  var maxScroll = 0;
+  document.addEventListener('scroll', function() {
+    var scrollPct = Math.round(window.scrollY / (document.body.scrollHeight - window.innerHeight) * 100);
+    if (scrollPct > maxScroll) { maxScroll = scrollPct; if (maxScroll % 25 === 0) audit('scroll', maxScroll + '%', 'page'); }
+  });
+
+  audit('pageview', '/airports/', '');
+
+  var state = { user: null, loggedIn: false };
+  var KEY = 'ea_session';
+
+  function getUser() {
+    try {
+      var raw = localStorage.getItem(KEY);
+      if (!raw) return null;
+      var data = JSON.parse(raw);
+      if (data && data.user && data.expires > Date.now()) {
+        window.currentUser = data.user;
+        return data.user;
+      }
+      if (data && data.user) { localStorage.removeItem(KEY); }
+    } catch(e) { console.error('[AUTH]', e); }
+    return null;
+  }
+
+  function setUser(user) {
+    if (!user) { localStorage.removeItem(KEY); window.currentUser = null; return; }
+    var data = { user: user, expires: Date.now() + 604800000 };
+    localStorage.setItem(KEY, JSON.stringify(data));
+    window.currentUser = user;
+  }
+
+  window.showAuth = function() {
+    var overlay = document.getElementById('authModal');
+    if (overlay) { overlay.classList.remove('hidden'); overlay.style.display = 'flex'; }
+  };
+  window.hideAuth = function() {
+    var overlay = document.getElementById('authModal');
+    if (overlay) { overlay.classList.add('hidden'); overlay.style.display = 'none'; }
+  };
+
+  function showToast(msg, type) {
+    type = type || 'info';
+    var container = document.getElementById('toastContainer');
+    var toast = document.createElement('div');
+    toast.className = 'toast ' + type;
+    toast.textContent = msg;
+    container.appendChild(toast);
+    setTimeout(function() {
+      toast.style.animation = 'toastOut 0.35s ease forwards';
+      setTimeout(function() { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 400);
+    }, 3500);
+  }
+
+  function api(method, params) {
+    try {
+      var url = API + '?' + Object.entries(params).map(function(e) { return encodeURIComponent(e[0]) + '=' + encodeURIComponent(e[1]); }).join('&') + '&t=' + Date.now();
+      return fetch(url, { cache: 'no-store' }).then(function(r) {
+        if (!r.ok) { console.error('[API ERROR]', method, params, r.status); return null; }
+        return r.json();
+      }).catch(function(e) { console.error('[API ERROR]', method, params, e); return null; });
+    } catch(e) { console.error('[API ERROR]', method, params, e); return Promise.resolve(null); }
+  }
+
+  var AIRPORT_CODES = ['JFK', 'LHR', 'CDG', 'DXB', 'SIN', 'NRT', 'LAX', 'DOH', 'HKG', 'SYD'];
+  var COUNTRY_FLAGS = { 'US':'🇺🇸','GB':'🇬🇧','FR':'🇫🇷','AE':'🇦🇪','SG':'🇸🇬','JP':'🇯🇵','AU':'🇦🇺','QA':'🇶🇦','HK':'🇭🇰','CN':'🇨🇳','DE':'🇩🇪','IT':'🇮🇹','ES':'🇪🇸','CA':'🇨🇦','BR':'🇧🇷','IN':'🇮🇳','KR':'🇰🇷','NL':'🇳🇱','CH':'🇨🇭','SE':'🇸🇪' };
+  var COUNTRY_NAMES = { 'US':'United States','GB':'United Kingdom','FR':'France','AE':'United Arab Emirates','SG':'Singapore','JP':'Japan','AU':'Australia','QA':'Qatar','HK':'Hong Kong','CN':'China','DE':'Germany','IT':'Italy','ES':'Spain','CA':'Canada','BR':'Brazil','IN':'India','KR':'South Korea','NL':'Netherlands','CH':'Switzerland','SE':'Sweden' };
+
+  var loadedAirports = [];
+
+  function loadAllAirports() {
+    var placeholder = document.getElementById('airportsPlaceholder');
+    var grid = document.getElementById('airportsGrid');
+    var requests = AIRPORT_CODES.map(function(code) {
+      return api('GET', { action: 'validateAirport', code: code });
+    });
+    Promise.all(requests).then(function(results) {
+      placeholder.style.display = 'none';
+      var valid = [];
+      results.forEach(function(data, i) {
+        if (data && data.success) {
+          valid.push(data);
+        } else {
+          valid.push({ success:true, code:AIRPORT_CODES[i], name:'Unknown', city:'', country:'', lat:0, lng:0, timezone:'UTC' });
+        }
+      });
+      loadedAirports = valid;
+      updateStats(valid);
+      renderAirports(valid);
+    });
+  }
+
+  function renderAirports(list) {
+    var grid = document.getElementById('airportsGrid');
+    grid.innerHTML = '';
+    list.forEach(function(ap) {
+      var card = document.createElement('div');
+      card.className = 'airport-card';
+      var countryCode = (ap.country || '').substring(0,2).toUpperCase();
+      var flag = COUNTRY_FLAGS[countryCode] || '🌐';
+      var countryName = COUNTRY_NAMES[countryCode] || ap.country || 'Unknown';
+      card.innerHTML =
+        '<div class="airport-header">' +
+          '<span class="airport-code">' + (ap.code || '--') + '</span>' +
+          '<span class="airport-country">' + flag + ' ' + countryName + '</span>' +
+        '</div>' +
+        '<div class="airport-name">' + (ap.name || 'Unknown Airport') + '</div>' +
+        '<div class="airport-city">' + (ap.city || ap.location || '') + '</div>' +
+        '<div class="airport-details">' +
+          '<div class="airport-detail"><span class="airport-detail-label">Latitude</span><span class="airport-detail-value">' + (ap.lat || '--') + '°</span></div>' +
+          '<div class="airport-detail"><span class="airport-detail-label">Longitude</span><span class="airport-detail-value">' + (ap.lng || ap.lon || '--') + '°</span></div>' +
+          '<div class="airport-detail"><span class="airport-detail-label">Timezone</span><span class="airport-detail-value">' + (ap.timezone || ap.tz || '--') + '</span></div>' +
+          '<div class="airport-detail"><span class="airport-detail-label">Status</span><span class="airport-detail-value" style="color:var(--success)">Active</span></div>' +
+        '</div>';
+      grid.appendChild(card);
+    });
+  }
+
+  function updateStats(airports) {
+    var countries = {};
+    airports.forEach(function(ap) {
+      var c = (ap.country || '').substring(0,2).toUpperCase();
+      if (c) countries[c] = true;
+    });
+    document.getElementById('totalAirports').textContent = airports.length;
+    document.getElementById('countriesCovered').textContent = Object.keys(countries).length;
+    document.getElementById('continentsCovered').textContent = Math.max(1, Math.ceil(Object.keys(countries).length / 2));
+  }
+
+  function loadCurrencyRates() {
+    api('GET', { action: 'exchange.rates' }).then(function(data) {
+      var container = document.getElementById('currencyRates');
+      var fromSelect = document.getElementById('convFrom');
+      var toSelect = document.getElementById('convTo');
+      if (data && data.success && data.rates) {
+        var rates = data.rates;
+        container.innerHTML = '<div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:4px;padding:8px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);border-bottom:1px solid var(--border)"><span>Currency</span><span>Code</span><span style="text-align:right">Rate (vs USD)</span></div>';
+        var currencies = Object.keys(rates).sort();
+        fromSelect.innerHTML = '<option value="USD">USD</option>';
+        toSelect.innerHTML = '<option value="EUR">EUR</option>';
+        currencies.forEach(function(cur) {
+          if (cur === 'USD') return;
+          var rate = rates[cur];
+          container.innerHTML += '<div class="currency-row"><span>' + cur + '</span><span class="currency-code">' + cur + '</span><span class="currency-rate" style="text-align:right">' + parseFloat(rate).toFixed(4) + '</span></div>';
+          fromSelect.innerHTML += '<option value="' + cur + '">' + cur + '</option>';
+          toSelect.innerHTML += '<option value="' + cur + '">' + cur + '</option>';
+        });
+        window._rates = rates;
+      } else {
+        container.innerHTML = '<p style="text-align:center;color:var(--text-muted);padding:20px">Exchange rates unavailable</p>';
+      }
+    });
+  }
+
+  function init() {
+    var user = getUser();
+    state.user = user;
+    state.loggedIn = !!user;
+    window.currentUser = user;
+
+    var loginwall = document.getElementById('loginwall');
+    var loginBtn = document.getElementById('loginBtn');
+    var signupBtn = document.getElementById('signupBtn');
+    var userMenu = document.getElementById('userMenu');
+
+    if (state.loggedIn) {
+      if (loginwall) loginwall.classList.add('hidden');
+      if (loginBtn) loginBtn.classList.add('hidden');
+      if (signupBtn) signupBtn.classList.add('hidden');
+      if (userMenu) userMenu.classList.remove('hidden');
+      var av = document.getElementById('avatarInitials');
+      if (av) av.textContent = (user.name || 'U').split(' ').map(function(w){return w[0]}).join('').toUpperCase().slice(0,2);
+      var dn = document.getElementById('dropdownName');
+      if (dn) dn.textContent = user.name;
+    } else {
+      if (loginwall) loginwall.classList.remove('hidden');
+    }
+    loadAllAirports();
+    loadCurrencyRates();
+  }
+
+  function hideLoader() {
+    var loader = document.getElementById('globalLoader');
+    if (loader) { loader.classList.add('fade-out'); setTimeout(function(){loader.style.display='none'}, 600); }
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    EA_TRACKER.init('/airports/');
+
+    setInterval(function() {
+      var user = getUser();
+      api('GET', { action: 'heartbeat', user: (user||{}).email || '', fingerprint: EA_TRACKER.fingerprint || '', page: '/airports/', session: (user||{}).email || EA_TRACKER.fingerprint || '' });
+    }, 60000);
+
+    init();
+    hideLoader();
+
+    document.getElementById('loginBtn').addEventListener('click', function() { showAuth(); });
+    document.getElementById('signupBtn').addEventListener('click', function() { showAuth(); });
+
+    document.querySelectorAll('.auth-tab').forEach(function(t) {
+      t.addEventListener('click', function() {
+        document.querySelectorAll('.auth-tab').forEach(function(x){x.classList.remove('active')});
+        t.classList.add('active');
+        document.getElementById('loginForm').classList.toggle('hidden', t.dataset.tab !== 'login');
+        document.getElementById('signupForm').classList.toggle('hidden', t.dataset.tab !== 'signup');
+      });
+    });
+
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      var email = document.getElementById('loginEmail').value.trim();
+      var password = document.getElementById('loginPassword').value;
+      var submitBtn = document.getElementById('loginSubmitBtn');
+      var loginError = document.getElementById('loginError');
+      audit('login_attempt', email, 'loginForm');
+      submitBtn.classList.add('loading');
+      api('GET', { action: 'login', email: email, password: password }).then(function(d) {
+        submitBtn.classList.remove('loading');
+        if (d && d.success) {
+          setUser(d.user);
+          state.user = d.user;
+          state.loggedIn = true;
+          audit('login_success', email, 'loginForm');
+          hideAuth();
+          init();
+          showToast('Signed in successfully', 'success');
+        } else {
+          audit('login_failed', email + ' - ' + ((d||{}).message||'error'), 'loginForm');
+          loginError.textContent = (d && d.message) || 'Login failed. Please try again.';
+          loginError.classList.remove('hidden');
+        }
+      });
+    });
+
+    document.getElementById('signupForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      var name = document.getElementById('signupName').value.trim();
+      var email = document.getElementById('signupEmail').value.trim();
+      var pw = document.getElementById('signupPassword').value;
+      var cf = document.getElementById('signupConfirm').value;
+      var submitBtn = document.getElementById('signupSubmitBtn');
+      var signupError = document.getElementById('signupError');
+      if (pw !== cf) { signupError.textContent = 'Passwords do not match'; signupError.classList.remove('hidden'); return; }
+      submitBtn.classList.add('loading');
+      api('GET', { action: 'signup', fullName: name, email: email, password: pw }).then(function(d) {
+        submitBtn.classList.remove('loading');
+        if (d && d.success) {
+          audit('signup_success', email, 'signupForm');
+          document.querySelector('[data-tab="login"]').click();
+          var loginError = document.getElementById('loginError');
+          loginError.textContent = 'Account created! Please sign in.';
+          loginError.classList.remove('hidden');
+          loginError.style.color = 'var(--success)';
+        } else {
+          signupError.textContent = (d && d.message) || 'Signup failed. Please try again.';
+          signupError.classList.remove('hidden');
+        }
+      });
+    });
+
+    document.getElementById('logoutBtn').addEventListener('click', function() {
+      localStorage.removeItem(KEY);
+      window.currentUser = null;
+      state.user = null;
+      state.loggedIn = false;
+      audit('logout', '', 'logoutBtn');
+      init();
+      showToast('Signed out', 'info');
+    });
+
+    document.getElementById('userMenu').addEventListener('click', function(e) {
+      e.stopPropagation();
+      var dd = document.querySelector('.user-dropdown');
+      if (dd) dd.classList.toggle('hidden');
+    });
+    document.addEventListener('click', function() {
+      var dd = document.querySelector('.user-dropdown');
+      if (dd) dd.classList.add('hidden');
+    });
+
+    document.getElementById('authModal').addEventListener('click', function(e) {
+      if (e.target === this) hideAuth();
+    });
+
+    document.getElementById('airportSearchBtn').addEventListener('click', function() {
+      var q = document.getElementById('airportSearch').value.trim().toUpperCase();
+      if (!q) { showToast('Please enter a search term', 'warning'); return; }
+      var filtered = loadedAirports.filter(function(ap) {
+        var code = (ap.code || '').toUpperCase();
+        var name = (ap.name || '').toUpperCase();
+        var city = (ap.city || '').toUpperCase();
+        return code.indexOf(q) !== -1 || name.indexOf(q) !== -1 || city.indexOf(q) !== -1;
+      });
+      if (filtered.length > 0) {
+        renderAirports(filtered);
+        showToast('Found ' + filtered.length + ' airports', 'success');
+      } else {
+        showToast('No airports found for "' + q + '"', 'warning');
+      }
+    });
+
+    document.getElementById('weatherBtn').addEventListener('click', function() {
+      var code = document.getElementById('weatherAirportCode').value.trim().toUpperCase();
+      if (!code) { showToast('Please enter an airport code', 'warning'); return; }
+      var btn = this;
+      btn.classList.add('loading');
+      api('GET', { action: 'validateAirport', code: code }).then(function(ap) {
+        if (ap && ap.success && ap.lat && ap.lng) {
+          var lat = ap.lat;
+          var lng = ap.lng;
+          var weatherUrl = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lng + '&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m,wind_direction_10m&timezone=auto';
+          return fetch(weatherUrl).then(function(r) { return r.json(); }).then(function(w) {
+            btn.classList.remove('loading');
+            var result = document.getElementById('weatherResult');
+            result.classList.remove('hidden');
+            if (w && w.current) {
+              var c = w.current;
+              var weatherCodes = { 0:'Clear sky',1:'Mainly clear',2:'Partly cloudy',3:'Overcast',45:'Fog',48:'Depositing rime fog',51:'Light drizzle',53:'Moderate drizzle',55:'Dense drizzle',61:'Slight rain',63:'Moderate rain',65:'Heavy rain',71:'Slight snow',73:'Moderate snow',75:'Heavy snow',80:'Slight rain showers',81:'Moderate rain showers',82:'Violent rain showers',95:'Thunderstorm',96:'Thunderstorm with slight hail',99:'Thunderstorm with heavy hail' };
+              var desc = weatherCodes[c.weather_code] || 'Unknown';
+              var windDir = ['N','NE','E','SE','S','SW','W','NW'][Math.round(c.wind_direction_10m / 45) % 8] || '--';
+              result.innerHTML = '<div class="weather-card"><div style="display:flex;align-items:center;justify-content:center;gap:16px">' +
+                '<span class="weather-temp">' + Math.round(c.temperature_2m) + '°C</span>' +
+                '<div><div class="weather-desc">' + desc + '</div><div style="font-size:13px;color:var(--text-secondary)">Feels like ' + Math.round(c.apparent_temperature) + '°C</div></div></div>' +
+                '<div class="weather-details"><div class="weather-detail-item"><span style="font-size:10px;text-transform:uppercase;color:var(--text-muted);display:block">Humidity</span><span style="font-size:14px;font-weight:600">' + c.relative_humidity_2m + '%</span></div>' +
+                '<div class="weather-detail-item"><span style="font-size:10px;text-transform:uppercase;color:var(--text-muted);display:block">Wind</span><span style="font-size:14px;font-weight:600">' + c.wind_speed_10m + ' km/h ' + windDir + '</span></div>' +
+                '<div class="weather-detail-item"><span style="font-size:10px;text-transform:uppercase;color:var(--text-muted);display:block">Precip.</span><span style="font-size:14px;font-weight:600">' + (c.precipitation || '0') + ' mm</span></div></div></div>';
+            } else {
+              result.innerHTML = '<p style="color:var(--text-secondary)">Weather data unavailable for ' + code + '</p>';
+            }
+          });
+        } else {
+          btn.classList.remove('loading');
+          document.getElementById('weatherResult').classList.remove('hidden');
+          document.getElementById('weatherResult').innerHTML = '<p style="color:var(--text-secondary)">Airport not found: ' + code + '</p>';
+        }
+      });
+    });
+
+    document.getElementById('convBtn').addEventListener('click', function() {
+      var amount = parseFloat(document.getElementById('convAmount').value);
+      var from = document.getElementById('convFrom').value;
+      var to = document.getElementById('convTo').value;
+      if (!amount || amount <= 0) { showToast('Please enter a valid amount', 'warning'); return; }
+      var btn = this;
+      btn.classList.add('loading');
+      api('GET', { action: 'exchange.convert', from: from, to: to, amount: amount.toString() }).then(function(d) {
+        btn.classList.remove('loading');
+        var result = document.getElementById('convResult');
+        result.classList.remove('hidden');
+        if (d && d.success) {
+          result.innerHTML = amount.toFixed(2) + ' ' + from + ' = <span style="color:var(--accent)">' + parseFloat(d.result || d.converted).toFixed(2) + ' ' + to + '</span>';
+        } else if (window._rates) {
+          var rate = window._rates[to] / window._rates[from];
+          var converted = amount * rate;
+          result.innerHTML = amount.toFixed(2) + ' ' + from + ' = <span style="color:var(--accent)">' + converted.toFixed(2) + ' ' + to + '</span> (rate: ' + rate.toFixed(6) + ')';
+        } else {
+          result.innerHTML = 'Conversion failed';
+        }
+      });
+    });
+
+    document.getElementById('nearbyBtn').addEventListener('click', function() {
+      var code = document.getElementById('nearbyCode').value.trim().toUpperCase();
+      if (!code) { showToast('Please enter an airport code', 'warning'); return; }
+      var btn = this;
+      btn.classList.add('loading');
+      api('GET', { action: 'validateAirport', code: code }).then(function(ap) {
+        if (ap && ap.success && ap.lat && ap.lng) {
+          var nearby = loadedAirports.filter(function(a) {
+            if ((a.code||'').toUpperCase() === code) return false;
+            if (a.lat && a.lng) {
+              var dlat = (a.lat - ap.lat) * 111;
+              var dlng = (a.lng - ap.lng) * 111 * Math.cos(ap.lat * Math.PI / 180);
+              var dist = Math.sqrt(dlat*dlat + dlng*dlng);
+              return dist < 1000;
+            }
+            return false;
+          });
+          btn.classList.remove('loading');
+          var result = document.getElementById('nearbyResult');
+          result.classList.remove('hidden');
+          if (nearby.length > 0) {
+            result.innerHTML = '<h4 style="font-size:14px;font-weight:700;margin-bottom:12px">Nearby Airports near ' + code + '</h4>' +
+              '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px">' +
+              nearby.map(function(a) {
+                return '<div class="route-card" style="padding:12px;text-align:center"><span class="airport-code" style="font-size:18px">' + (a.code||'') + '</span><div style="font-size:13px;color:var(--text-secondary);margin-top:4px">' + (a.name||'') + '</div></div>';
+              }).join('') + '</div>';
+          } else {
+            result.innerHTML = '<p style="color:var(--text-secondary)">No nearby airports found within 1000 km of ' + code + '</p>';
+          }
+        } else {
+          btn.classList.remove('loading');
+          document.getElementById('nearbyResult').classList.remove('hidden');
+          document.getElementById('nearbyResult').innerHTML = '<p style="color:var(--text-secondary)">Airport not found: ' + code + '</p>';
+        }
+      });
+    });
+  });
+})();
+</script>
+</body>
+</html>

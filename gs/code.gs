@@ -28,7 +28,10 @@ const SHEETS = {
   Notifications: "Notifications",
   TrackingLog: "TrackingLog",
   AuditLog: "AuditLog",
-  ApiKeys: "ApiKeys"
+  ApiKeys: "ApiKeys",
+  DeviceTracking: "DeviceTracking",
+  UserSecurity: "UserSecurity",
+  VerificationAttempts: "VerificationAttempts"
 };
 
 const APPROVED_AIRCRAFT_MANUFACTURERS = ["Boeing", "Canadair"];
@@ -40,22 +43,7 @@ const MILEAGE_TIERS = {
 };
 const CABIN_MULTIPLIERS = { Economy: 1.0, Business: 2.5, FirstClass: 5.0 };
 
-const AIRPORT_CACHE = {
-  JFK: {name: "John F. Kennedy", lat: 40.6413, lng: -73.7781, type: "international", city: "New York", country: "USA"},
-  LAX: {name: "Los Angeles International", lat: 33.9425, lng: -118.4081, type: "international", city: "Los Angeles", country: "USA"},
-  LHR: {name: "London Heathrow", lat: 51.4700, lng: -0.4543, type: "international", city: "London", country: "UK"},
-  CDG: {name: "Paris Charles de Gaulle", lat: 49.0097, lng: 2.5479, type: "international", city: "Paris", country: "France"},
-  NRT: {name: "Tokyo Narita", lat: 35.7653, lng: 140.3931, type: "international", city: "Tokyo", country: "Japan"},
-  SYD: {name: "Sydney", lat: -33.9461, lng: 151.1772, type: "international", city: "Sydney", country: "Australia"},
-  ORD: {name: "Chicago O'Hare", lat: 41.9742, lng: -87.9073, type: "international", city: "Chicago", country: "USA"},
-  DFW: {name: "Dallas/Fort Worth", lat: 32.8975, lng: -97.0380, type: "international", city: "Dallas", country: "USA"},
-  MIA: {name: "Miami International", lat: 25.7959, lng: -80.2870, type: "domestic", city: "Miami", country: "USA"},
-  BOS: {name: "Boston Logan", lat: 42.3656, lng: -71.0096, type: "domestic", city: "Boston", country: "USA"},
-  SFO: {name: "San Francisco", lat: 37.6213, lng: -122.3790, type: "domestic", city: "San Francisco", country: "USA"},
-  SEA: {name: "Seattle-Tacoma", lat: 47.4502, lng: -122.3088, type: "domestic", city: "Seattle", country: "USA"},
-  DEN: {name: "Denver", lat: 39.8561, lng: -104.6737, type: "domestic", city: "Denver", country: "USA"},
-  ATL: {name: "Atlanta", lat: 33.6407, lng: -84.4277, type: "domestic", city: "Atlanta", country: "USA"}
-};
+var AIRPORT_CACHE = {};
 
 function getSheet(name) {
   const ss = SpreadsheetApp.openByUrl(SHEET_URL);
@@ -133,8 +121,8 @@ function haversineDistance(lat1, lng1, lat2, lng2) {
 }
 
 function calculateFlightTime(origin, destination) {
-  const orig = AIRPORT_CACHE[origin];
-  const dest = AIRPORT_CACHE[destination];
+  const orig = lookupAirportFromAPI(origin) || AIRPORT_CACHE[origin];
+  const dest = lookupAirportFromAPI(destination) || AIRPORT_CACHE[destination];
   if (!orig || !dest) return 0;
   const distance = haversineDistance(orig.lat, orig.lng, dest.lat, dest.lng);
   return distance / 500 + 0.25;
@@ -224,7 +212,103 @@ function getPublicEndpoints() {
   ];
 }
 
-function getAirportCodes() { return Object.keys(AIRPORT_CACHE).sort(); }
+// ===== NEW: ENHANCED AUDIT LOGGING =====
+function auditLogEvent(action, user, details, ip, fingerprint, userAgent, page, element, eventType, duration) {
+  try {
+    const sheet = ensureSheet("AuditLog");
+    if (sheet.getLastRow() === 0) sheet.appendRow(["Timestamp", "Action", "User", "Details", "IP", "Fingerprint", "UserAgent", "Page", "Element", "EventType", "Duration"]);
+    sheet.appendRow([new Date().toISOString(), action, user || "anonymous", details || "", ip || "", fingerprint || "", userAgent || "", page || "", element || "", eventType || "", duration || ""]);
+  } catch(e) {}
+}
+
+// ===== NEW: LIVE USERS ONLINE =====
+function getTotalCodeFiles() {
+  try {
+    var docSheet = getSheet(SHEETS.Documents);
+    if (!docSheet) return 0;
+    var docs = sheetToArray(docSheet);
+    var codeTypes = ["html", "css", "js", "gs"];
+    return docs.filter(function(d) {
+      var type = (d.Type || "").toLowerCase();
+      return codeTypes.indexOf(type) >= 0;
+    }).length;
+  } catch(e) { return 0; }
+}
+
+function getTotalLinesOfCode() {
+  try {
+    var docSheet = getSheet(SHEETS.Documents);
+    if (!docSheet) return 0;
+    var docs = sheetToArray(docSheet);
+    var total = 0;
+    var codeTypes = ["html", "css", "js", "gs"];
+    docs.forEach(function(d) {
+      var type = (d.Type || "").toLowerCase();
+      if (codeTypes.indexOf(type) >= 0) {
+        total += parseInt(d.OpenLimit || 0, 10) || 0;
+      }
+    });
+    return total || getTotalCodeFiles() * 500;
+  } catch(e) { return 0; }
+}
+
+function getTotalSheets() {
+  try {
+    var ss = SpreadsheetApp.openByUrl(SHEET_URL);
+    return ss.getSheets().length;
+  } catch(e) { return Object.keys(SHEETS).length; }
+}
+
+function getUsersOnline() {
+  try {
+    const sheet = ensureSheet("SessionHeartbeats");
+    if (sheet.getLastRow() === 0) sheet.appendRow(["SessionID", "User", "IP", "Fingerprint", "LastHeartbeat", "Page"]);
+    const fiveMinAgo = new Date(Date.now() - 5 * 60000).toISOString();
+    const rows = sheet.getDataRange().getValues();
+    var count = 0;
+    for (var i = 1; i < rows.length; i++) {
+      if (String(rows[i][4] || "") >= fiveMinAgo) count++;
+    }
+    return count;
+  } catch(e) { return 0; }
+}
+
+function recordHeartbeat(sessionID, user, ip, fingerprint, page) {
+  try {
+    const sheet = ensureSheet("SessionHeartbeats");
+    if (sheet.getLastRow() === 0) sheet.appendRow(["SessionID", "User", "IP", "Fingerprint", "LastHeartbeat", "Page"]);
+    const rows = sheet.getDataRange().getValues();
+    for (var i = 1; i < rows.length; i++) {
+      if (String(rows[i][0]) === sessionID) {
+        sheet.getRange(i + 1, 2).setValue(user || "");
+        sheet.getRange(i + 1, 3).setValue(ip || "");
+        sheet.getRange(i + 1, 4).setValue(fingerprint || "");
+        sheet.getRange(i + 1, 5).setValue(new Date().toISOString());
+        sheet.getRange(i + 1, 6).setValue(page || "");
+        return;
+      }
+    }
+    sheet.appendRow([sessionID, user || "", ip || "", fingerprint || "", new Date().toISOString(), page || ""]);
+  } catch(e) {}
+}
+
+// ===== NEW: COMPANY HOLDINGS =====
+var HOLDINGS_DATA = [
+  { ticker: "EXAW", name: "Express Airways International", sector: "Aviation", ceo: "James Mitchell", founded: 1998, employees: 12400, marketCap: 8470000000, revenue: 3200000000, pe: 12.4, dividend: 2.1, description: "Flag carrier and primary airline operations, servicing 180+ destinations across 6 continents.", stockPrice: 84.70, change: 1.25, changePercent: 1.50 },
+  { ticker: "EXCG", name: "Express Airways Cargo Logistics", sector: "Logistics", ceo: "Sarah Chen", founded: 2002, employees: 3400, marketCap: 2100000000, revenue: 980000000, pe: 8.9, dividend: 1.8, description: "Global air freight and cargo services with dedicated freighter fleet and ground handling network.", stockPrice: 42.15, change: -0.35, changePercent: -0.82 },
+  { ticker: "EXHT", name: "Express Airways Hospitality", sector: "Hospitality", ceo: "Maria Rodriguez", founded: 2005, employees: 2800, marketCap: 1250000000, revenue: 520000000, pe: 15.2, dividend: 0.9, description: "Airport lounges, in-flight dining, and hotel partnership programs across 60+ countries.", stockPrice: 28.90, change: 0.45, changePercent: 1.58 },
+  { ticker: "EXTK", name: "Express Airways Technology", sector: "Technology", ceo: "David Park", founded: 2010, employees: 1800, marketCap: 3800000000, revenue: 740000000, pe: 22.6, dividend: 0.0, description: "Aviation software, booking systems, and in-flight entertainment platforms powering 200+ airlines.", stockPrice: 156.30, change: 3.80, changePercent: 2.49 },
+  { ticker: "EXGR", name: "Express Airways Ground Services", sector: "Services", ceo: "Robert Kim", founded: 2000, employees: 6200, marketCap: 890000000, revenue: 410000000, pe: 6.8, dividend: 2.8, description: "Ground handling, aircraft maintenance, and airport support services at 75 major airports worldwide.", stockPrice: 18.45, change: -0.12, changePercent: -0.65 },
+  { ticker: "EXTR", name: "Express Airways Travel Retail", sector: "Retail", ceo: "Lisa Thompson", founded: 2008, employees: 1600, marketCap: 650000000, revenue: 380000000, pe: 10.1, dividend: 1.5, description: "Duty-free retail operations, travel accessories, and exclusive brand partnerships across 40 airport locations.", stockPrice: 24.80, change: 0.18, changePercent: 0.73 },
+  { ticker: "EXFC", name: "Express Airways Financial Services", sector: "Financial", ceo: "Andrew Walsh", founded: 2012, employees: 950, marketCap: 1450000000, revenue: 290000000, pe: 14.8, dividend: 1.2, description: "Travel insurance, currency exchange, and loyalty program financial products for 5M+ members.", stockPrice: 52.10, change: -0.55, changePercent: -1.04 },
+  { ticker: "EXTRN", name: "Express Airways Training Academy", sector: "Education", ceo: "Dr. Patricia Adams", founded: 2003, employees: 750, marketCap: 420000000, revenue: 185000000, pe: 11.3, dividend: 0.0, description: "Pilot training, cabin crew certification, and aviation professional development programs.", stockPrice: 33.60, change: 0.22, changePercent: 0.66 },
+  { ticker: "EXMC", name: "Express Airways Medical Corps", sector: "Healthcare", ceo: "Dr. Michael Torres", founded: 2015, employees: 1200, marketCap: 780000000, revenue: 210000000, pe: 17.5, dividend: 0.0, description: "Aeromedical services, emergency response, and aviation health certification for crew and passengers.", stockPrice: 41.25, change: 0.62, changePercent: 1.53 },
+  { ticker: "EXEN", name: "Express Airways Energy", sector: "Energy", ceo: "Thomas Wright", founded: 2016, employees: 500, marketCap: 560000000, revenue: 175000000, pe: 9.8, dividend: 3.2, description: "Sustainable aviation fuel development, carbon offset programs, and renewable energy for airport operations.", stockPrice: 14.95, change: 0.08, changePercent: 0.54 },
+  { ticker: "EXSP", name: "Express Airways Security", sector: "Security", ceo: "John Masters", founded: 2006, employees: 3200, marketCap: 920000000, revenue: 340000000, pe: 7.6, dividend: 2.5, description: "Aviation security services, cybersecurity solutions, and risk management for 50+ airline partners.", stockPrice: 19.20, change: -0.08, changePercent: -0.41 },
+  { ticker: "EXCH", name: "Express Airways Charter", sector: "Aviation", ceo: "Daniel Foster", founded: 2011, employees: 900, marketCap: 380000000, revenue: 195000000, pe: 5.2, dividend: 0.0, description: "Private jet charters, executive travel, and on-demand cargo charter services worldwide.", stockPrice: 67.30, change: 1.10, changePercent: 1.66 }
+];
+
+function getAirportCodes() { var keys = Object.keys(AIRPORT_CACHE); return keys.length > 0 ? keys.sort() : []; }
 
 function getAllApiEndpoints() {
   var cache = CacheService.getScriptCache();
@@ -234,92 +318,260 @@ function getAllApiEndpoints() {
   var codes = getAirportCodes();
   var endpoints = [];
 
-  // General / System endpoints (20)
-  var generals = [
-    { name: "system.status", method: "GET", description: "Get live system status of all services", category: "System", auth: true },
-    { name: "system.stats", method: "GET", description: "Get aggregate platform statistics", category: "System", auth: true },
-    { name: "system.config", method: "GET", description: "Get system configuration values", category: "System", auth: true },
-    { name: "system.time", method: "GET", description: "Get server time and timezone", category: "System", auth: true },
-    { name: "system.health", method: "GET", description: "Get API health check", category: "System", auth: true },
-    { name: "system.version", method: "GET", description: "Get API version information", category: "System", auth: true },
-    { name: "endpoints.list", method: "GET", description: "List all available API endpoints", category: "System", auth: true },
-    { name: "endpoints.search", method: "GET", description: "Search API endpoints by keyword", category: "System", auth: true, params: { q: "string" } },
-    { name: "airports.list", method: "GET", description: "List all supported airports", category: "Airports", auth: true },
-    { name: "airports.search", method: "GET", description: "Search airports by name or code", category: "Airports", auth: true, params: { q: "string" } },
-    { name: "events.list", method: "GET", description: "Get upcoming events", category: "Events", auth: true },
-    { name: "notices.list", method: "GET", description: "Get system notices", category: "Notices", auth: true },
-    { name: "documents.list", method: "GET", description: "Get available documents", category: "Documents", auth: true },
-    { name: "promos.validate", method: "GET", description: "Validate a promo code", category: "Promotions", auth: true, params: { code: "string" } },
-    { name: "bookings.stats", method: "GET", description: "Get booking statistics", category: "Bookings", auth: true },
-    { name: "flights.list", method: "GET", description: "List all active flights", category: "Flights", auth: true },
-    { name: "flights.delayed", method: "GET", description: "List delayed flights", category: "Flights", auth: true },
-    { name: "flights.cancelled", method: "GET", description: "List cancelled flights", category: "Flights", auth: true },
-    { name: "reports.daily", method: "GET", description: "Get daily operations report", category: "Reports", auth: true },
-    { name: "reports.summary", method: "GET", description: "Get operations summary", category: "Reports", auth: true }
-  ];
-  generals.forEach(function(ep) { endpoints.push(ep); });
+  function add(name, method, desc, cat, auth, params) {
+    endpoints.push({ name: name, method: method || "GET", description: desc || "", category: cat || "General", auth: auth !== false, params: params || {} });
+  }
 
-  // Airport-specific endpoints (14 airports x 6 patterns = 84)
-  var airportPatterns = [
-    { suffix: "info", desc: "Get detailed airport information", label: "Airport Info" },
-    { suffix: "status", desc: "Get current operational status", label: "Airport Status" },
-    { suffix: "weather", desc: "Get current weather conditions", label: "Airport Weather" },
-    { suffix: "routes", desc: "List all routes from this airport", label: "Airport Routes" },
-    { suffix: "delays", desc: "Get current departure delay info", label: "Airport Delays" },
-    { suffix: "facilities", desc: "List terminal facilities and amenities", label: "Airport Facilities" }
+  // General / System endpoints (40)
+  var generals = [
+    ["system.status", "Get live system status of all Express Airways services"],
+    ["system.stats", "Get aggregate platform statistics"],
+    ["system.config", "Get system configuration values"],
+    ["system.time", "Get current server time and timezone"],
+    ["system.health", "Get API health check status"],
+    ["system.version", "Get API version and build info"],
+    ["system.maintenance", "Get scheduled maintenance windows"],
+    ["system.cache.status", "Get cache layer health"],
+    ["system.database.status", "Get database connection status"],
+    ["system.uptime", "Get API uptime percentage"],
+    ["system.load", "Get current system load metrics"],
+    ["system.queues", "Get queue depths and processing times"],
+    ["system.services", "List all registered microservices"],
+    ["system.dependencies", "Get service dependency graph"],
+    ["system.logs.recent", "Get recent system log entries"],
+    ["system.alerts.active", "Get currently active system alerts"],
+    ["system.backup.status", "Get backup system status"],
+    ["system.security.status", "Get security posture summary"],
+    ["system.rateLimits", "Get current rate limit status"],
+    ["endpoints.list", "List all available API endpoints"],
+    ["endpoints.search", "Search API endpoints by keyword"],
+    ["endpoints.count", "Get total endpoint count"],
+    ["endpoints.categories", "List all endpoint categories"],
+    ["endpoints.random", "Get a random endpoint suggestion"],
+    ["endpoints.popular", "Get most frequently used endpoints"],
+    ["endpoints.recent", "Get recently added endpoints"],
+    ["airports.list", "List all supported airports worldwide"],
+    ["airports.search", "Search airports by name, code, or city"],
+    ["airports.count", "Get total airport count"],
+    ["airports.codes", "Get all IATA airport codes"],
+    ["airports.random", "Get a random airport"],
+    ["airports.nearby", "Find airports near coordinates"],
+    ["events.list", "Get all upcoming events and promotions"],
+    ["events.upcoming", "Get upcoming events within 30 days"],
+    ["events.calendar", "Get events calendar for the year"],
+    ["notices.list", "Get system notices and advisories"],
+    ["notices.active", "Get currently active notices"],
+    ["documents.list", "Get available travel documents"],
+    ["documents.types", "Get document type catalog"],
+    ["promos.validate", "Validate a promo or discount code"],
+    ["promos.active", "List all active promotions"],
+    ["promos.best", "Get best available promotion"],
+    ["bookings.stats", "Get booking statistics and metrics"],
+    ["bookings.today", "Get today's booking count"],
+    ["bookings.trends", "Get booking trend data"],
+    ["bookings.peak", "Get peak booking times"],
+    ["flights.list", "List all currently active flights"],
+    ["flights.active", "List currently airborne flights"],
+    ["flights.delayed", "List currently delayed flights"],
+    ["flights.cancelled", "List cancelled flights for today"],
+    ["flights.onTime", "List on-time flights"],
+    ["flights.departures", "List upcoming departures"],
+    ["flights.arrivals", "List upcoming arrivals"],
+    ["flights.scheduled", "List scheduled flights"],
+    ["flights.diverted", "List diverted flights"],
+    ["reports.daily", "Get daily operations report"],
+    ["reports.summary", "Get period operations summary"],
+    ["reports.flights", "Get flight operations report"],
+    ["reports.ontime", "Get on-time performance report"],
+    ["reports.delays", "Get delay analysis report"],
+    ["reports.revenue", "Get revenue report"],
+    ["reports.forecast", "Get operations forecast"],
+    ["reports.comparison", "Get period-over-period comparison"],
+    ["users.stats", "Get user account statistics"],
+    ["users.active", "Get active user count"],
+    ["users.loyalty.tiers", "Get loyalty program tier definitions"],
+    ["users.registration", "Get user registration trends"],
+    ["analytics.traffic", "Get API traffic analytics"],
+    ["analytics.errors", "Get error rate analytics"],
+    ["analytics.latency", "Get latency analytics"],
+    ["analytics.usage", "Get endpoint usage statistics"]
+  ];
+  generals.forEach(function(g) { add(g[0], "GET", g[1], "System"); });
+
+  // Airport endpoints (14 airports x 20 patterns = 280)
+  var airportOps = [
+    ["info", "Get detailed information for airport"],
+    ["status", "Get current operational status for airport"],
+    ["weather", "Get current weather conditions at airport"],
+    ["routes", "List all available routes from airport"],
+    ["delays", "Get current departure delay information for airport"],
+    ["facilities", "List terminal facilities and amenities at airport"],
+    ["timezone", "Get timezone information for airport"],
+    ["parking", "Get parking options and rates at airport"],
+    ["terminals", "Get terminal map and gate information for airport"],
+    ["stats", "Get traffic statistics for airport"],
+    ["airlines", "Get airlines operating at airport"],
+    ["elevation", "Get airport elevation and geographical data"],
+    ["runway", "Get runway information for airport"],
+    ["nearby", "Get nearby airports and distances"],
+    ["security", "Get security wait times at airport"],
+    ["lounge", "Get lounge access information for airport"],
+    ["dining", "Get dining options available at airport"],
+    ["shopping", "Get shopping and retail options at airport"],
+    ["transport", "Get ground transportation options from airport"],
+    ["codeshares", "Get codeshare airline agreements for airport"]
   ];
   codes.forEach(function(code) {
-    var airport = AIRPORT_CACHE[code];
-    airportPatterns.forEach(function(p) {
-      endpoints.push({ name: "airports." + p.suffix + "." + code, method: "GET", description: p.desc + " for " + code + " (" + airport.name + ")", category: "Airports", auth: true, params: {} });
+    var ap = AIRPORT_CACHE[code];
+    airportOps.forEach(function(op) {
+      add("airports." + op[0] + "." + code, "GET", op[1] + " " + code + " (" + ap.name + ")", "Airports");
     });
   });
 
-  // Route-specific endpoints (182 routes x 6 patterns = 1092)
-  var routePatterns = [
-    { suffix: "info", desc: "Get route information", label: "Route Info" },
-    { suffix: "fare", desc: "Get fare estimate with full breakdown", label: "Route Fare" },
-    { suffix: "schedule", desc: "Get flight schedule", label: "Route Schedule" },
-    { suffix: "pricing", desc: "Get detailed pricing with taxes and fees", label: "Route Pricing" },
-    { suffix: "flighttime", desc: "Get estimated flight time", label: "Flight Time" },
-    { suffix: "weather", desc: "Get weather forecast for route", label: "Route Weather" }
+  // Route endpoints (182 routes x 24 patterns = 4368)
+  var routeOps = [
+    ["info", "Get comprehensive route information for"],
+    ["fare", "Get fare estimate for"],
+    ["schedule", "Get flight schedule for"],
+    ["pricing", "Get detailed pricing breakdown for"],
+    ["flighttime", "Get estimated flight time for"],
+    ["weather", "Get weather forecast for route"],
+    ["aircraft", "Get aircraft type assigned to route"],
+    ["availability", "Get seat availability for"],
+    ["class", "Get cabin class options and pricing for"],
+    ["stops", "Get stopover information for"],
+    ["distance", "Get great-circle distance for"],
+    ["taxes", "Get tax and fee breakdown for"],
+    ["upgrade", "Get upgrade pricing for"],
+    ["compare", "Get fare comparison across cabins for"],
+    ["carbon", "Get carbon emissions estimate for"],
+    ["insurance", "Get travel insurance options for"],
+    ["loyalty", "Get loyalty points earning for"],
+    ["promotions", "Get route-specific promotions for"],
+    ["hotels", "Get hotel recommendations at destination for"],
+    ["transit", "Get transit and connection information for"],
+    ["visa", "Get visa requirement information for"],
+    ["health", "Get health advisory information for"],
+    ["alerts", "Get travel alerts for"],
+    ["weather.alternate", "Get alternate weather forecast for"]
   ];
   codes.forEach(function(orig, i) {
     codes.forEach(function(dest, j) {
       if (i === j) return;
-      routePatterns.forEach(function(p) {
-        var label = orig + "\u2192" + dest;
-        endpoints.push({ name: p.suffix + "." + orig + "." + dest, method: "GET", description: p.desc + " for " + label, category: "Routes", auth: true, params: (p.suffix === "fare" || p.suffix === "pricing") ? { cabin: "string (optional)", passengers: "number (optional)" } : {} });
+      var label = orig + "\u2192" + dest;
+      routeOps.forEach(function(op) {
+        var hasParams = ["fare","pricing","availability","class","upgrade","compare","insurance","loyalty"].indexOf(op[0]) >= 0;
+        var params = hasParams ? { cabin: "string (optional)", passengers: "number (optional)" } : {};
+        add(op[0] + "." + orig + "." + dest, "GET", op[1] + " " + label, "Routes", true, params);
       });
     });
   });
 
-  // Admin endpoints (20)
-  var admins = [
-    { name: "admin.stats", method: "GET", description: "Get admin dashboard statistics", category: "Admin", auth: true },
-    { name: "admin.users.list", method: "GET", description: "List all users", category: "Admin", auth: true },
-    { name: "admin.bookings.list", method: "GET", description: "List all bookings", category: "Admin", auth: true },
-    { name: "admin.sections.list", method: "GET", description: "List homepage sections", category: "Admin", auth: true },
-    { name: "admin.events.list", method: "GET", description: "List all events", category: "Admin", auth: true },
-    { name: "admin.documents.list", method: "GET", description: "List all documents", category: "Admin", auth: true },
-    { name: "admin.notices.list", method: "GET", description: "List all notices", category: "Admin", auth: true },
-    { name: "admin.promos.list", method: "GET", description: "List all promo codes", category: "Admin", auth: true },
-    { name: "admin.ancillaries.list", method: "GET", description: "List all ancillaries", category: "Admin", auth: true },
-    { name: "admin.audit.log", method: "GET", description: "Get audit log entries", category: "Admin", auth: true },
-    { name: "admin.system.status", method: "GET", description: "Get full system status", category: "Admin", auth: true },
-    { name: "admin.reports.daily", method: "GET", description: "Get daily admin report", category: "Admin", auth: true },
-    { name: "admin.reports.bookings", method: "GET", description: "Get booking analytics", category: "Admin", auth: true },
-    { name: "admin.reports.users", method: "GET", description: "Get user analytics", category: "Admin", auth: true },
-    { name: "admin.reports.revenue", method: "GET", description: "Get revenue analytics", category: "Admin", auth: true },
-    { name: "admin.config.get", method: "GET", description: "Get system configuration", category: "Admin", auth: true },
-    { name: "admin.maintenance.status", method: "GET", description: "Get maintenance status", category: "Admin", auth: true },
-    { name: "admin.alerts.list", method: "GET", description: "List system alerts", category: "Admin", auth: true },
-    { name: "admin.logs.recent", method: "GET", description: "Get recent activity logs", category: "Admin", auth: true },
-    { name: "admin.backup.status", method: "GET", description: "Get backup status", category: "Admin", auth: true }
+  // Flight-specific endpoints (per route: 182 x 14 = 2548)
+  var flightOps = [
+    ["departure", "Get departure details for"],
+    ["arrival", "Get arrival details for"],
+    ["status", "Get current flight status for"],
+    ["gate", "Get gate assignment for"],
+    ["tracking", "Get live flight tracking for"],
+    ["seatmap", "Get seat configuration for"],
+    ["meals", "Get meal service options for"],
+    ["baggage", "Get baggage allowance for"],
+    ["entertainment", "Get in-flight entertainment for"],
+    ["wifi", "Get wifi availability for"],
+    ["crew", "Get crew information for"],
+    ["history", "Get historical performance for"],
+    ["restrictions", "Get travel restrictions for"],
+    ["codeshare", "Get codeshare partners for"]
   ];
-  admins.forEach(function(ep) { endpoints.push(ep); });
+  codes.forEach(function(orig, i) {
+    codes.forEach(function(dest, j) {
+      if (i === j) return;
+      var label = orig + "\u2192" + dest;
+      flightOps.forEach(function(op) {
+        add("flight." + op[0] + "." + orig + "." + dest, "GET", op[1] + " flight " + label, "Flights", true);
+      });
+    });
+  });
 
-  if (cache) cache.put('allEndpoints', JSON.stringify(endpoints), 600);
+  // Synthetic flight IDs (500 flights EA1001-EA1500 x 6 patterns = 3000)
+  var flightIdPatterns = [
+    ["info", "Get detailed flight information for"],
+    ["status", "Get current operational status for"],
+    ["route", "Get route assignment for"],
+    ["schedule", "Get departure/arrival schedule for"],
+    ["crew", "Get crew assignment for"],
+    ["aircraft", "Get aircraft registration for"]
+  ];
+  for (var fid = 1001; fid <= 1500; fid++) {
+    var fnum = "EA" + fid;
+    flightIdPatterns.forEach(function(op) {
+      add("flight." + op[0] + "." + fnum, "GET", op[1] + " flight " + fnum, "Flights", true);
+    });
+  }
+
+  // Synthetic airline endpoints (20 airlines x 5 patterns = 100)
+  var airlineCodes = ["EA","EX","EC","AA","DL","UA","WN","NK","B6","AS","F9","HA","OO","QX","OH","YX","ZW","9E","G7","PT"];
+  var airlinePatterns = [
+    ["info", "Get airline information for"],
+    ["fleet", "Get fleet composition for"],
+    ["routes", "Get route network for"],
+    ["status", "Get operational status for"],
+    ["ratings", "Get customer ratings for"]
+  ];
+  airlineCodes.forEach(function(ac) {
+    airlinePatterns.forEach(function(op) {
+      add("airlines." + op[0] + "." + ac, "GET", op[1] + " airline " + ac, "Airlines");
+    });
+  });
+
+  // Admin endpoints (40)
+  var admins = [
+    ["admin.stats", "Get admin dashboard statistics"],
+    ["admin.users.count", "Get total user count"],
+    ["admin.users.active", "Get active user count"],
+    ["admin.users.new", "Get new user registrations"],
+    ["admin.users.roles", "Get user role distribution"],
+    ["admin.users.byCountry", "Get users by country"],
+    ["admin.bookings.total", "Get total booking count"],
+    ["admin.bookings.pending", "Get pending booking count"],
+    ["admin.bookings.cancelled", "Get cancelled booking count"],
+    ["admin.bookings.revenue", "Get booking revenue"],
+    ["admin.bookings.byRoute", "Get bookings by route"],
+    ["admin.bookings.byDate", "Get bookings by date"],
+    ["admin.flights.total", "Get total flight count"],
+    ["admin.flights.active", "Get active flight count"],
+    ["admin.flights.delayed", "Get delayed flight count"],
+    ["admin.flights.cancelled", "Get cancelled flight count"],
+    ["admin.flights.byRoute", "Get flights by route"],
+    ["admin.flights.byStatus", "Get flights by status"],
+    ["admin.reports.daily", "Get daily operations report"],
+    ["admin.reports.weekly", "Get weekly operations report"],
+    ["admin.reports.monthly", "Get monthly operations report"],
+    ["admin.reports.quarterly", "Get quarterly operations report"],
+    ["admin.reports.annual", "Get annual operations report"],
+    ["admin.reports.revenue", "Get revenue report"],
+    ["admin.reports.compliance", "Get compliance report"],
+    ["admin.sections.list", "List homepage sections"],
+    ["admin.events.list", "List all events"],
+    ["admin.documents.list", "List all documents"],
+    ["admin.notices.list", "List all notices"],
+    ["admin.promos.list", "List all promo codes"],
+    ["admin.ancillaries.list", "List all ancillaries"],
+    ["admin.audit.recent", "Get recent audit log entries"],
+    ["admin.audit.summary", "Get audit summary"],
+    ["admin.audit.byUser", "Get audit entries by user"],
+    ["admin.system.config", "Get system configuration"],
+    ["admin.system.status", "Get full system status report"],
+    ["admin.alerts.list", "List system alerts"],
+    ["admin.alerts.active", "List active alerts"],
+    ["admin.maintenance.status", "Get maintenance window status"],
+    ["admin.backup.status", "Get backup system status"]
+  ];
+  admins.forEach(function(ep) { add(ep[0], "GET", ep[1], "Admin"); });
+
+  if (cache) { try { cache.put('allEndpoints', JSON.stringify(endpoints), 21600); } catch(e) {} }
+
   return endpoints;
 }
 
@@ -328,26 +580,51 @@ function handleDevEndpoint(endpoint, params) {
   var prefix = parts[0];
   var codes = getAirportCodes();
 
-  // --- Airports ---
+  function airportByCode(code) { return lookupAirportFromAPI(code.toUpperCase()) || AIRPORT_CACHE[code.toUpperCase()]; }
+
+  // --- Airports (handles all 20 patterns) ---
   if (prefix === "airports" && parts.length === 3) {
     var op = parts[1], code = parts[2].toUpperCase();
-    if (op === "list") return { success: true, airports: codes.map(function(c) { return { code: c, name: AIRPORT_CACHE[c].name, city: AIRPORT_CACHE[c].city, country: AIRPORT_CACHE[c].country, type: AIRPORT_CACHE[c].type }; }) };
-    if (code === "list") return handleDevEndpoint(endpoint.replace(".list", ".list.all"), params);
-    if (code && AIRPORT_CACHE[code]) {
-      var a = AIRPORT_CACHE[code];
-      if (op === "info") return { success: true, code: code, name: a.name, city: a.city, country: a.country, type: a.type, timezone: "UTC" + (["JFK","BOS","MIA","ATL"].indexOf(code) >= 0 ? "-5" : ["LAX","SFO","SEA"].indexOf(code) >= 0 ? "-8" : ["ORD","DFW","DEN"].indexOf(code) >= 0 ? "-6" : code === "LHR" ? "+0" : code === "CDG" ? "+1" : code === "NRT" ? "+9" : code === "SYD" ? "+11" : "-5"), coordinates: { lat: a.lat, lng: a.lng } };
-      if (op === "status") return { success: true, code: code, status: "operational", gates: Math.floor(Math.random() * 30 + 10), terminals: Math.floor(Math.random() * 5 + 2) };
-      if (op === "weather") return { success: true, code: code, temperature: Math.round(Math.random() * 35 + 5) + "\u00B0C", conditions: ["Clear","Cloudy","Rain","Windy"][Math.floor(Math.random() * 4)], visibility: Math.round(Math.random() * 5 + 5) + "mi", wind: Math.round(Math.random() * 20 + 5) + "mph" };
-      if (op === "routes") return { success: true, code: code, routes: codes.filter(function(c) { return c !== code; }).map(function(c) { return { destination: c, distance: Math.round(haversineDistance(a.lat, a.lng, AIRPORT_CACHE[c].lat, AIRPORT_CACHE[c].lng)) + "mi" }; }) };
-      if (op === "delays") return { success: true, code: code, averageDelay: Math.round(Math.random() * 25) + "min", delayedFlights: Math.floor(Math.random() * 8), onTimePercentage: Math.round(Math.random() * 15 + 80) + "%" };
-      if (op === "facilities") return { success: true, code: code, lounges: Math.floor(Math.random() * 4), restaurants: Math.floor(Math.random() * 20 + 10), shops: Math.floor(Math.random() * 15 + 5), parking: ["Short-term","Long-term","Valet"] };
+    if (op === "list") return { success: true, total: codes.length, airports: codes.map(function(c) { var a = AIRPORT_CACHE[c]; return a ? { code: c, name: a.name, city: a.city, country: a.country, type: a.type } : { code: c }; }) };
+    if (op === "search") {
+      var q = params.q || code;
+      var apiResults = searchAirportsFromAPI(q);
+      if (apiResults.length > 0) return { success: true, query: q, airports: apiResults, source: "opensky" };
+      return { success: true, query: q, airports: [], source: "opensky" };
     }
+    if (op === "count") return { success: true, count: codes.length };
+    if (op === "codes") return { success: true, codes: codes.length > 0 ? codes : ["JFK","LAX","LHR","CDG","NRT","SYD","ORD"] };
+    if (op === "random") return { success: true, code: codes.length > 0 ? codes[Math.floor(Math.random() * codes.length)] : "JFK" };
+    if (op === "nearby") return { success: true, airports: codes.slice(0, Math.min(5, codes.length)).map(function(c) { var a = AIRPORT_CACHE[c]; return { code: c, name: a ? a.name : c, distance: Math.round(Math.random() * 100 + 5) + "mi" }; }) };
+    var a = airportByCode(code);
+    if (!a) return { success: false, error: "Unknown airport: " + code };
+    if (op === "info") return { success: true, code: code, name: a.name, city: a.city, country: a.country, type: a.type, coordinates: { lat: a.lat, lng: a.lng }, timezone: "UTC-5" };
+    if (op === "status") return { success: true, code: code, operational: true, gatesOpen: Math.floor(Math.random() * 30 + 10), terminals: Math.floor(Math.random() * 5 + 2), runwayStatus: "Active" };
+    if (op === "weather") return { success: true, code: code, temperature: Math.round(Math.random() * 35 + 5) + "\u00B0C", conditions: ["Clear","Partly Cloudy","Cloudy","Light Rain","Windy"][Math.floor(Math.random() * 5)], visibility: Math.round(Math.random() * 5 + 5) + "mi", wind: Math.round(Math.random() * 20 + 5) + "mph", humidity: Math.round(Math.random() * 40 + 40) + "%" };
+    if (op === "routes") return { success: true, code: code, routes: codes.filter(function(c) { return c !== code; }).slice(0,20).map(function(c) { var r = AIRPORT_CACHE[c]; return { destination: c, name: r ? r.name : c, distance: r ? Math.round(haversineDistance(a.lat, a.lng, r.lat, r.lng)) + "mi" : "—" }; }) };
+    if (op === "delays") return { success: true, code: code, averageDelay: Math.round(Math.random() * 25) + "min", delayedFlights: Math.floor(Math.random() * 8), onTimePercentage: Math.round(Math.random() * 15 + 80) + "%", reason: ["Weather","Traffic","Maintenance"][Math.floor(Math.random() * 3)] };
+    if (op === "facilities") return { success: true, code: code, lounges: Math.floor(Math.random() * 4), restaurants: Math.floor(Math.random() * 20 + 10), shops: Math.floor(Math.random() * 15 + 5), parking: ["Short-term","Long-term","Valet"], wifi: true };
+    if (op === "timezone") return { success: true, code: code, timezone: "UTC", utcOffset: "-5" };
+    if (op === "parking") return { success: true, code: code, options: [{ type: "Short-term", rate: "$" + Math.round(Math.random() * 10 + 5) + "/hr", capacity: Math.floor(Math.random() * 500 + 200) },{ type: "Long-term", rate: "$" + Math.round(Math.random() * 30 + 15) + "/day", capacity: Math.floor(Math.random() * 2000 + 500) },{ type: "Valet", rate: "$" + Math.round(Math.random() * 20 + 10) + "/hr", capacity: Math.floor(Math.random() * 200 + 50) }]};
+    if (op === "terminals") return { success: true, code: code, terminals: Math.floor(Math.random() * 5 + 2), gates: Math.floor(Math.random() * 30 + 10), concourses: ["A","B","C","D","E"].slice(0, Math.floor(Math.random() * 4 + 2)) };
+    if (op === "stats") return { success: true, code: code, dailyFlights: Math.floor(Math.random() * 500 + 100), monthlyPassengers: Math.floor(Math.random() * 500000 + 100000), busiestRoute: "JFK" };
+    if (op === "airlines") return { success: true, code: code, airlines: ["Express Airways","Delta","American","United"][Math.floor(Math.random() * 4)], count: Math.floor(Math.random() * 15 + 5) };
+    if (op === "elevation") return { success: true, code: code, elevation: Math.round(Math.random() * 500 + 10) + "ft", coordinates: { lat: a.lat, lng: a.lng } };
+    if (op === "runway") return { success: true, code: code, runways: Math.floor(Math.random() * 4 + 1), longest: Math.round(Math.random() * 5000 + 8000) + "ft", surface: ["Asphalt","Concrete","Asphalt/Concrete"][Math.floor(Math.random() * 3)] };
+    if (op === "nearby") return { success: true, code: code, nearby: codes.filter(function(c) { return c !== code; }).slice(0, 3).map(function(c) { var r = AIRPORT_CACHE[c]; return { code: c, name: r ? r.name : c, distance: Math.round(Math.random() * 50 + 10) + "mi" }; }) };
+    if (op === "security") return { success: true, code: code, averageWait: Math.round(Math.random() * 30 + 5) + "min", tsaPreCheck: Math.random() > 0.3, clearAvailable: Math.random() > 0.5 };
+    if (op === "lounge") return { success: true, code: code, lounges: Math.floor(Math.random() * 4), locations: ["Terminal " + Math.floor(Math.random() * 5 + 1) + ", near Gate " + ["A","B","C","D"][Math.floor(Math.random() * 4)] + Math.floor(Math.random() * 20 + 1)] };
+    if (op === "dining") return { success: true, code: code, restaurants: Math.floor(Math.random() * 15 + 5), cuisines: ["American","Italian","Japanese","Mexican","Seafood","Fast Food","Coffee"][Math.floor(Math.random() * 7)] };
+    if (op === "shopping") return { success: true, code: code, stores: Math.floor(Math.random() * 20 + 5), dutyFree: true, brands: ["Gucci","Coach","Apple","Sunglass Hut","Hudson News"].slice(0, Math.floor(Math.random() * 4 + 1)) };
+    if (op === "transport") return { success: true, code: code, options: ["Taxi","Rideshare","Bus","Train","Rental Car","Shuttle"].slice(0, Math.floor(Math.random() * 4 + 2)), toCityCenter: Math.round(Math.random() * 30 + 5) + "min" };
+    if (op === "codeshares") return { success: true, code: code, partners: ["Delta","American","United","Alaska","JetBlue","Southwest"].slice(0, Math.floor(Math.random() * 4 + 2)) };
   }
 
-  // --- Routes / Fare / Schedule / Pricing / Flight Time / Weather ---
-  if (["info","fare","schedule","pricing","flighttime","weather"].indexOf(prefix) >= 0 && parts.length === 3) {
+  // --- Route endpoints (24 patterns) ---
+  var routeOps = ["info","fare","schedule","pricing","flighttime","weather","aircraft","availability","class","stops","distance","taxes","upgrade","compare","carbon","insurance","loyalty","promotions","hotels","transit","visa","health","alerts","weather.alternate"];
+  if (routeOps.indexOf(prefix) >= 0 && parts.length === 3) {
     var orig = parts[1].toUpperCase(), dest = parts[2].toUpperCase();
-    var o = AIRPORT_CACHE[orig], d = AIRPORT_CACHE[dest];
+    var o = airportByCode(orig), d = airportByCode(dest);
     if (!o || !d) return { success: false, error: "Invalid airport codes" };
     var dist = haversineDistance(o.lat, o.lng, d.lat, d.lng);
     var ft = dist / 500 + 0.25;
@@ -356,38 +633,167 @@ function handleDevEndpoint(endpoint, params) {
     var pax = parseInt(params.passengers) || 1;
     var tax = baseFare * 0.08;
     var fee = 15 + pax * 5;
+    var aircraftTypes = ["Boeing 737-800","Boeing 787-9","Airbus A320","Boeing 777-300ER","Embraer E190","Airbus A330-300","Boeing 767-400ER","Airbus A350-900"];
 
-    if (prefix === "info") return { success: true, origin: orig, originName: o.name, destination: dest, destinationName: d.name, distance: Math.round(dist) + "mi", estimatedFlightTime: ft.toFixed(1) + "h", aircraft: ["Boeing 737-800","Boeing 787-9","Airbus A320","Boeing 777-300ER","Embraer E190"][Math.floor(Math.random() * 5)] };
-    if (prefix === "fare") return { success: true, origin: orig, destination: dest, economy: Math.round(baseFare * pax), business: Math.round(baseFare * 2.5 * pax), firstClass: Math.round(baseFare * 5.0 * pax), currency: "USD", passengers: pax };
-    if (prefix === "schedule") return { success: true, origin: orig, destination: dest, departures: Array.from({length: Math.floor(Math.random() * 4 + 3)}, function(_, i) { var h = 6 + i * 3; return { flight: "EA" + (100 + i), departure: h.toString().padStart(2, "0") + ":00", arrival: (h + Math.ceil(ft)).toString().padStart(2, "0") + ":" + (Math.floor(ft % 1 * 60)).toString().padStart(2, "0"), aircraft: ["Boeing 737-800","Boeing 787-9","Airbus A320"][i % 3], frequency: ["Daily","Multiple daily"][i % 2] }; }) };
-    if (prefix === "pricing") return { success: true, origin: orig, destination: dest, baseFare: Math.round(baseFare * cabinMul * pax), taxes: Math.round(tax * cabinMul * pax), fees: Math.round(fee), total: Math.round(baseFare * cabinMul * pax + tax * cabinMul * pax + fee), currency: "USD", breakdown: { baseFare: Math.round(baseFare), cabinMultiplier: cabinMul, passengers: pax, taxRate: "8%", serviceFee: fee }, cabin: params.cabin || "Economy" };
+    if (prefix === "info") return { success: true, origin: orig, originName: o.name, destination: dest, destinationName: d.name, distance: Math.round(dist) + "mi", estimatedFlightTime: ft.toFixed(1) + "h", aircraft: aircraftTypes[Math.floor(Math.random() * aircraftTypes.length)], frequency: ["Daily","Multiple daily","Weekly"][Math.floor(Math.random() * 3)], firstFlight: "06:00", lastFlight: "22:00" };
+    if (prefix === "fare") return { success: true, origin: orig, destination: dest, economy: Math.round(baseFare * pax), business: Math.round(baseFare * 2.5 * pax), firstClass: Math.round(baseFare * 5.0 * pax), currency: "USD", passengers: pax, lastUpdated: new Date().toISOString() };
+    if (prefix === "schedule") return { success: true, origin: orig, destination: dest, departures: Array.from({length: Math.floor(Math.random() * 4 + 3)}, function(_, i) { var h = 6 + i * 3; return { flight: "EA" + (100 + i), departure: h.toString().padStart(2, "0") + ":00", arrival: (h + Math.ceil(ft)).toString().padStart(2, "0") + ":" + (Math.floor(ft % 1 * 60)).toString().padStart(2, "0"), aircraft: aircraftTypes[i % aircraftTypes.length], frequency: ["Daily","Multiple daily"][i % 2] }; }) };
+    if (prefix === "pricing") return { success: true, origin: orig, destination: dest, currency: "USD", breakdown: { baseFare: Math.round(baseFare), cabinMultiplier: cabinMul, passengers: pax, subtotal: Math.round(baseFare * cabinMul * pax), taxes: Math.round(tax * cabinMul * pax), fees: fee, total: Math.round(baseFare * cabinMul * pax + tax * cabinMul * pax + fee) }, cabin: params.cabin || "Economy" };
     if (prefix === "flighttime") return { success: true, origin: orig, destination: dest, distance: Math.round(dist) + "mi", estimatedFlightTime: ft.toFixed(1) + "h", averageSpeed: "500 mph", timezoneDiff: Math.floor(Math.random() * 5 + 1) + "h" };
-    if (prefix === "weather") return { success: true, origin: { code: orig, conditions: ["Clear","Cloudy","Rain"][Math.floor(Math.random() * 3)], temperature: Math.round(Math.random() * 30 + 10) + "\u00B0C" }, destination: { code: dest, conditions: ["Clear","Cloudy","Rain"][Math.floor(Math.random() * 3)], temperature: Math.round(Math.random() * 30 + 10) + "\u00B0C" }, advisory: Math.random() > 0.8 ? "Light turbulence expected" : "No significant weather" };
+    if (prefix === "weather") return { success: true, origin: { code: orig, conditions: ["Clear","Cloudy","Rain"][Math.floor(Math.random() * 3)], temperature: Math.round(Math.random() * 30 + 10) + "\u00B0C", wind: Math.round(Math.random() * 20 + 5) + "mph" }, destination: { code: dest, conditions: ["Clear","Cloudy","Rain"][Math.floor(Math.random() * 3)], temperature: Math.round(Math.random() * 30 + 10) + "\u00B0C", wind: Math.round(Math.random() * 20 + 5) + "mph" }, advisory: Math.random() > 0.8 ? "Light turbulence expected" : "No significant weather" };
+    if (prefix === "aircraft") return { success: true, origin: orig, destination: dest, aircraft: aircraftTypes[Math.floor(Math.random() * aircraftTypes.length)], configuration: { economy: Math.floor(Math.random() * 100 + 100), business: Math.floor(Math.random() * 30 + 20), first: Math.floor(Math.random() * 10 + 8) }, wifi: Math.random() > 0.3, power: Math.random() > 0.2 };
+    if (prefix === "availability") return { success: true, origin: orig, destination: dest, date: new Date().toISOString().split("T")[0], seats: { economy: Math.floor(Math.random() * 50 + 10), business: Math.floor(Math.random() * 15 + 5), firstClass: Math.floor(Math.random() * 5 + 2) }, nextAvailable: Math.random() > 0.7 ? "Full" : "Available" };
+    if (prefix === "class") return { success: true, origin: orig, destination: dest, classes: [{ cabin: "Economy", fare: Math.round(baseFare * pax), amenities: ["Standard seat","Meal service","Carry-on"], multiplier: 1.0 },{ cabin: "Business", fare: Math.round(baseFare * 2.5 * pax), amenities: ["Lie-flat seat","Premium dining","Priority boarding","Lounge access"], multiplier: 2.5 },{ cabin: "FirstClass", fare: Math.round(baseFare * 5.0 * pax), amenities: ["Private suite","Gourmet dining","Chauffeur service","Spa access"], multiplier: 5.0 }]};
+    if (prefix === "stops") return { success: true, origin: orig, destination: dest, stops: Math.floor(Math.random() * 2), direct: Math.random() > 0.5, connectingAirports: Math.random() > 0.5 ? [codes.filter(function(c) { return c !== orig && c !== dest; })[Math.floor(Math.random() * (codes.length - 2))]] : [] };
+    if (prefix === "distance") return { success: true, origin: orig, destination: dest, miles: Math.round(dist), kilometers: Math.round(dist * 1.609), nauticalMiles: Math.round(dist * 0.869) };
+    if (prefix === "taxes") return { success: true, origin: orig, destination: dest, baseFare: Math.round(baseFare * cabinMul * pax), taxRate: "8%", taxAmount: Math.round(tax * cabinMul * pax), serviceFee: fee, governmentTax: Math.round(baseFare * cabinMul * pax * 0.03), totalTaxesAndFees: Math.round(tax * cabinMul * pax + fee + baseFare * cabinMul * pax * 0.03) };
+    if (prefix === "upgrade") return { success: true, origin: orig, destination: dest, upgradeOptions: [{ from: "Economy", to: "Business", price: Math.round(baseFare * 1.5 * pax), milesRequired: Math.round(baseFare * 1.5 * 10) },{ from: "Business", to: "FirstClass", price: Math.round(baseFare * 2.5 * pax), milesRequired: Math.round(baseFare * 2.5 * 10) },{ from: "Economy", to: "FirstClass", price: Math.round(baseFare * 4.0 * pax), milesRequired: Math.round(baseFare * 4.0 * 10) }]};
+    if (prefix === "compare") return { success: true, origin: orig, destination: dest, currency: "USD", comparison: [{ cabin: "Economy", fare: Math.round(baseFare * pax), value: "Standard" },{ cabin: "Business", fare: Math.round(baseFare * 2.5 * pax), value: "Premium", extra: "+" + Math.round(baseFare * 1.5 * pax) + " vs Economy" },{ cabin: "FirstClass", fare: Math.round(baseFare * 5.0 * pax), value: "Luxury", extra: "+" + Math.round(baseFare * 4.0 * pax) + " vs Economy" }]};
+    // New route families
+    if (prefix === "carbon") return { success: true, origin: orig, destination: dest, emissions: Math.round(dist * 0.155 * pax) + "kg CO2", offset: Math.round(dist * 0.155 * pax * 0.02) + " offset credits", treeEquivalent: Math.round(dist * 0.155 * pax / 20) + " trees/month" };
+    if (prefix === "insurance") return { success: true, origin: orig, destination: dest, options: [{ provider: "TravelGuard", price: Math.round(baseFare * 0.08 * pax), coverage: "Trip cancellation, medical, baggage" },{ provider: "SafeTrip", price: Math.round(baseFare * 0.05 * pax), coverage: "Trip cancellation only" },{ provider: "PremiumCare", price: Math.round(baseFare * 0.12 * pax), coverage: "Full coverage including COVID-19" }]};
+    if (prefix === "loyalty") return { success: true, origin: orig, destination: dest, milesEarned: Math.round(dist * pax), status: ["Basic","Silver","Titanium","Gold"][Math.floor(Math.random() * 4)], bonusMultiplier: [1.0, 1.1, 1.25, 1.5][Math.floor(Math.random() * 4)], partnerEarnings: Math.random() > 0.7 };
+    if (prefix === "promotions") return { success: true, origin: orig, destination: dest, activePromos: [{ code: "ROUTE" + orig + dest, discount: Math.round(Math.random() * 20 + 5) + "%", expires: "2026-12-31" }]};
+    if (prefix === "hotels") return { success: true, origin: orig, destination: dest, recommendations: [{ name: d.city + " Grand Hotel", price: "$" + Math.round(Math.random() * 200 + 100) + "/night", rating: Math.round(Math.random() * 2 + 3) + "/5" },{ name: d.city + " Airport Inn", price: "$" + Math.round(Math.random() * 100 + 60) + "/night", rating: Math.round(Math.random() * 2 + 3) + "/5" }]};
+    if (prefix === "transit") return { success: true, origin: orig, destination: dest, connectionTime: Math.round(Math.random() * 2 + 1) + "h", minimumLayover: Math.round(Math.random() * 45 + 30) + "min", preferredAirport: codes[Math.floor(Math.random() * codes.length)] };
+    if (prefix === "visa") return { success: true, origin: orig, destination: dest, required: Math.random() > 0.5, processingTime: Math.round(Math.random() * 14 + 3) + " days", notes: ["Visa-free for most nationalities","E-visa available","Visa on arrival"][Math.floor(Math.random() * 3)] };
+    if (prefix === "health") return { success: true, origin: orig, destination: dest, vaccinations: Math.random() > 0.7 ? ["Yellow Fever","Hepatitis A","Typhoid"] : ["None required"], advisory: Math.random() > 0.8 ? "Travel advisory issued" : "No health advisories" };
+    if (prefix === "alerts") return { success: true, origin: orig, destination: dest, alerts: Math.random() > 0.7 ? [{ type: "Weather", message: "Thunderstorms expected", severity: "Moderate", issued: new Date().toISOString() }] : [], activeAlerts: Math.floor(Math.random() * 3) };
+    if (prefix === "weather.alternate") return { success: true, origin: orig, destination: dest, alternateConditions: ["Clear","Mostly Sunny","Isolated Showers"][Math.floor(Math.random() * 3)], probability: Math.round(Math.random() * 30 + 60) + "%", forecastConfidence: ["High","Medium","Low"][Math.floor(Math.random() * 3)] };
   }
 
-  // --- General endpoints ---
+  // --- Flight endpoints (route-based, 14 patterns) ---
+  if (prefix === "flight" && parts.length === 4) {
+    var flightOp = parts[1], origF = parts[2].toUpperCase(), destF = parts[3].toUpperCase();
+    if (!airportByCode(origF) || !airportByCode(destF)) return { success: false, error: "Invalid airport codes" };
+    var randFlight = "EA" + Math.floor(Math.random() * 900 + 100);
+    var randTime = (Math.floor(Math.random() * 12 + 5)).toString().padStart(2,"0") + ":" + Math.floor(Math.random() * 60).toString().padStart(2,"0");
+    if (flightOp === "departure") return { success: true, flight: randFlight, origin: origF, destination: destF, scheduled: randTime, status: ["On Time","Boarding","Departed","Delayed"][Math.floor(Math.random() * 4)], gate: "G" + Math.floor(Math.random() * 30 + 1), terminal: Math.floor(Math.random() * 5 + 1) };
+    if (flightOp === "arrival") return { success: true, flight: randFlight, origin: origF, destination: destF, scheduled: randTime, status: ["On Time","Landed","Expected","Diverted"][Math.floor(Math.random() * 4)], gate: "G" + Math.floor(Math.random() * 30 + 1) };
+    if (flightOp === "status") return { success: true, flight: randFlight, origin: origF, destination: destF, status: ["Scheduled","Boarding","In Air","Landed","Cancelled"][Math.floor(Math.random() * 5)], departure: randTime, arrival: (Math.floor(Math.random() * 12 + 5)).toString().padStart(2,"0") + ":" + Math.floor(Math.random() * 60).toString().padStart(2,"0"), progress: Math.floor(Math.random() * 100) + "%" };
+    if (flightOp === "gate") return { success: true, flight: randFlight, origin: origF, destination: destF, gate: "G" + Math.floor(Math.random() * 30 + 1), terminal: Math.floor(Math.random() * 5 + 1), boardingTime: Math.floor(Math.random() * 3 + 1) + ":" + Math.floor(Math.random() * 60).toString().padStart(2,"0") + " prior", lastCall: Math.random() > 0.7 };
+    if (flightOp === "tracking") return { success: true, flight: randFlight, origin: origF, destination: destF, latitude: (Math.random() * 40 + 25).toFixed(4), longitude: (Math.random() * 100 - 120).toFixed(4), altitude: Math.round(Math.random() * 35000 + 5000) + "ft", speed: Math.round(Math.random() * 100 + 450) + "mph", heading: Math.round(Math.random() * 360) + "\u00B0" };
+    if (flightOp === "seatmap") return { success: true, flight: randFlight, configuration: { economy: Math.floor(Math.random() * 30 + 20), business: Math.floor(Math.random() * 8 + 4), first: Math.floor(Math.random() * 4 + 2) }, rows: { economy: Math.floor(Math.random() * 15 + 10), business: Math.floor(Math.random() * 5 + 2), first: Math.floor(Math.random() * 3 + 1) }, seatsAvailable: { economy: Math.floor(Math.random() * 50 + 10), business: Math.floor(Math.random() * 10 + 2), first: Math.floor(Math.random() * 4 + 1) } };
+    if (flightOp === "meals") return { success: true, flight: randFlight, options: ["Chicken","Pasta","Fish","Vegetarian","Vegan","Kids Meal"].slice(0, Math.floor(Math.random() * 4 + 2)), specialMeals: ["Halal","Kosher","Gluten-Free","Dairy-Free"].slice(0, Math.floor(Math.random() * 3 + 1)), complimentary: Math.random() > 0.2 };
+    if (flightOp === "baggage") return { success: true, flight: randFlight, allowance: { carryOn: "1 x 22lb / 10kg", checked: "2 x 50lb / 23kg", overweight: "$" + Math.round(Math.random() * 50 + 25) }, excessRate: "$" + Math.round(Math.random() * 100 + 50) + "/bag", sportingEquipment: Math.random() > 0.5 };
+    if (flightOp === "entertainment") return { success: true, flight: randFlight, system: ["seatback","streaming","tablet provided"][Math.floor(Math.random() * 3)], movies: Math.floor(Math.random() * 100 + 50), shows: Math.floor(Math.random() * 200 + 100), music: Math.floor(Math.random() * 500 + 200), liveTV: Math.random() > 0.5 };
+    if (flightOp === "wifi") return { success: true, flight: randFlight, available: Math.random() > 0.2, price: Math.random() > 0.5 ? "$" + Math.round(Math.random() * 15 + 5) : "Complimentary", speed: Math.round(Math.random() * 10 + 5) + "Mbps", streaming: Math.random() > 0.4 };
+    if (flightOp === "crew") return { success: true, flight: randFlight, pilots: Math.floor(Math.random() * 2 + 1), flightAttendants: Math.floor(Math.random() * 6 + 4), leadPilot: "Captain " + ["Smith","Johnson","Williams","Brown","Davis"][Math.floor(Math.random() * 5)], languages: ["English","Spanish","French","Mandarin"].slice(0, Math.floor(Math.random() * 3 + 1)) };
+    if (flightOp === "history") return { success: true, flight: randFlight, onTimeRate: Math.round(Math.random() * 10 + 85) + "%", cancellationRate: Math.round(Math.random() * 3 + 1) + "%", avgDelay: Math.round(Math.random() * 15 + 2) + "min", totalFlights: Math.floor(Math.random() * 500 + 100) };
+    if (flightOp === "restrictions") return { success: true, flight: randFlight, travelRestrictions: Math.random() > 0.6 ? ["Valid passport required","Visa may be required"] : ["No restrictions"], covidMeasures: Math.random() > 0.7 ? ["Mask recommended"] : ["No current measures"] };
+    if (flightOp === "codeshare") return { success: true, flight: randFlight, operatingCarrier: ["Express Airways","Delta Connection","American Eagle","United Express"][Math.floor(Math.random() * 4)], codesharePartners: ["AA","DL","UA","B6","AS"].slice(0, Math.floor(Math.random() * 3 + 1)) };
+  }
+
+  // --- Synthetic flight endpoints (flight.{op}.EA####, 3 parts) ---
+  if (prefix === "flight" && parts.length === 3) {
+    var flightOp2 = parts[1], flightId = parts[2];
+    if (flightId.indexOf("EA") !== 0) return { success: false, error: "Invalid flight ID" };
+    var fnum = parseInt(flightId.substring(2), 10);
+    if (isNaN(fnum) || fnum < 1001 || fnum > 1500) return { success: false, error: "Flight ID out of range" };
+    var origIdx = (fnum - 1001) % codes.length;
+    var destIdx = (origIdx + 1 + Math.floor((fnum - 1001) / codes.length)) % codes.length;
+    if (destIdx === origIdx) destIdx = (destIdx + 1) % codes.length;
+    var fOrig = codes[origIdx], fDest = codes[destIdx];
+    var fo = airportByCode(fOrig), fd = airportByCode(fDest);
+    var fdist = fo && fd ? haversineDistance(fo.lat, fo.lng, fd.lat, fd.lng) : 1000;
+    var departureH = (6 + (fnum % 12)).toString().padStart(2,"0");
+    var departureM = (fnum % 60).toString().padStart(2,"0");
+    if (flightOp2 === "info") return { success: true, flight: flightId, origin: fOrig, destination: fDest, aircraft: ["Boeing 737-800","Airbus A320","Boeing 787-9","Embraer E190"][fnum % 4], departure: departureH + ":" + departureM, arrival: ((parseInt(departureH) + Math.floor(fdist / 500 + 0.25)) % 24).toString().padStart(2,"0") + ":" + departureM, status: ["Active","Scheduled","In Air","Completed"][fnum % 4], operator: "Express Airways" };
+    if (flightOp2 === "status") return { success: true, flight: flightId, status: ["Scheduled","Boarding","In Air","Landed","Completed","Cancelled","Delayed"][fnum % 7], departure: departureH + ":" + departureM, gate: "G" + ((fnum % 30) + 1), progress: (fnum % 101) + "%", reason: fnum % 7 === 6 ? "Weather delay" : "" };
+    if (flightOp2 === "route") return { success: true, flight: flightId, origin: fOrig, originName: fo ? fo.name : "", destination: fDest, destinationName: fd ? fd.name : "", distance: Math.round(fdist) + "mi", flightTime: (fdist / 500 + 0.25).toFixed(1) + "h", waypoints: ["DEPARTURE","WAYPOINT01","WAYPOINT02","ARRIVAL"] };
+    if (flightOp2 === "schedule") return { success: true, flight: flightId, departure: departureH + ":" + departureM, arrival: ((parseInt(departureH) + Math.floor(fdist / 500 + 0.25)) % 24).toString().padStart(2,"0") + ":" + departureM, daysOfWeek: ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].filter(function(_, i) { return (fnum >> i) % 2 === 0; }), effective: "2026-01-01", seasonal: fnum % 3 === 0 };
+    if (flightOp2 === "crew") return { success: true, flight: flightId, captain: ["Capt. Smith","Capt. Johnson","Capt. Brown","Capt. Lee","Capt. Garcia"][fnum % 5], firstOfficer: ["F/O Davis","F/O Wilson","F/O Martinez","F/O Taylor","F/O Anderson"][(fnum + 2) % 5], attendants: Math.floor((fnum % 6) + 4), languages: ["English","Spanish"].concat(fnum % 3 === 0 ? ["French"] : []).concat(fnum % 5 === 0 ? ["Mandarin"] : []) };
+    if (flightOp2 === "aircraft") return { success: true, flight: flightId, registration: "N" + String.fromCharCode(65 + (fnum % 26)) + (1000 + fnum), type: ["Boeing 737-800","Boeing 787-9","Airbus A320","Boeing 777-300ER","Embraer E190","Airbus A330-300"][fnum % 6], age: (fnum % 15) + " years", capacity: 150 + (fnum % 100), wifi: fnum % 3 !== 0, power: true };
+  }
+
+  // --- Airline endpoints ---
+  var airlineCodes = ["EA","EX","EC","AA","DL","UA","WN","NK","B6","AS","F9","HA","OO","QX","OH","YX","ZW","9E","G7","PT"];
+  var airlineNames = ["Express Airways","Express Charter","Express Cargo","American Airlines","Delta Air Lines","United Airlines","Southwest Airlines","Spirit Airlines","JetBlue Airways","Alaska Airlines","Frontier Airlines","Hawaiian Airlines","SkyWest Airlines","Horizon Air","PSA Airlines","Air Wisconsin","Mesa Airlines","Endeavor Air","GoJet Airlines","Piedmont Airlines"];
+  if (prefix === "airlines" && parts.length === 3) {
+    var aOp = parts[1], aCode = parts[2].toUpperCase();
+    var aIdx = airlineCodes.indexOf(aCode);
+    if (aIdx < 0) return { success: false, error: "Unknown airline code" };
+    if (aOp === "info") return { success: true, code: aCode, name: airlineNames[aIdx], alliance: ["Star Alliance","SkyTeam","Oneworld","None"][aIdx % 4], hub: codes[aIdx % codes.length], founded: 1920 + (aIdx * 10), fleetSize: Math.floor(Math.random() * 300 + 50), destinations: Math.floor(Math.random() * 100 + 30) };
+    if (aOp === "fleet") return { success: true, code: aCode, name: airlineNames[aIdx], aircraft: ["Boeing 737","Boeing 787","Airbus A320","Boeing 777","Embraer E190","Airbus A330"].slice(0, Math.floor(Math.random() * 5 + 1)), totalAircraft: Math.floor(Math.random() * 300 + 50), averageAge: Math.round(Math.random() * 10 + 5) + " years" };
+    if (aOp === "routes") return { success: true, code: aCode, domestic: Math.floor(Math.random() * 200 + 50), international: Math.floor(Math.random() * 100 + 20), total: Math.floor(Math.random() * 300 + 70), hubs: codes.slice(0, Math.floor(Math.random() * 3 + 1)) };
+    if (aOp === "status") return { success: true, code: aCode, operational: true, flightsToday: Math.floor(Math.random() * 1500 + 500), delays: Math.floor(Math.random() * 50 + 5), cancellations: Math.floor(Math.random() * 10 + 1), onTimeRate: Math.round(Math.random() * 5 + 90) + "%" };
+    if (aOp === "ratings") return { success: true, code: aCode, name: airlineNames[aIdx], overall: Math.round(Math.random() * 2 + 3) + "/5", onTime: Math.round(Math.random() * 2 + 3) + "/5", comfort: Math.round(Math.random() * 2 + 3) + "/5", service: Math.round(Math.random() * 2 + 3) + "/5", value: Math.round(Math.random() * 2 + 3) + "/5" };
+  }
+
+  //--- General / System endpoints ---
   if (endpoint === "system.status") return { success: true, status: "operational", services: 15, healthy: 15, uptime: "99.97%", lastIncident: "3 days ago" };
-  if (endpoint === "system.stats") { var ss = getSheet(SHEETS.SystemStatus); return { success: true, users: ss ? ss.getLastRow() : 0, endpoints: getAllApiEndpoints().length, uptime: "99.97%", version: "2.1.0" }; }
-  if (endpoint === "system.time") return { success: true, timestamp: new Date().toISOString(), timezone: "UTC", server: "Google Apps Script" };
-  if (endpoint === "system.health") return { success: true, status: "healthy", database: "connected", cache: "operational", latency: Math.round(Math.random() * 200 + 50) + "ms" };
-  if (endpoint === "system.version") return { success: true, version: "2.1.0", build: "2026.07", name: "Express Airways API", endpoints: getAllApiEndpoints().length };
+  if (endpoint === "system.stats") return { success: true, totalEndpoints: getAllApiEndpoints().length, airports: getAirportCodes().length, routes: getAirportCodes().length * (getAirportCodes().length - 1), uptime: "99.97%", version: "2.1.0" };
+  if (endpoint === "system.time") return { success: true, timestamp: new Date().toISOString(), timezone: "UTC", server: "Google Apps Script", epoch: Date.now() };
+  if (endpoint === "system.health") return { success: true, status: "healthy", database: "connected", cache: "operational", latency: Math.round(Math.random() * 200 + 50) + "ms", version: "2.1.0" };
+  if (endpoint === "system.version") return { success: true, version: "2.1.0", build: "2026.07", name: "Express Airways API", totalEndpoints: getAllApiEndpoints().length, documentation: "https://developer.expressairways.com/docs" };
+  if (endpoint === "system.maintenance") return { success: true, scheduled: [{ start: "2026-07-15 02:00", end: "2026-07-15 06:00", impact: "Low", description: "Database optimization" }] };
+  if (endpoint === "system.cache.status") return { success: true, status: "operational", hitRate: "94%", memory: "256MB", entries: Math.floor(Math.random() * 1000 + 500) };
+  if (endpoint === "system.database.status") return { success: true, status: "connected", type: "Google Sheets", latency: Math.round(Math.random() * 300 + 100) + "ms", lastSync: new Date().toISOString() };
+  if (endpoint === "system.uptime") return { success: true, uptime: "99.97%", measured: "Last 90 days", incidents: 2, totalDowntime: "42 minutes" };
+  if (endpoint === "system.load") return { success: true, requestsPerMinute: Math.floor(Math.random() * 500 + 100), activeConnections: Math.floor(Math.random() * 100 + 20), averageResponse: Math.round(Math.random() * 150 + 50) + "ms", cpuLoad: Math.round(Math.random() * 30 + 20) + "%" };
+  if (endpoint === "system.queues") return { success: true, queues: [{ name: "Booking", depth: Math.floor(Math.random() * 10), processingTime: Math.round(Math.random() * 500 + 100) + "ms" },{ name: "Email", depth: Math.floor(Math.random() * 5), processingTime: Math.round(Math.random() * 1000 + 200) + "ms" }]};
+  if (endpoint === "system.services") return { success: true, services: ["API Gateway","Booking Engine","Payment","Notifications","Tracking","Analytics","Weather","Exchange Rates"].map(function(s) { return { name: s, status: ["operational","degraded","operational","operational"][Math.floor(Math.random() * 4)], uptime: "99." + Math.floor(Math.random() * 9 + 90) + "%" }; }) };
+  if (endpoint === "system.dependencies") return { success: true, dependencies: { api: "healthy", database: "connected", cache: "operational", externalApis: { openSky: "available", openMeteo: "available", exchangeRate: "available" } } };
+  if (endpoint === "system.logs.recent") return { success: true, entries: Array.from({length: 10}, function(_, i) { return { timestamp: new Date(Date.now() - i * 60000).toISOString(), level: ["INFO","INFO","WARN","INFO","ERROR"][i % 5], message: "System operation " + (1000 + i), service: ["api","db","cache","worker"][i % 4] }; }) };
+  if (endpoint === "system.alerts.active") return { success: true, count: Math.floor(Math.random() * 3), alerts: [{ severity: "warning", message: "Database replication lag", timestamp: new Date().toISOString() }] };
+  if (endpoint === "system.backup.status") return { success: true, lastBackup: new Date(Date.now() - 3600000).toISOString(), nextBackup: new Date(Date.now() + 82800000).toISOString(), status: "completed", size: Math.round(Math.random() * 500 + 100) + "MB" };
+  if (endpoint === "system.security.status") return { success: true, status: "secure", lastAudit: "2026-06-15", vulnerabilities: 0, encryption: "TLS 1.3", authMethods: ["API Key","Session Token"] };
+  if (endpoint === "system.rateLimits") return { success: true, defaultLimit: 100, defaultPeriod: "1 hour", currentUsage: Math.floor(Math.random() * 50 + 5), remaining: Math.floor(Math.random() * 50 + 50), resetsIn: Math.floor(Math.random() * 45 + 5) + " minutes" };
   if (endpoint === "endpoints.list") return { success: true, total: getAllApiEndpoints().length, endpoints: getAllApiEndpoints() };
-  if (endpoint === "endpoints.search") return { success: true, query: params.q, results: getAllApiEndpoints().filter(function(ep) { return !params.q || ep.name.indexOf(params.q.toLowerCase()) >= 0 || ep.description.indexOf(params.q) >= 0; }) };
-  if (endpoint === "airports.list") return { success: true, airports: getAirportCodes().map(function(c) { return { code: c, name: AIRPORT_CACHE[c].name, city: AIRPORT_CACHE[c].city, country: AIRPORT_CACHE[c].country }; }) };
-  if (endpoint === "airports.search") return { success: true, query: params.q, results: getAirportCodes().filter(function(c) { return !params.q || c.indexOf(params.q.toUpperCase()) >= 0 || AIRPORT_CACHE[c].name.toLowerCase().indexOf(params.q.toLowerCase()) >= 0 || AIRPORT_CACHE[c].city.toLowerCase().indexOf(params.q.toLowerCase()) >= 0; }).map(function(c) { return { code: c, name: AIRPORT_CACHE[c].name, city: AIRPORT_CACHE[c].city, country: AIRPORT_CACHE[c].country }; }) };
-  if (endpoint === "events.list") return { success: true, events: [{id:"EVT001",name:"Summer Sale",date:"2026-08-15"},{id:"EVT002",name:"New Route Launch",date:"2026-09-01"}] };
-  if (endpoint === "notices.list") return { success: true, notices: [{id:"NTC001",message:"Schedule maintenance this weekend",priority:"low"}] };
-  if (endpoint === "documents.list") return { success: true, documents: [{id:"DOC001",name:"Travel Advisory",type:"PDF",updated:"2026-07-01"},{id:"DOC002",name:"Safety Guidelines",type:"PDF",updated:"2026-06-15"}] };
-  if (endpoint === "promos.validate") return { success: true, valid: true, code: params.code, discount: "15%", expires: "2026-12-31" };
-  if (endpoint === "bookings.stats") return { success: true, total: 1247, active: 892, pending: 88, cancelled: 267 };
-  if (endpoint === "flights.list") return { success: true, flights: Array.from({length: 10}, function(_, i) { return { flight: "EA" + (100 + i), status: ["On Time","Boarding","Departed","Delayed"][Math.floor(Math.random() * 4)], origin: getAirportCodes()[Math.floor(Math.random() * 14)], destination: getAirportCodes()[Math.floor(Math.random() * 14)] }; }) };
-  if (endpoint === "flights.delayed") return { success: true, flights: Array.from({length: Math.floor(Math.random() * 5 + 1)}, function(_, i) { return { flight: "EA" + (200 + i), delay: Math.round(Math.random() * 60 + 10) + "min", reason: ["Weather","Maintenance","ATC","Crew"][Math.floor(Math.random() * 4)] }; }) };
-  if (endpoint === "flights.cancelled") return { success: true, flights: Array.from({length: Math.floor(Math.random() * 3)}, function(_, i) { return { flight: "EA" + (300 + i), reason: ["Weather","Maintenance","Operational"][Math.floor(Math.random() * 3)] }; }) };
-  if (endpoint === "reports.daily") return { success: true, date: new Date().toISOString().split("T")[0], flights: Math.floor(Math.random() * 200 + 150), passengers: Math.floor(Math.random() * 30000 + 15000), onTime: Math.round(Math.random() * 5 + 90) + "%", cancellations: Math.floor(Math.random() * 5) };
-  if (endpoint === "reports.summary") return { success: true, period: "Last 30 days", revenue: "$" + Math.round(Math.random() * 5000000 + 2000000), passengers: Math.floor(Math.random() * 500000 + 200000), loadFactor: Math.round(Math.random() * 10 + 82) + "%" };
+  if (endpoint === "endpoints.search") return { success: true, query: params.q, results: getAllApiEndpoints().filter(function(ep) { return !params.q || ep.name.indexOf(params.q.toLowerCase()) >= 0 || (ep.description || "").toLowerCase().indexOf((params.q || "").toLowerCase()) >= 0; }) };
+  if (endpoint === "endpoints.count") return { success: true, count: getAllApiEndpoints().length, updated: new Date().toISOString() };
+  if (endpoint === "endpoints.categories") return { success: true, categories: ["System","Airports","Routes","Flights","Airlines","Events","Notices","Documents","Promotions","Bookings","Reports","Users","Admin","Analytics"] };
+  if (endpoint === "endpoints.random") return { success: true, suggestion: getAllApiEndpoints()[Math.floor(Math.random() * getAllApiEndpoints().length)] };
+  if (endpoint === "endpoints.popular") return { success: true, popular: ["system.status","airports.list","endpoints.list","routes.info.JFK.LAX","fare.JFK.LAX","flight.status.EA1200"].map(function(n) { return { name: n, calls: Math.floor(Math.random() * 10000 + 1000) }; }) };
+  if (endpoint === "endpoints.recent") return { success: true, recent: getAllApiEndpoints().slice(-5).map(function(ep) { return ep.name; }) };
+  if (endpoint === "airports.list") return { success: true, total: codes.length, airports: codes.map(function(c) { return { code: c, name: AIRPORT_CACHE[c].name, city: AIRPORT_CACHE[c].city, country: AIRPORT_CACHE[c].country, type: AIRPORT_CACHE[c].type }; }) };
+  if (endpoint === "airports.search") return { success: true, query: params.q, results: codes.filter(function(c) { return !params.q || c.indexOf(params.q.toUpperCase()) >= 0 || AIRPORT_CACHE[c].name.toLowerCase().indexOf((params.q || "").toLowerCase()) >= 0 || AIRPORT_CACHE[c].city.toLowerCase().indexOf((params.q || "").toLowerCase()) >= 0; }).map(function(c) { return { code: c, name: AIRPORT_CACHE[c].name, city: AIRPORT_CACHE[c].city, country: AIRPORT_CACHE[c].country }; }) };
+  if (endpoint === "airports.count") return { success: true, count: codes.length };
+  if (endpoint === "airports.codes") return { success: true, codes: codes };
+  if (endpoint === "airports.random") return { success: true, airport: codes[Math.floor(Math.random() * codes.length)] };
+  if (endpoint === "airports.nearby") return { success: true, airports: codes.slice(0, Math.min(5, codes.length)).map(function(c) { return { code: c, name: AIRPORT_CACHE[c].name, distance: Math.round(Math.random() * 100 + 5) + "mi" }; }) };
+  if (endpoint === "events.list") return { success: true, total: 6, events: [{ id: "EVT001", name: "Summer Sale", date: "2026-08-15" },{ id: "EVT002", name: "New Route Launch", date: "2026-09-01" },{ id: "EVT003", name: "Labor Day Weekend", date: "2026-09-05" },{ id: "EVT004", name: "Mileage Bonus", date: "2026-10-01" },{ id: "EVT005", name: "Winter Promotion", date: "2026-11-15" },{ id: "EVT006", name: "Holiday Travel Special", date: "2026-12-15" }]};
+  if (endpoint === "events.upcoming") return { success: true, events: [{ id: "EVT001", name: "Summer Sale", date: "2026-08-15" }]};
+  if (endpoint === "events.calendar") return { success: true, year: 2026, events: Array.from({length: 12}, function(_, i) { return { month: ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][i], count: Math.floor(Math.random() * 5 + 1) }; }) };
+  if (endpoint === "notices.list") return { success: true, notices: [{ id: "NTC001", message: "Scheduled maintenance this weekend", priority: "low" }]};
+  if (endpoint === "notices.active") return { success: true, active: [{ id: "NTC001", message: "Schedule maintenance this weekend", priority: "low" }]};
+  if (endpoint === "documents.list") return { success: true, documents: [{ id: "DOC001", name: "Travel Advisory", type: "PDF" },{ id: "DOC002", name: "Safety Guidelines", type: "PDF" },{ id: "DOC003", name: "Baggage Policy", type: "PDF" }]};
+  if (endpoint === "documents.types") return { success: true, types: ["PDF","DOC","XLS","IMG"], count: 4 };
+  if (endpoint === "promos.validate") return { success: true, valid: true, code: params.code, discount: "15%", expires: "2026-12-31", applicableRoutes: codes.length * (codes.length - 1) };
+  if (endpoint === "promos.active") return { success: true, promotions: [{ code: "SUMMER30", discount: "30%", expires: "2026-08-31" },{ code: "WELCOME15", discount: "15%", expires: "2026-12-31" },{ code: "FALL20", discount: "20%", expires: "2026-11-30" }]};
+  if (endpoint === "promos.best") return { success: true, promotion: { code: "SUMMER30", discount: "30%", expires: "2026-08-31", priority: "high" }};
+  if (endpoint === "bookings.stats") return { success: true, total: 1247, active: 892, pending: 88, cancelled: 267, today: Math.floor(Math.random() * 50 + 10) };
+  if (endpoint === "bookings.today") return { success: true, date: new Date().toISOString().split("T")[0], count: Math.floor(Math.random() * 50 + 10), vsYesterday: "+" + Math.floor(Math.random() * 15 + 2) + "%" };
+  if (endpoint === "bookings.trends") return { success: true, trend: "up", percentage: "+12.5%", period: "Last 30 days", dataPoints: 30 };
+  if (endpoint === "bookings.peak") return { success: true, peakHour: Math.floor(Math.random() * 8 + 8) + ":00-" + (Math.floor(Math.random() * 8 + 9)) + ":00", peakDay: ["Monday","Tuesday","Wednesday","Thursday","Friday"][Math.floor(Math.random() * 5)], busiestRoute: codes[Math.floor(Math.random() * codes.length)] + "\u2192" + codes[Math.floor(Math.random() * codes.length)] };
+  if (endpoint === "flights.list") return { success: true, total: Math.floor(Math.random() * 50 + 100), flights: Array.from({length: 10}, function(_, i) { return { flight: "EA" + (100 + i), status: ["On Time","Boarding","Departed","Delayed"][Math.floor(Math.random() * 4)], origin: getAirportCodes()[Math.floor(Math.random() * 14)], destination: getAirportCodes()[Math.floor(Math.random() * 14)] }; }) };
+  if (endpoint === "flights.active") return { success: true, count: Math.floor(Math.random() * 30 + 15), flights: Array.from({length: 5}, function(_, i) { return { flight: "EA" + (400 + i), altitude: Math.round(Math.random() * 35000 + 5000) + "ft", speed: Math.round(Math.random() * 100 + 450) + "mph" }; }) };
+  if (endpoint === "flights.delayed") return { success: true, count: Math.floor(Math.random() * 5 + 1), flights: Array.from({length: Math.floor(Math.random() * 5 + 1)}, function(_, i) { return { flight: "EA" + (200 + i), delay: Math.round(Math.random() * 60 + 10) + "min", reason: ["Weather","Maintenance","ATC","Crew"][Math.floor(Math.random() * 4)] }; }) };
+  if (endpoint === "flights.cancelled") return { success: true, count: Math.floor(Math.random() * 3), flights: Array.from({length: Math.floor(Math.random() * 3)}, function(_, i) { return { flight: "EA" + (300 + i), reason: ["Weather","Maintenance","Operational"][Math.floor(Math.random() * 3)] }; }) };
+  if (endpoint === "flights.onTime") return { success: true, count: Math.floor(Math.random() * 40 + 60), percentage: Math.round(Math.random() * 5 + 90) + "%" };
+  if (endpoint === "flights.departures") return { success: true, count: Math.floor(Math.random() * 20 + 10), next: Array.from({length: 5}, function(_, i) { var h = (Math.floor(Date.now() / 3600000) + i) % 24; return { flight: "EA" + (500 + i), destination: getAirportCodes()[Math.floor(Math.random() * 14)], time: h.toString().padStart(2,"0") + ":" + Math.floor(Math.random() * 60).toString().padStart(2,"0"), status: "On Time" }; }) };
+  if (endpoint === "flights.arrivals") return { success: true, count: Math.floor(Math.random() * 20 + 10), next: Array.from({length: 5}, function(_, i) { var h = (Math.floor(Date.now() / 3600000) + i) % 24; return { flight: "EA" + (600 + i), origin: getAirportCodes()[Math.floor(Math.random() * 14)], time: h.toString().padStart(2,"0") + ":" + Math.floor(Math.random() * 60).toString().padStart(2,"0"), status: "On Time" }; }) };
+  if (endpoint === "flights.scheduled") return { success: true, count: Math.floor(Math.random() * 100 + 50), nextDeparture: (Math.floor(Date.now() / 3600000 + 1) % 24).toString().padStart(2,"0") + ":00" };
+  if (endpoint === "flights.diverted") return { success: true, count: Math.floor(Math.random() * 3), flights: Array.from({length: Math.floor(Math.random() * 3)}, function(_, i) { return { flight: "EA" + (700 + i), divertedTo: getAirportCodes()[Math.floor(Math.random() * 14)], reason: ["Weather","Medical","Technical"][Math.floor(Math.random() * 3)] }; }) };
+  if (endpoint === "reports.daily") return { success: true, date: new Date().toISOString().split("T")[0], flights: Math.floor(Math.random() * 200 + 150), passengers: Math.floor(Math.random() * 30000 + 15000), onTime: Math.round(Math.random() * 5 + 90) + "%", cancellations: Math.floor(Math.random() * 5), loadFactor: Math.round(Math.random() * 10 + 82) + "%", revenue: "$" + Math.round(Math.random() * 200000 + 100000) };
+  if (endpoint === "reports.summary") return { success: true, period: "Last 30 days", revenue: "$" + Math.round(Math.random() * 5000000 + 2000000), passengers: Math.floor(Math.random() * 500000 + 200000), flights: Math.floor(Math.random() * 3000 + 2000), loadFactor: Math.round(Math.random() * 10 + 82) + "%", onTime: Math.round(Math.random() * 5 + 90) + "%" };
+  if (endpoint === "reports.flights") return { success: true, total: Math.floor(Math.random() * 3000 + 2000), completed: Math.floor(Math.random() * 2800 + 1800), cancelled: Math.floor(Math.random() * 50 + 10), delayed: Math.floor(Math.random() * 100 + 50), averageDelay: Math.round(Math.random() * 15 + 5) + "min" };
+  if (endpoint === "reports.ontime") return { success: true, overall: Math.round(Math.random() * 5 + 90) + "%", byHour: Array.from({length: 24}, function(_, i) { return { hour: i.toString().padStart(2,"0") + ":00", onTime: Math.round(Math.random() * 10 + 85) + "%" }; }) };
+  if (endpoint === "reports.delays") return { success: true, averageDelay: Math.round(Math.random() * 15 + 5) + "min", byCause: { weather: Math.round(Math.random() * 30 + 10) + "%", maintenance: Math.round(Math.random() * 20 + 5) + "%", atc: Math.round(Math.random() * 15 + 5) + "%", crew: Math.round(Math.random() * 10 + 2) + "%", other: Math.round(Math.random() * 10 + 5) + "%" } };
+  if (endpoint === "reports.revenue") return { success: true, total: "$" + Math.round(Math.random() * 50000000 + 10000000), ticketRevenue: "$" + Math.round(Math.random() * 40000000 + 8000000), ancillaryRevenue: "$" + Math.round(Math.random() * 10000000 + 2000000), vsLastYear: "+" + Math.round(Math.random() * 10 + 2) + "%" };
+  if (endpoint === "reports.forecast") return { success: true, nextMonth: { projectedRevenue: "$" + Math.round(Math.random() * 5000000 + 2000000), projectedPassengers: Math.floor(Math.random() * 300000 + 200000), confidence: Math.round(Math.random() * 10 + 80) + "%" } };
+  if (endpoint === "reports.comparison") return { success: true, currentPeriod: { revenue: "$" + Math.round(Math.random() * 5000000 + 2000000), passengers: Math.floor(Math.random() * 300000 + 200000) }, previousPeriod: { revenue: "$" + Math.round(Math.random() * 5000000 + 2000000), passengers: Math.floor(Math.random() * 300000 + 200000) }, change: "+" + Math.round(Math.random() * 10 + 2) + "%" };
+  if (endpoint === "users.stats") return { success: true, total: 5842, active: 4127, newThisMonth: 342, loyaltyMembers: 1824 };
+  if (endpoint === "users.active") return { success: true, count: 4127, percentage: "70.6%", last24h: Math.floor(Math.random() * 200 + 50) };
+  if (endpoint === "users.loyalty.tiers") return { success: true, tiers: [{ name: "Basic", minMiles: 0, benefits: ["Base pricing"] },{ name: "Silver", minMiles: 25000, benefits: ["10% bonus miles","Priority support"] },{ name: "Titanium", minMiles: 50000, benefits: ["25% bonus miles","Free seat upgrades","Priority boarding"] },{ name: "Gold", minMiles: 100000, benefits: ["50% bonus miles","Complimentary upgrades","Exclusive lounge access","Priority everything"] }]};
+  if (endpoint === "users.registration") return { success: true, daily: Math.floor(Math.random() * 50 + 10), weekly: Math.floor(Math.random() * 300 + 50), monthly: Math.floor(Math.random() * 1200 + 200), trend: "growing" };
+  if (endpoint === "analytics.traffic") return { success: true, requestsToday: Math.floor(Math.random() * 100000 + 50000), topEndpoint: getAllApiEndpoints()[Math.floor(Math.random() * getAllApiEndpoints().length)].name, averageLatency: Math.round(Math.random() * 100 + 50) + "ms" };
+  if (endpoint === "analytics.errors") return { success: true, totalErrors: Math.floor(Math.random() * 100 + 10), errorRate: (Math.random() * 0.5 + 0.1).toFixed(2) + "%", topErrors: ["Invalid API key","Rate limit exceeded","Invalid parameters","Endpoint not found"].map(function(e, i) { return { error: e, count: Math.floor(Math.random() * 50 + 5) * (i + 1) }; }) };
+  if (endpoint === "analytics.latency") return { success: true, p50: Math.round(Math.random() * 50 + 20) + "ms", p95: Math.round(Math.random() * 200 + 100) + "ms", p99: Math.round(Math.random() * 500 + 200) + "ms", trend: ["stable","improving","degrading"][Math.floor(Math.random() * 3)] };
+  if (endpoint === "analytics.usage") return { success: true, today: Math.floor(Math.random() * 10000 + 5000), thisWeek: Math.floor(Math.random() * 70000 + 35000), thisMonth: Math.floor(Math.random() * 300000 + 150000), topUsers: ["app","web","mobile","partner_api"].map(function(u) { return { source: u, requests: Math.floor(Math.random() * 10000 + 1000) }; }) };
 
   // --- Admin endpoints ---
-  if (endpoint.indexOf("admin.") === 0) return { success: true, endpoint: endpoint, message: "Admin data available via admin portal", requiresAdmin: true };
+  if (endpoint.indexOf("admin.") === 0) return { success: true, endpoint: endpoint, message: "Admin endpoint accessible", requiresPrivilegedAccess: true, dataAvailable: true };
 
   return { success: false, error: "Unknown endpoint: " + endpoint };
 }
@@ -405,7 +811,8 @@ function addCorsHeaders(output) {
 }
 
 function respond(payload) {
-  return addCorsHeaders(ContentService.createTextOutput(JSON.stringify(payload || {})).setMimeType(ContentService.MimeType.JSON));
+  return addCorsHeaders(ContentService.createTextOutput(JSON.stringify(payload || {}))
+    .setMimeType(ContentService.MimeType.TEXT));
 }
 
 function auditLog(action, user, details, ip, fingerprint) {
@@ -433,6 +840,386 @@ function logTracking(data) {
       data.extra || ""
     ]);
   } catch(e) {}
+}
+
+// ===== DEVICE TRACKING SYSTEM =====
+
+function ensureDeviceTrackingSheet() {
+  var sheet = ensureSheet(SHEETS.DeviceTracking);
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(["Name","Device ID","IP","Fingerprint","Status","Websites","Country","State","City","Postal Code","Latitude","Longitude","ASN","Organization","ISP","VPN","Network Scanner","Hosting","Proxy","Cloud","Snort","Mobile","Tor","Inbound","Outbound","AS Name","Further Details","Last Seen"]);
+  }
+  return sheet;
+}
+
+function getIPInfo(ip) {
+  if (!ip || ip === "::1" || ip === "127.0.0.1" || ip === "localhost") {
+    return { country: "Local", state: "Local", city: "Local", postalCode: "", lat: "", lng: "", asn: "", org: "", isp: "Local", vpn: false, hosting: false, proxy: false, mobile: false, tor: false, cloud: false, asName: "" };
+  }
+  try {
+    var resp = UrlFetchApp.fetch("https://ip-api.com/json/" + encodeURIComponent(ip) + "?fields=status,country,regionName,city,zip,lat,lon,isp,org,as,proxy,hosting,mobile,query", { muteHttpExceptions: true, timeout: 5000 });
+    var d = JSON.parse(resp.getContentText());
+    if (d.status !== "success") return {};
+    var asn = d.as ? d.as.split(" ")[0] : "";
+    var asName = d.as ? d.as.substring(d.as.indexOf(" ") + 1) : "";
+    var orgLower = (d.org || "").toLowerCase();
+    var cloud = orgLower.indexOf("amazon") >= 0 || orgLower.indexOf("google cloud") >= 0 || orgLower.indexOf("microsoft") >= 0 || orgLower.indexOf("azure") >= 0 || orgLower.indexOf("digitalocean") >= 0 || orgLower.indexOf("linode") >= 0 || orgLower.indexOf("vultr") >= 0 || orgLower.indexOf("oracle cloud") >= 0 || orgLower.indexOf("ibm cloud") >= 0 || orgLower.indexOf("cloudflare") >= 0 || orgLower.indexOf("akamai") >= 0 || orgLower.indexOf("fastly") >= 0;
+    var tor = orgLower.indexOf("tor") >= 0 || (d.isp || "").toLowerCase().indexOf("tor") >= 0;
+    return { country: d.country || "", state: d.regionName || "", city: d.city || "", postalCode: d.zip || "", lat: d.lat !== undefined ? String(d.lat) : "", lng: d.lon !== undefined ? String(d.lon) : "", asn: asn, org: d.org || "", isp: d.isp || "", vpn: d.proxy === true, hosting: d.hosting === true, proxy: d.proxy === true, mobile: d.mobile === true, tor: tor, cloud: cloud, asName: asName };
+  } catch(e) { return {}; }
+}
+
+function generateDeviceID(name) {
+  var parts = (name || "").trim().split(/\s+/);
+  if (parts.length < 2) return "XX" + String(Date.now()).slice(-4);
+  var first = (parts[0] || "X").charAt(0).toUpperCase();
+  var last = parts[parts.length - 1].charAt(0).toUpperCase();
+  var prefix = first + last;
+  var sheet = ensureDeviceTrackingSheet();
+  var rows = sheet.getDataRange().getValues();
+  var maxSeq = 0;
+  for (var i = 1; i < rows.length; i++) {
+    var did = String(rows[i][1] || "");
+    if (did.indexOf(prefix) === 0) {
+      var num = parseInt(did.substring(2), 10);
+      if (!isNaN(num) && num > maxSeq) maxSeq = num;
+    }
+  }
+  return prefix + (maxSeq + 1);
+}
+
+function trackDeviceEntry(name, ip, fingerprint, websites, status) {
+  try {
+    var info = getIPInfo(ip);
+    var deviceID = generateDeviceID(name || "Anonymous");
+    var sheet = ensureDeviceTrackingSheet();
+    var now = new Date().toISOString();
+    var vpnMark = info.vpn ? "\u2713" : "\u2717";
+    var hostingMark = info.hosting ? "\u2713" : "\u2717";
+    var proxyMark = info.proxy ? "\u2713" : "\u2717";
+    var cloudMark = info.cloud ? "\u2713" : "\u2717";
+    var mobileMark = info.mobile ? "\u2713" : "\u2717";
+    var torMark = info.tor ? "\u2713" : "\u2717";
+    sheet.appendRow([name || "", deviceID, ip, fingerprint || "", status || "Active", websites || "", info.country || "", info.state || "", info.city || "", info.postalCode || "", info.lat || "", info.lng || "", info.asn || "", info.org || "", info.isp || "", vpnMark, "\u2717", hostingMark, proxyMark, cloudMark, "\u2717", mobileMark, torMark, "", "", info.asName || "", "", now]);
+  } catch(e) {}
+}
+
+function ensureUserSecuritySheet() {
+  var sheet = ensureSheet(SHEETS.UserSecurity);
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(["Email", "SecurityQuestion", "SecurityAnswer", "AllowedDays", "AllowedStartTime", "AllowedEndTime", "BlockedDates", "KnownFingerprints", "CreatedAt", "PatternColors", "GestureSequence", "UserSalt", "SecretHandshake", "CanvasFingerprint", "AudioFingerprint", "RegisteredGesture", "GestureTimingProfile", "ReactionTimeAvg", "AllowedStartHour", "AllowedEndHour", "BehaviorProfile"]);
+  }
+  return sheet;
+}
+
+function ensureVerificationAttemptsSheet() {
+  var sheet = ensureSheet(SHEETS.VerificationAttempts);
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(["Email", "Timestamp", "Step", "Success", "IP", "Fingerprint"]);
+  }
+  return sheet;
+}
+
+function logVerificationAttempt(email, step, success, ip, fingerprint) {
+  try {
+    var sheet = ensureVerificationAttemptsSheet();
+    sheet.appendRow([email || "", new Date().toISOString(), step || "", success ? "TRUE" : "FALSE", ip || "", fingerprint || ""]);
+  } catch(e) {}
+}
+
+function getAllowedDays(email) {
+  try {
+    var sheet = getSheet(SHEETS.UserSecurity);
+    if (!sheet) return null;
+    var rows = sheet.getDataRange().getValues();
+    for (var i = 1; i < rows.length; i++) {
+      if (String(rows[i][0] || "").toLowerCase() === (email || "").toLowerCase()) {
+        var val = rows[i][3];
+        if (!val || val === "") return null;
+        return String(val).split(",").map(function(s) { return parseInt(s.trim(), 10); }).filter(function(n) { return !isNaN(n); });
+      }
+    }
+  } catch(e) {}
+  return null;
+}
+
+function getAllowedHours(email) {
+  try {
+    var sheet = getSheet(SHEETS.UserSecurity);
+    if (!sheet) return null;
+    var rows = sheet.getDataRange().getValues();
+    for (var i = 1; i < rows.length; i++) {
+      if (String(rows[i][0] || "").toLowerCase() === (email || "").toLowerCase()) {
+        var start = rows[i][4];
+        var end = rows[i][5];
+        if (!start && !end) return null;
+        return { start: parseInt(start, 10) || 6, end: parseInt(end, 10) || 22 };
+      }
+    }
+  } catch(e) {}
+  return null;
+}
+
+function getBlockedDates(email) {
+  try {
+    var sheet = getSheet(SHEETS.UserSecurity);
+    if (!sheet) return [];
+    var rows = sheet.getDataRange().getValues();
+    for (var i = 1; i < rows.length; i++) {
+      if (String(rows[i][0] || "").toLowerCase() === (email || "").toLowerCase()) {
+        var val = rows[i][6];
+        if (!val || val === "") return [];
+        return String(val).split(",").map(function(s) { return s.trim(); }).filter(function(s) { return s.length > 0; });
+      }
+    }
+  } catch(e) {}
+  return [];
+}
+
+function isTimeAllowed(email) {
+  var days = getAllowedDays(email);
+  var hours = getAllowedHours(email);
+  var blockedDates = getBlockedDates(email);
+  var now = new Date();
+  if (days && days.length > 0) {
+    if (days.indexOf(now.getDay()) < 0) return false;
+  }
+  if (hours) {
+    var currentHour = now.getHours();
+    if (currentHour < hours.start || currentHour >= hours.end) return false;
+  }
+  if (blockedDates.length > 0) {
+    var dateStr = now.toISOString().slice(0, 10);
+    for (var bi = 0; bi < blockedDates.length; bi++) {
+      if (blockedDates[bi] === dateStr) return false;
+    }
+  }
+  return true;
+}
+
+function getTimeRestrictions(email) {
+  var days = getAllowedDays(email);
+  var hours = getAllowedHours(email);
+  var blockedDates = getBlockedDates(email);
+  var now = new Date();
+  var timeBlocked = false, dateBlocked = false;
+  if (hours) {
+    var currentHour = now.getHours();
+    if (currentHour < hours.start || currentHour >= hours.end) timeBlocked = true;
+  }
+  if (days && days.length > 0) {
+    if (days.indexOf(now.getDay()) < 0) dateBlocked = true;
+  }
+  if (blockedDates.length > 0) {
+    var dateStr = now.toISOString().slice(0, 10);
+    for (var bi = 0; bi < blockedDates.length; bi++) {
+      if (blockedDates[bi] === dateStr) dateBlocked = true;
+    }
+  }
+  return { timeBlocked: timeBlocked, dateBlocked: dateBlocked, allowedDays: days, allowedHours: hours, blockedDates: blockedDates };
+}
+
+function isBetaTestingActive() {
+  try {
+    var sheet = getSheet("Config");
+    if (!sheet) return false;
+    var rows = sheet.getDataRange().getValues();
+    for (var i = 1; i < rows.length; i++) {
+      if (String(rows[i][0]).trim() === "BETA_TESTING" && String(rows[i][1]).trim().toUpperCase() === "ON") return true;
+    }
+  } catch(e) {}
+  return false;
+}
+
+function isFullyVerified(email) {
+  if (!email) return false;
+  try {
+    var sheet = ensureSheet("VerificationAttempts");
+    var rows = sheet.getDataRange().getValues();
+    var now = Date.now();
+    for (var i = rows.length - 1; i >= 1; i--) {
+      if (String(rows[i][0]).toLowerCase() === email.toLowerCase()) {
+        var timestamp = new Date(rows[i][1]).getTime();
+        if (now - timestamp > 86400000) return false;
+        var step = String(rows[i][2]).trim();
+        var success = String(rows[i][3]).trim();
+        if (step === "complete" && success === "true") return true;
+      }
+    }
+  } catch(e) {}
+  return false;
+}
+
+function generateTimeCipher(email, fingerprint) {
+  var minuteWindow = Math.floor(Date.now() / 60000);
+  var userSalt = getUserSalt(email);
+  var raw = (fingerprint || "") + minuteWindow + (userSalt || "EASECRET2026");
+  var digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, raw);
+  var hex = digest.map(function(b) { return ('0' + (b & 0xFF).toString(16)).slice(-2); }).join("");
+  return hex;
+}
+
+function getUserSalt(email) {
+  try {
+    var sheet = getSheet("UserSecurity");
+    var rows = sheet.getDataRange().getValues();
+    for (var i = 1; i < rows.length; i++) {
+      if (String(rows[i][0]).toLowerCase() === email.toLowerCase() && rows[i][11]) return String(rows[i][11]);
+    }
+  } catch(e) {}
+  return "EASECRET2026";
+}
+
+function updateDeviceEntry(name, ip, websites, status) {
+  try {
+    var sheet = ensureDeviceTrackingSheet();
+    var rows = sheet.getDataRange().getValues();
+    var info = getIPInfo(ip);
+    var now = new Date().toISOString();
+    for (var i = rows.length - 1; i >= 1; i--) {
+      if (String(rows[i][2] || "") === ip && String(rows[i][3] || "") !== "") {
+        sheet.getRange(i + 1, 6).setValue(String(rows[i][5] || "") + (websites ? ", " + websites : ""));
+        sheet.getRange(i + 1, 5).setValue(status || rows[i][4] || "Active");
+        sheet.getRange(i + 1, 28).setValue(now);
+        return;
+      }
+    }
+    trackDeviceEntry(name, ip, "", websites, status);
+  } catch(e) {}
+}
+
+// ===== REAL-TIME APIS =====
+
+function openSkyQuery(query) {
+  try {
+    var resp = UrlFetchApp.fetch("https://opensky-network.org/api/airports/query?query=" + encodeURIComponent(query), { muteHttpExceptions: true, timeout: 5000 });
+    if (resp.getResponseCode() !== 200) return null;
+    var d = JSON.parse(resp.getContentText());
+    return Array.isArray(d) ? d : [d].filter(Boolean);
+  } catch(e) { return null; }
+}
+
+function geoNamesQuery(code) {
+  try {
+    var user = "demo";
+    var resp = UrlFetchApp.fetch("http://api.geonames.org/searchJSON?q=" + encodeURIComponent(code) + "&maxRows=1&featureCode=AIRP&username=" + user, { muteHttpExceptions: true, timeout: 5000 });
+    if (resp.getResponseCode() !== 200) return null;
+    var d = JSON.parse(resp.getContentText());
+    if (d.geonames && d.geonames.length > 0) {
+      var g = d.geonames[0];
+      return { name: g.name || g.toponymName || code, lat: parseFloat(g.lat) || 0, lng: parseFloat(g.lng) || 0, city: g.adminName1 || "", country: g.countryName || "", type: "airport" };
+    }
+  } catch(e) {}
+  return null;
+}
+
+function airportFromList(code) {
+  return null;
+}
+
+function lookupAirportFromAPI(code) {
+  if (!code || code.length !== 3) return null;
+  if (AIRPORT_CACHE[code]) return AIRPORT_CACHE[code];
+
+  // Strategy 1: OpenSky query with raw code
+  var arr = openSkyQuery(code);
+  if (arr && arr.length > 0) {
+    for (var i = 0; i < arr.length; i++) {
+      if (arr[i].lat && arr[i].lon) {
+        var ap = { name: arr[i].name || arr[i].municipality || code, lat: arr[i].lat || 0, lng: arr[i].lon || 0, type: arr[i].type || "unknown", city: arr[i].municipality || "", country: arr[i].country || "" };
+        AIRPORT_CACHE[code] = ap;
+        return ap;
+      }
+    }
+  }
+
+  // Strategy 2: OpenSky query with K-prefix (US ICAO codes)
+  if (code.length === 3) {
+    var arr2 = openSkyQuery("K" + code);
+    if (arr2 && arr2.length > 0) {
+      for (var j = 0; j < arr2.length; j++) {
+        if (arr2[j].lat && arr2[j].lon) {
+          var ap2 = { name: arr2[j].name || arr2[j].municipality || code, lat: arr2[j].lat || 0, lng: arr2[j].lon || 0, type: arr2[j].type || "unknown", city: arr2[j].municipality || "", country: arr2[j].country || "" };
+          AIRPORT_CACHE[code] = ap2;
+          return ap2;
+        }
+      }
+    }
+  }
+
+  // Strategy 3: GeoNames as fallback
+  var gn = geoNamesQuery(code);
+  if (gn) { AIRPORT_CACHE[code] = gn; return gn; }
+
+  return null;
+}
+
+function searchAirportsFromAPI(query) {
+  if (!query || query.length < 2) return [];
+  // Strategy 1: OpenSky with raw query
+  var arr = openSkyQuery(query);
+  if (arr && arr.length > 0) {
+    var results = arr.filter(function(a) { return a.icao && a.lat && a.lon; }).map(function(a) { return { code: a.icao, name: a.name || "", city: a.municipality || "", country: a.country || "", lat: a.lat || 0, lng: a.lon || 0 }; });
+    if (results.length > 0) return results;
+  }
+  // Strategy 2: OpenSky with K-prefix for ICAO search
+  var arr2 = openSkyQuery("K" + query);
+  if (arr2 && arr2.length > 0) {
+    var results2 = arr2.filter(function(a) { return a.icao && a.lat && a.lon; }).map(function(a) { return { code: a.icao, name: a.name || "", city: a.municipality || "", country: a.country || "", lat: a.lat || 0, lng: a.lon || 0 }; });
+    if (results2.length > 0) return results2;
+  }
+  // Strategy 3: GeoNames search
+  try {
+    var user = "demo";
+    var resp = UrlFetchApp.fetch("http://api.geonames.org/searchJSON?q=" + encodeURIComponent(query) + "&maxRows=5&featureCode=AIRP&username=" + user, { muteHttpExceptions: true, timeout: 5000 });
+    if (resp.getResponseCode() === 200) {
+      var d = JSON.parse(resp.getContentText());
+      if (d.geonames && d.geonames.length > 0) {
+        return d.geonames.filter(function(g) { return g.lat && g.lng; }).map(function(g) { return { code: query.toUpperCase(), name: g.name || g.toponymName || "", city: g.adminName1 || "", country: g.countryName || "", lat: parseFloat(g.lat) || 0, lng: parseFloat(g.lng) || 0 }; });
+      }
+    }
+  } catch(e) {}
+  return [];
+}
+
+function getRealWeather(lat, lng) {
+  if (!lat || !lng) return null;
+  try {
+    var resp = UrlFetchApp.fetch("https://api.open-meteo.com/v1/forecast?latitude=" + encodeURIComponent(lat) + "&longitude=" + encodeURIComponent(lng) + "&current=temperature_2m,weather_code,wind_speed_10m,relative_humidity_2m,apparent_temperature,precipitation,pressure_msl&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch", { muteHttpExceptions: true, timeout: 5000 });
+    var d = JSON.parse(resp.getContentText());
+    if (d && d.current) {
+      return { temp: d.current.temperature_2m, feelsLike: d.current.apparent_temperature, condition: getWeatherCondition(d.current.weather_code), windSpeed: d.current.wind_speed_10m, humidity: d.current.relative_humidity_2m, precipitation: d.current.precipitation, pressure: d.current.pressure_msl };
+    }
+  } catch(e) {}
+  return null;
+}
+
+function getForecast(lat, lng) {
+  if (!lat || !lng) return null;
+  try {
+    var resp = UrlFetchApp.fetch("https://api.open-meteo.com/v1/forecast?latitude=" + encodeURIComponent(lat) + "&longitude=" + encodeURIComponent(lng) + "&daily=temperature_2m_max,temperature_2m_min,weather_code,precipitation_sum,wind_speed_10m_max&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=auto", { muteHttpExceptions: true, timeout: 5000 });
+    var d = JSON.parse(resp.getContentText());
+    if (d && d.daily) {
+      var days = [];
+      for (var di = 0; di < d.daily.time.length && di < 7; di++) {
+        days.push({ date: d.daily.time[di], tempMax: d.daily.temperature_2m_max[di], tempMin: d.daily.temperature_2m_min[di], condition: getWeatherCondition(d.daily.weather_code[di]), precipitation: d.daily.precipitation_sum[di], windSpeed: d.daily.wind_speed_10m_max[di] });
+      }
+      return days;
+    }
+  } catch(e) {}
+  return null;
+}
+
+function getExchangeRate(baseCurrency, targetCurrency) {
+  if (!baseCurrency) baseCurrency = "USD";
+  if (!targetCurrency) return null;
+  if (baseCurrency === targetCurrency) return 1.0;
+  try {
+    var resp = UrlFetchApp.fetch("https://api.exchangerate-api.com/v4/latest/" + encodeURIComponent(baseCurrency), { muteHttpExceptions: true, timeout: 5000 });
+    var d = JSON.parse(resp.getContentText());
+    if (d && d.rates && d.rates[targetCurrency] !== undefined) return d.rates[targetCurrency];
+  } catch(e) {}
+  return null;
 }
 
 function getAircraftConfig(distanceMiles) {
@@ -464,19 +1251,10 @@ function getUserRecordByEmail(email) {
   return users.find(u => (u.Email || "").toString().toLowerCase() === (email || "").toString().toLowerCase()) || null;
 }
 
-function getExchangeRate(baseCurrency, targetCurrency) {
-  try {
-    const url = `https://api.exchangerate-api.com/v4/latest/${baseCurrency || "USD"}`;
-    const resp = UrlFetchApp.fetch(url, {muteHttpExceptions: true});
-    if (resp.getResponseCode() === 200) return (JSON.parse(resp.getContentText()).rates[targetCurrency || "EUR"]) || 1;
-  } catch(e) {}
-  return 1;
-}
-
 function calculateBaseFare(origin, destination, serviceType, departDate, promoCode) {
   try {
-    const orig = AIRPORT_CACHE[origin];
-    const dest = AIRPORT_CACHE[destination];
+    const orig = lookupAirportFromAPI(origin) || AIRPORT_CACHE[origin];
+    const dest = lookupAirportFromAPI(destination) || AIRPORT_CACHE[destination];
     if (!orig || !dest) return 150;
     const distance = haversineDistance(orig.lat, orig.lng, dest.lat, dest.lng);
     let fare = 100 + (distance * 0.10);
@@ -609,57 +1387,20 @@ function setupSheet() {
     Notifications: ["NotificationID","UserID","Email","Type","Title","Message","Link","Read","CreatedAt"],
     TrackingLog: ["Timestamp","IP","Fingerprint","UserAgent","Screen","Timezone","Language","Page","User","Extra"],
     AuditLog: ["Timestamp","Action","User","Details","IP","Fingerprint","UserAgent"],
-    ApiKeys: ["Key","Email","Name","CreatedAt","LastUsed","Status","RequestCount","LastReactivation","Notes"]
+    ApiKeys: ["Key","Email","Name","CreatedAt","LastUsed","Status","RequestCount","LastReactivation","Notes"],
+    DeviceTracking: ["Name","Device ID","IP","Fingerprint","Status","Websites","Country","State","City","Postal Code","Latitude","Longitude","ASN","Organization","ISP","VPN","Network Scanner","Hosting","Proxy","Cloud","Snort","Mobile","Tor","Inbound","Outbound","AS Name","Further Details","Last Seen"],
+    UserSecurity: ["Email","SecurityQuestion","SecurityAnswer","AllowedDays","AllowedStartTime","AllowedEndTime","BlockedDates","KnownFingerprints","CreatedAt","PatternColors","GestureSequence","UserSalt","SecretHandshake","CanvasFingerprint","AudioFingerprint","RegisteredGesture","GestureTimingProfile","ReactionTimeAvg","AllowedStartHour","AllowedEndHour","BehaviorProfile"],
+    VerificationAttempts: ["Email","Timestamp","Step","Success","IP","Fingerprint"]
   };
-  const seed = {
-    Config: [
-      ["Hero_Image","https://wallpapercave.com/wp/wp4615633.jpg"],
-      ["Main_Headline","Reliable. Sovereign. Global."],
-      ["Sub_Header","Express Airways"],
-      ["SystemName","Express Airways NextGen"],
-      ["Version","2.0.0"]
-    ],
-    SystemStatus: [
-      ["bookingEngine","OPERATIONAL"],
-      ["payment","OPERATIONAL"],
-      ["seats","OPERATIONAL"],
-      ["notifications","OPERATIONAL"],
-      ["tracking","OPERATIONAL"]
-    ],
-    Sections: [
-      ["Book a Flight","Search routes, select seats, and book your next journey with Express Airways.","https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=600","#booking","Book Now"],
-      ["Operations Hub","Access documents, real-time analytics, and system monitoring tools.","https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=600","docs/","Open Hub"],
-      ["Infrastructure Status","Live monitoring of all Express Airways services and systems.","https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=600","status/","View Status"]
-    ],
-    Events: [
-      [Utilities.formatDate(new Date(Date.now()+86400000*7), Session.getScriptTimeZone(), "yyyy-MM-dd"),"New Route Launch","Express Airways launches direct flights to Tokyo Narita from JFK","","https://images.unsplash.com/photo-1542296332-2e4473faf563?w=300"],
-      [Utilities.formatDate(new Date(Date.now()+86400000*30), Session.getScriptTimeZone(), "yyyy-MM-dd"),"Mileage Bonus Weekend","Earn double miles on all international flights for 72 hours","","https://images.unsplash.com/photo-1464037866556-6812c9d1c72e?w=300"],
-      [Utilities.formatDate(new Date(Date.now()+86400000*60), Session.getScriptTimeZone(), "yyyy-MM-dd"),"Fleet Expansion","Express Airways welcomes three new Boeing 787 Dreamliners","","https://images.unsplash.com/photo-1540962351504-03099e0a754b?w=300"]
-    ],
-    Notices: [
-      ["Welcome to Express Airways","Experience next-generation flight services with our unified platform.","info",new Date()]
-    ],
-    PromoCodes: [
-      ["WELCOME10",10,0,100,0,Utilities.formatDate(new Date(Date.now()+86400000*365), Session.getScriptTimeZone(), "yyyy-MM-dd"),"TRUE"]
-    ],
-    Users: [
-      ["USR-ADMIN-001","Admin User","admin@expressairways.com","kingswood1","Admin",100000,1,new Date(),new Date(),new Date()],
-      ["USR-DEMO-001","Demo User","demo@expressairways.com","demo1234","User",5000,1,new Date(),new Date(),new Date()]
-    ]
-  };
-  let created = [], skipped = [], seeded = [];
+  let created = [], skipped = [];
   for (const [name, headers] of Object.entries(schema)) {
     let sheet = ss.getSheetByName(name);
     if (sheet) { skipped.push(name); continue; }
     sheet = ss.insertSheet(name);
     sheet.appendRow(headers);
     created.push(name);
-    if (seed[name]) {
-      for (const row of seed[name]) { sheet.appendRow(row); }
-      seeded.push(name);
-    }
   }
-  const msg = "Setup complete: " + created.length + " sheets created (" + created.join(", ") + "), " + skipped.length + " already existed, " + seeded.length + " seeded with default data.";
+  const msg = "Setup complete: " + created.length + " sheets created (" + created.join(", ") + "), " + skipped.length + " already existed.";
   SpreadsheetApp.getUi().alert(msg);
   return msg;
 }
@@ -668,6 +1409,15 @@ function doGet(e) {
   try {
     const params = e ? e.parameter : {};
     const action = params.action;
+
+    // Beta testing mode check
+    if (isBetaTestingActive() && action && action !== "login" && action !== "signup" && action !== "auth.autoDeviceFingerprint" && action !== "auth.autoGeolocation" && action !== "auth.autoBrowserIntegrity" && action !== "auth.autoClockSync" && action !== "auth.autoProofOfWork" && action !== "auth.autoConnectionCheck" && action !== "auth.autoNavigationPath" && action !== "auth.autoBehaviorProfile" && action !== "auth.autoCanvasFingerprint" && action !== "auth.autoAudioFingerprint" && action !== "auth.userTimePassword" && action !== "auth.userDynamicCode" && action !== "auth.userGestureTrace" && action !== "auth.userReactionTest" && action !== "auth.completeVerification" && action !== "heartbeat" && action !== "users.online" && action !== "system.overview" && action !== "getSystemStatus" && action !== "track" && action !== "audit.event") {
+      var email = params.email || "";
+      var verified = isFullyVerified(email);
+      if (!verified) {
+        return respond({ success: false, error: "BETA_ACCESS_REQUIRED", message: "Beta testing mode active. Complete all 15 verification steps to access the system." });
+      }
+    }
 
     // --- TRACKING ---
     if (action === "track") {
@@ -682,7 +1432,128 @@ function doGet(e) {
         user: params.user || "",
         extra: params.extra || ""
       });
+      trackDeviceEntry(params.user || "Anonymous", params.ip || "", params.fingerprint || "", params.page || "", "Active");
       return respond({ success: true });
+    }
+
+    // --- ENHANCED AUDIT EVENT ---
+    if (action === "audit.event") {
+      auditLogEvent(params.action || "event", params.user || "", params.details || "", params.ip || "", params.fingerprint || "", params.ua || "", params.page || "", params.element || "", params.eventType || "", params.duration || "");
+      return respond({ success: true });
+    }
+
+    // --- HEARTBEAT / USERS ONLINE ---
+    if (action === "heartbeat") {
+      recordHeartbeat(params.session || params.fingerprint || "anon", params.user || "", params.ip || "", params.fingerprint || "", params.page || "");
+      var bookings = sheetToArray(getSheet(SHEETS.Bookings)) || [];
+      var users = sheetToArray(getSheet(SHEETS.Users)) || [];
+      var docs = sheetToArray(getSheet(SHEETS.Documents)) || [];
+      var sysSheet = getSheet(SHEETS.SystemStatus);
+      var sysData = sysSheet ? sheetToArray(sysSheet) : [];
+      var systemUptime = "—";
+      for (var si = 0; si < sysData.length; si++) {
+        if ((sysData[si].Key || "") === "uptime") { systemUptime = sysData[si].Value; break; }
+      }
+      return respond({
+        success: true,
+        usersOnline: getUsersOnline(),
+        totalFiles: getTotalCodeFiles(),
+        totalLinesOfCode: getTotalLinesOfCode(),
+        totalSheets: getTotalSheets(),
+        totalApiEndpoints: getAllApiEndpoints().length,
+        totalBookings: bookings.length,
+        totalUsers: users.length,
+        systemUptime: systemUptime,
+        timestamp: new Date().toISOString()
+      });
+    }
+    if (action === "system.overview") {
+      var users = sheetToArray(getSheet(SHEETS.Users)) || [];
+      var bookings = sheetToArray(getSheet(SHEETS.Bookings)) || [];
+      var docs = sheetToArray(getSheet(SHEETS.Documents)) || [];
+      return respond({
+        success: true,
+        stats: {
+          usersOnline: getUsersOnline(),
+          totalUsers: users.length,
+          totalBookings: bookings.length,
+          totalDocuments: docs.length,
+          totalApiEndpoints: getAllApiEndpoints().length,
+          totalSheets: Object.keys(SHEETS).length,
+          timestamp: new Date().toISOString()
+        }
+      });
+    }
+
+    if (action === "users.online") {
+      return respond({ success: true, online: getUsersOnline() });
+    }
+
+    // --- HOLDINGS ---
+    if (action === "holdings.list") {
+      return respond({ success: true, holdings: HOLDINGS_DATA });
+    }
+    if (action === "holdings.search") {
+      var q = (params.q || "").toLowerCase();
+      if (!q) return respond({ success: true, holdings: HOLDINGS_DATA });
+      var filtered = HOLDINGS_DATA.filter(function(h) { return h.name.toLowerCase().indexOf(q) >= 0 || h.ticker.toLowerCase().indexOf(q) >= 0 || h.sector.toLowerCase().indexOf(q) >= 0; });
+      return respond({ success: true, holdings: filtered });
+    }
+    if (action === "holdings.detail") {
+      var ticker = (params.ticker || "").toUpperCase();
+      var holding = null;
+      for (var hi = 0; hi < HOLDINGS_DATA.length; hi++) {
+        if (HOLDINGS_DATA[hi].ticker === ticker) { holding = HOLDINGS_DATA[hi]; break; }
+      }
+      if (!holding) return respond({ success: false, error: "Holding not found" });
+      // Generate historical price data
+      var history = [];
+      for (var hd = 29; hd >= 0; hd--) {
+        var date = new Date(Date.now() - hd * 86400000);
+        var base = holding.stockPrice;
+        var variation = (Math.random() - 0.5) * base * 0.06;
+        var vol = Math.floor(Math.random() * 500000 + 100000);
+        history.push({ date: date.toISOString().slice(0,10), open: Math.round((base + variation - Math.random() * 2) * 100) / 100, high: Math.round((base + variation + Math.abs(Math.random() * 3)) * 100) / 100, low: Math.round((base + variation - Math.abs(Math.random() * 3)) * 100) / 100, close: Math.round((base + variation) * 100) / 100, volume: vol });
+      }
+      return respond({ success: true, holding: holding, history: history, lastUpdated: new Date().toISOString() });
+    }
+
+    // --- EXCHANGE RATES ---
+    if (action === "exchange.rates") {
+      try {
+        var resp = UrlFetchApp.fetch("https://api.exchangerate-api.com/v4/latest/USD", { muteHttpExceptions: true, timeout: 5000 });
+        if (resp.getResponseCode() === 200) {
+          var d = JSON.parse(resp.getContentText());
+          return respond({ success: true, base: "USD", rates: d.rates, date: d.date, timestamp: new Date().toISOString() });
+        }
+      } catch(e) {}
+      return respond({ success: false, error: "Exchange rates unavailable" });
+    }
+    if (action === "exchange.convert") {
+      var fromC = (params.from || "USD").toUpperCase();
+      var toC = (params.to || "EUR").toUpperCase();
+      var amount = parseFloat(params.amount) || 1;
+      if (fromC === toC) return respond({ success: true, from: fromC, to: toC, amount: amount, result: amount, rate: 1 });
+      try {
+        var resp2 = UrlFetchApp.fetch("https://api.exchangerate-api.com/v4/latest/" + encodeURIComponent(fromC), { muteHttpExceptions: true, timeout: 5000 });
+        if (resp2.getResponseCode() === 200) {
+          var d2 = JSON.parse(resp2.getContentText());
+          if (d2.rates && d2.rates[toC] !== undefined) {
+            var rate = d2.rates[toC];
+            return respond({ success: true, from: fromC, to: toC, amount: amount, result: Math.round(amount * rate * 100) / 100, rate: rate, date: d2.date });
+          }
+        }
+      } catch(e) {}
+      return respond({ success: false, error: "Conversion unavailable" });
+    }
+
+    // --- AUTH VALIDATE ---
+    if (action === "auth.validate") {
+      var token = params.token;
+      if (!token) return respond({ success: false, valid: false, error: "No token" });
+      var user = getUserFromToken(token);
+      if (!user) return respond({ success: false, valid: false, error: "Invalid or expired token" });
+      return respond({ success: true, valid: true, user: { id: user.UserID || user.Email, name: user.FullName, email: user.Email, role: user.Role || "User", miles: user.Miles || 0, status: getStatusValue(user.Status) } });
     }
 
     // --- STATS ---
@@ -705,7 +1576,8 @@ function doGet(e) {
           totalCases: cases.length,
           todayBookings: bookings.filter(b => (b.DepartDate || "").toString() === today).length,
           todayVisitors: tracks.filter(t => (t.Timestamp || "").startsWith(new Date().toISOString().slice(0,10))).length,
-          pendingRequests: bookings.filter(b => (b.Status || "").toString().toUpperCase().indexOf("PENDING") === 0).length
+          pendingRequests: bookings.filter(b => (b.Status || "").toString().toUpperCase().indexOf("PENDING") === 0).length,
+          usersOnline: getUsersOnline()
         }
       });
     }
@@ -847,11 +1719,6 @@ function doGet(e) {
       return respond({ success: true, totalBookings: bookings.length, totalUsers: users.length, todayBookings: bookings.filter(b => (b.DepartDate || "").toString() === today).length, pendingRequests: bookings.filter(b => (b.Status || "").toString().toUpperCase().indexOf("PENDING") === 0).length });
     }
 
-    // --- AUTH SESSION CHECK (docs) ---
-    if (action === "checkLogin") {
-      return respond({ loggedIn: false });
-    }
-
     // --- LEGAL: getActiveCases ---
     if (action === "getActiveCases") {
       const user = getUserFromToken(params.token);
@@ -904,11 +1771,158 @@ function doGet(e) {
       });
     }
 
+    // --- REAL-TIME: validate airport via OpenSky API ---
+    if (action === "validateAirport") {
+      var code = (params.code || "").toUpperCase();
+      if (!code || code.length !== 3) return respond({ success: false, error: "Valid 3-letter IATA code required" });
+      var ap = lookupAirportFromAPI(code);
+      if (ap) return respond({ success: true, airport: ap });
+      if (AIRPORT_CACHE[code]) return respond({ success: true, airport: AIRPORT_CACHE[code], cached: true });
+      return respond({ success: false, error: "Airport not found" });
+    }
+
+    // --- REAL-TIME: search airports via OpenSky API ---
+    if (action === "searchAirports") {
+      var query = (params.query || "").trim();
+      if (!query || query.length < 2) return respond({ success: true, airports: [] });
+      var apiResults = searchAirportsFromAPI(query);
+      if (apiResults.length > 0) return respond({ success: true, airports: apiResults, source: "api" });
+      // Fallback: search AIRPORT_CACHE
+      var q = query.toUpperCase();
+      var cached = Object.keys(AIRPORT_CACHE).filter(function(c) { return c.indexOf(q) >= 0 || (AIRPORT_CACHE[c].name || "").toUpperCase().indexOf(q) >= 0 || (AIRPORT_CACHE[c].city || "").toUpperCase().indexOf(q) >= 0; }).map(function(c) { return { code: c, name: AIRPORT_CACHE[c].name, city: AIRPORT_CACHE[c].city, country: AIRPORT_CACHE[c].country, lat: AIRPORT_CACHE[c].lat, lng: AIRPORT_CACHE[c].lng }; });
+      return respond({ success: true, airports: cached, source: "cache" });
+    }
+
+    // --- SERVER-SIDE FARE CALCULATION ---
+    if (action === "calculateFareServerSide") {
+      var origin = (params.origin || "").toUpperCase();
+      var destination = (params.destination || "").toUpperCase();
+      var serviceType = params.serviceType || "EA";
+      var departDate = params.departDate || new Date().toISOString().slice(0, 10);
+      var cabin = params.cabin || "Economy";
+      var passengers = parseInt(params.passengers, 10) || 1;
+      var promoCode = params.promoCode || "";
+      var orig = lookupAirportFromAPI(origin) || AIRPORT_CACHE[origin];
+      var dest = lookupAirportFromAPI(destination) || AIRPORT_CACHE[destination];
+      if (!orig || !dest) return respond({ success: false, error: "Invalid airport codes" });
+      var distance = haversineDistance(orig.lat, orig.lng, dest.lat, dest.lng);
+      var flightTime = distance / 500 + 0.25;
+      var baseFare = calculateBaseFare(origin, destination, serviceType, departDate, promoCode);
+      var cabinMultiplier = CABIN_MULTIPLIERS[cabin] || 1.0;
+      var surgeFare = applySurgePricing(departDate, baseFare);
+      var totalFare = Math.round(surgeFare * cabinMultiplier * passengers);
+      var userRecord = getUserRecordByEmail(params.email || "");
+      var tier = calculateLoyaltyTier(userRecord ? (userRecord.Miles || 0) : 0);
+      var milesEarned = Math.round(distance * tier.multiplier);
+      return respond({
+        success: true,
+        baseFare: Math.round(baseFare),
+        surgeFare: surgeFare,
+        totalFare: totalFare,
+        milesEarned: milesEarned,
+        distance: Math.round(distance),
+        flightTime: flightTime.toFixed(1),
+        breakdown: {
+          baseFare: Math.round(baseFare),
+          cabinMultiplier: cabinMultiplier,
+          passengers: passengers,
+          surgeMultiplier: (surgeFare / baseFare).toFixed(2),
+          subtotal: totalFare
+        }
+      });
+    }
+
+    // --- REAL-TIME: flight information ---
+    if (action === "getFlightTime") {
+      var origCode = (params.origin || "").toUpperCase();
+      var destCode = (params.destination || "").toUpperCase();
+      if (!origCode || !destCode) return respond({ success: false, error: "origin and destination required" });
+      var orig = lookupAirportFromAPI(origCode) || AIRPORT_CACHE[origCode];
+      var dest = lookupAirportFromAPI(destCode) || AIRPORT_CACHE[destCode];
+      if (!orig || !dest) return respond({ success: false, error: "Invalid airport codes" });
+      var dist = haversineDistance(orig.lat, orig.lng, dest.lat, dest.lng);
+      var ft = calculateFlightTime(origCode, destCode);
+      var bf = calculateBaseFare(origCode, destCode);
+      var weather = getRealWeather(dest.lat, dest.lng);
+      return respond({ success: true, flightTime: ft.toFixed(2), baseFare: Math.round(bf), distanceMiles: Math.round(dist).toString(), origin: orig, destination: dest, weather: weather });
+    }
+
+    // --- REAL-TIME: weather at airport ---
+    if (action === "getWeather") {
+      var wCode = (params.code || "").toUpperCase();
+      var airport = lookupAirportFromAPI(wCode) || AIRPORT_CACHE[wCode];
+      if (!airport) return respond({ success: false, error: "Airport not found" });
+      var w = getRealWeather(airport.lat, airport.lng);
+      return respond({ success: true, weather: w || { temp: null, condition: "Unavailable", windSpeed: null }, airport: wCode });
+    }
+
+    // --- REAL-TIME: exchange rate ---
+    if (action === "getExchangeRate") {
+      var fromCurr = (params.from || "USD").toUpperCase();
+      var toCurr = (params.to || "EUR").toUpperCase();
+      var rate = getExchangeRate(fromCurr, toCurr);
+      if (rate !== null) return respond({ success: true, rate: rate, from: fromCurr, to: toCurr, timestamp: new Date().toISOString() });
+      return respond({ success: false, error: "Exchange rate unavailable" });
+    }
+
+    // --- WEATHER: 7-day forecast ---
+    if (action === "weather.forecast") {
+      var wfCode = (params.code || "").toUpperCase();
+      var wfAirport = lookupAirportFromAPI(wfCode);
+      if (!wfAirport) return respond({ success: false, error: "Airport not found" });
+      var wf = getForecast(wfAirport.lat, wfAirport.lng);
+      return respond({ success: true, forecast: wf || [], airport: { code: wfCode, name: wfAirport.name, city: wfAirport.city, country: wfAirport.country } });
+    }
+
+    // --- FLIGHTS: status by flight number ---
+    if (action === "flights.status") {
+      var flightNum = (params.flight || "").toUpperCase();
+      if (!flightNum) return respond({ success: false, error: "Flight number required (e.g. EA1001)" });
+      var origin = (params.origin || "").toUpperCase();
+      var dest = (params.destination || "").toUpperCase();
+      var depDate = params.date || "";
+      var oAp = origin ? lookupAirportFromAPI(origin) : null;
+      var dAp = dest ? lookupAirportFromAPI(dest) : null;
+      var dist = (oAp && dAp) ? Math.round(haversineDistance(oAp.lat, oAp.lng, dAp.lat, dAp.lng)) : 0;
+      var fltTime = (oAp && dAp) ? (dist / 500 + 0.25).toFixed(1) : "—";
+      var now = new Date();
+      var depHour = 6 + Math.floor(Math.random() * 14);
+      var depMin = Math.floor(Math.random() * 60);
+      var depTime = depHour.toString().padStart(2, "0") + ":" + depMin.toString().padStart(2, "0");
+      var arrHour = depHour + Math.ceil(dist / 500);
+      var arrTime = (arrHour % 24).toString().padStart(2, "0") + ":" + depMin.toString().padStart(2, "0");
+      var statuses = ["On Time", "Delayed", "Boarding", "Departed", "Landed", "Scheduled"];
+      var status = statuses[Math.floor(Math.random() * statuses.length)];
+      var gate = "G" + (Math.floor(Math.random() * 40) + 1);
+      var terminal = String.fromCharCode(65 + Math.floor(Math.random() * 4));
+      return respond({ success: true, flight: flightNum, status: status, origin: oAp ? { code: origin, name: oAp.name } : { code: origin }, destination: dAp ? { code: dest, name: dAp.name } : { code: dest }, departure: { time: depTime, date: depDate || now.toISOString().slice(0,10), gate: gate, terminal: terminal }, arrival: { time: arrTime, date: depDate || now.toISOString().slice(0,10) }, distance: dist, flightTime: fltTime + "h", aircraft: getAircraftConfig(dist).model, timestamp: now.toISOString() });
+    }
+
+    // --- ROUTES: explore from airport ---
+    if (action === "routes.fromAirport") {
+      var rtCode = (params.code || "").toUpperCase();
+      var rtAirport = lookupAirportFromAPI(rtCode);
+      if (!rtAirport) return respond({ success: false, error: "Airport not found" });
+      var allCodes = getAirportCodes();
+      var routes = [];
+      for (var ri = 0; ri < allCodes.length && ri < 30; ri++) {
+        if (allCodes[ri] !== rtCode) {
+          var a = AIRPORT_CACHE[allCodes[ri]];
+          if (a) {
+            var d = Math.round(haversineDistance(rtAirport.lat, rtAirport.lng, a.lat, a.lng));
+            routes.push({ destination: allCodes[ri], name: a.name, city: a.city, country: a.country, distance: d, estimatedFare: Math.round(calculateBaseFare(rtCode, allCodes[ri])) });
+          }
+        }
+      }
+      routes.sort(function(x, y) { return x.distance - y.distance; });
+      return respond({ success: true, airport: { code: rtCode, name: rtAirport.name, city: rtAirport.city, country: rtAirport.country }, routes: routes, totalRoutes: routes.length });
+    }
+
     // --- DEVELOPER API: list public endpoints ---
     if (action === "dev.listEndpoints") {
       const keyCheck = validateApiKey(params.key);
       if (!keyCheck.valid) return respond({ success: false, error: keyCheck.error });
-      return respond({ success: true, total: getAllApiEndpoints().length, endpoints: getAllApiEndpoints(), keyInfo: { requests: keyCheck.record.RequestCount } });
+      var allEps = getAllApiEndpoints(); return respond({ success: true, total: allEps.length, endpoints: allEps, keyInfo: { requests: keyCheck.record.RequestCount } });
     }
 
     // --- DEVELOPER API: execute an endpoint by name ---
@@ -943,7 +1957,7 @@ function doGet(e) {
     if (action === "dev.apiAirports") {
       const keyCheck = validateApiKey(params.key);
       if (!keyCheck.valid) return respond({ success: false, error: keyCheck.error });
-      return respond({ success: true, airports: Object.entries(AIRPORT_CACHE).map(([code, info]) => ({ code, ...info })), keyInfo: { requests: keyCheck.record.RequestCount } });
+      var airCodes = getAirportCodes(); return respond({ success: true, airports: airCodes.map(function(c) { var a = AIRPORT_CACHE[c]; return a ? { code: c, name: a.name, city: a.city, country: a.country, lat: a.lat, lng: a.lng } : { code: c }; }), keyInfo: { requests: keyCheck.record.RequestCount } });
     }
 
     // --- DEVELOPER API: calculate fare (key-protected) ---
@@ -951,8 +1965,8 @@ function doGet(e) {
       const keyCheck = validateApiKey(params.key);
       if (!keyCheck.valid) return respond({ success: false, error: keyCheck.error });
       if (!params.origin || !params.destination) return respond({ success: false, error: "origin and destination required" });
-      const orig = AIRPORT_CACHE[params.origin];
-      const dest = AIRPORT_CACHE[params.destination];
+      const orig = lookupAirportFromAPI(params.origin) || AIRPORT_CACHE[params.origin];
+      const dest = lookupAirportFromAPI(params.destination) || AIRPORT_CACHE[params.destination];
       if (!orig || !dest) return respond({ success: false, error: "Invalid airport codes" });
       const distance = haversineDistance(orig.lat, orig.lng, dest.lat, dest.lng);
       const baseFare = calculateBaseFare(params.origin, params.destination);
@@ -993,6 +2007,16 @@ function doPost(e) {
     } else { data = e.parameter; }
 
     const action = data.action;
+
+    // Beta testing mode check
+    if (isBetaTestingActive() && action && action !== "login" && action !== "signup" && action !== "auth.autoDeviceFingerprint" && action !== "auth.autoGeolocation" && action !== "auth.autoBrowserIntegrity" && action !== "auth.autoClockSync" && action !== "auth.autoProofOfWork" && action !== "auth.autoConnectionCheck" && action !== "auth.autoNavigationPath" && action !== "auth.autoBehaviorProfile" && action !== "auth.autoCanvasFingerprint" && action !== "auth.autoAudioFingerprint" && action !== "auth.userTimePassword" && action !== "auth.userDynamicCode" && action !== "auth.userGestureTrace" && action !== "auth.userReactionTest" && action !== "auth.completeVerification" && action !== "heartbeat" && action !== "users.online" && action !== "system.overview" && action !== "getSystemStatus" && action !== "track") {
+      var email = data.email || "";
+      var verified = isFullyVerified(email);
+      if (!verified) {
+        return respond({ success: false, error: "BETA_ACCESS_REQUIRED", message: "Beta testing mode active. Complete all 15 verification steps to access the system." });
+      }
+    }
+
     data.ancillaries = parseJsonField(data.ancillaries, []);
     data.passengerDetails = parseJsonField(data.passengerDetails, []);
     let response = { success: false, message: "Unknown request" };
@@ -1004,6 +2028,7 @@ function doPost(e) {
         screen: data.screen || "", timezone: data.timezone || "", language: data.language || "",
         page: data.page || "", user: data.user || "", extra: data.extra || ""
       });
+      trackDeviceEntry(data.user || "Anonymous", data.ip || "", data.fingerprint || "", data.page || "", "Active");
       response = { success: true };
     }
 
@@ -1029,6 +2054,354 @@ function doPost(e) {
       auditLog("login", email, "User login");
     }
 
+    // --- AUTH: verifyPassword (Step 1) ---
+    else if (action === "auth.verifyPassword") {
+      var email = normalizeText(data.email).toLowerCase();
+      var password = normalizeText(data.password);
+      var ip = data.ip || "";
+      var fingerprint = data.fingerprint || "";
+      var users = sheetToArray(getSheet(SHEETS.Users));
+      var foundUser = null;
+      for (var vi = 0; vi < users.length; vi++) {
+        if (normalizeText(users[vi].Email).toLowerCase() === email) {
+          var pwMatch = normalizeText(users[vi].Password) === password || (users[vi].PasswordSalt && hashPassword(password, users[vi].PasswordSalt) === users[vi].Password);
+          if (!pwMatch) break;
+          foundUser = users[vi];
+          break;
+        }
+      }
+      if (!foundUser) {
+        logVerificationAttempt(email, "verifyPassword", false, ip, fingerprint);
+        throw new Error("Invalid credentials.");
+      }
+      var restrictions = getTimeRestrictions(email);
+      if (restrictions.timeBlocked || restrictions.dateBlocked) {
+        logVerificationAttempt(email, "verifyPassword", false, ip, fingerprint);
+        response = { success: true, blocked: true, message: "Access restricted at this time", restrictions: restrictions, verified_fields: { password: true, time: !restrictions.timeBlocked, date: !restrictions.dateBlocked } };
+      } else {
+        logVerificationAttempt(email, "verifyPassword", true, ip, fingerprint);
+        response = { success: true, step2_required: true, restrictions: null, verified_fields: { password: true, time: true, date: true } };
+      }
+    }
+
+    // --- AUTH: verifyTimeDate (Step 2) ---
+    else if (action === "auth.verifyTimeDate") {
+      var email = normalizeText(data.email).toLowerCase();
+      var ip = data.ip || "";
+      var fingerprint = data.fingerprint || "";
+      var allowed = isTimeAllowed(email);
+      logVerificationAttempt(email, "verifyTimeDate", allowed, ip, fingerprint);
+      if (allowed) {
+        response = { success: true, step3_required: true };
+      } else {
+        var restrictions = getTimeRestrictions(email);
+        response = { success: true, blocked: true, message: "Access restricted at this time", restrictions: restrictions };
+      }
+    }
+
+    // --- AUTH: verifySecurityQuestion (Step 3) ---
+    else if (action === "auth.verifySecurityQuestion") {
+      var email = normalizeText(data.email).toLowerCase();
+      var answer = normalizeText(data.answer);
+      var ip = data.ip || "";
+      var fingerprint = data.fingerprint || "";
+      var secSheet = getSheet(SHEETS.UserSecurity);
+      var secRows = secSheet ? secSheet.getDataRange().getValues() : [];
+      var storedQuestion = null, storedAnswer = null;
+      for (var sqi = 1; sqi < secRows.length; sqi++) {
+        if (String(secRows[sqi][0] || "").toLowerCase() === email) {
+          storedQuestion = secRows[sqi][1];
+          storedAnswer = String(secRows[sqi][2] || "").toLowerCase();
+          break;
+        }
+      }
+      if (!storedQuestion) throw new Error("No security question configured for this account.");
+      if (!answer) {
+        logVerificationAttempt(email, "verifySecurityQuestion", false, ip, fingerprint);
+        response = { success: true, question: storedQuestion, answered: false };
+      } else if (answer.toLowerCase() === storedAnswer) {
+        logVerificationAttempt(email, "verifySecurityQuestion", true, ip, fingerprint);
+        response = { success: true, question: storedQuestion, step3_verified: true, answered: true };
+      } else {
+        logVerificationAttempt(email, "verifySecurityQuestion", false, ip, fingerprint);
+        throw new Error("Incorrect security answer.");
+      }
+    }
+
+    // --- AUTH: verifyDevice (Step 4) ---
+    else if (action === "auth.verifyDevice") {
+      var email = normalizeText(data.email).toLowerCase();
+      var fingerprint = data.fingerprint || "";
+      var ip = data.ip || "";
+      var secSheet = getSheet(SHEETS.UserSecurity);
+      var secRows = secSheet ? secSheet.getDataRange().getValues() : [];
+      var knownFingerprints = [];
+      for (var sdi = 1; sdi < secRows.length; sdi++) {
+        if (String(secRows[sdi][0] || "").toLowerCase() === email) {
+          var fpField = secRows[sdi][7];
+          if (fpField) {
+            try { knownFingerprints = JSON.parse(fpField); } catch(e) { knownFingerprints = String(fpField).split(",").map(function(s) { return s.trim(); }); }
+          }
+          break;
+        }
+      }
+      var recognized = knownFingerprints.indexOf(fingerprint) >= 0;
+      logVerificationAttempt(email, "verifyDevice", recognized, ip, fingerprint);
+      response = {
+        success: true,
+        recognized: recognized,
+        requires_confirmation: !recognized,
+        message: recognized ? "Device recognized" : "Unknown device. Register this device?"
+      };
+    }
+
+    // --- AUTH: verifyKnowledge (Step 5) ---
+    else if (action === "auth.verifyKnowledge") {
+      var email = normalizeText(data.email).toLowerCase();
+      var answer = data.answer;
+      var ip = data.ip || "";
+      var fingerprint = data.fingerprint || "";
+      var users = sheetToArray(getSheet(SHEETS.Users));
+      var user = null;
+      for (var uki = 0; uki < users.length; uki++) {
+        if (normalizeText(users[uki].Email).toLowerCase() === email) { user = users[uki]; break; }
+      }
+      if (!user) throw new Error("User not found.");
+      var bookings = sheetToArray(getSheet(SHEETS.Bookings)).filter(function(b) { return (b.Email || "").toLowerCase() === email; });
+      var questions = [];
+      questions.push({ q: "How many miles do you have?", a: String(user.Miles || 0) });
+      questions.push({ q: "When did you join?", a: String(user.JoinDate || "").slice(0, 10) });
+      if (bookings.length > 0) {
+        questions.push({ q: "What is your last booking destination?", a: (bookings[bookings.length - 1].Destination || "").toUpperCase() });
+      }
+      if (!answer) {
+        var randomQ = questions[Math.floor(Math.random() * questions.length)];
+        response = { success: true, question: randomQ.q };
+      } else {
+        var matched = false;
+        for (var kqi = 0; kqi < questions.length; kqi++) {
+          if (String(answer).toLowerCase() === questions[kqi].a.toLowerCase()) { matched = true; break; }
+        }
+        logVerificationAttempt(email, "verifyKnowledge", matched, ip, fingerprint);
+        if (matched) {
+          response = { success: true, step5_verified: true, message: "Knowledge verified" };
+        } else {
+          throw new Error("Incorrect answer.");
+        }
+      }
+    }
+
+    // --- AUTH: verifyCaptcha (Step 6) ---
+    else if (action === "auth.verifyCaptcha") {
+      var email = normalizeText(data.email).toLowerCase();
+      var answer = data.answer;
+      var ip = data.ip || "";
+      var fingerprint = data.fingerprint || "";
+      var cache = CacheService.getScriptCache();
+      if (!answer) {
+        var num1 = Math.floor(Math.random() * 10) + 1;
+        var num2 = Math.floor(Math.random() * 10) + 1;
+        var ops = ["+", "-"];
+        var op = ops[Math.floor(Math.random() * ops.length)];
+        var challengeResult = op === "+" ? num1 + num2 : num1 - num2;
+        var challengeKey = "captcha_" + email;
+        if (cache) { try { cache.put(challengeKey, String(challengeResult), 300); } catch(e) {} }
+        response = { success: true, challenge: "What is " + num1 + " " + op + " " + num2 + "?" };
+      } else {
+        var challengeKey = "captcha_" + email;
+        var expected = cache ? cache.get(challengeKey) : null;
+        if (expected && String(answer).trim() === expected) {
+          logVerificationAttempt(email, "verifyCaptcha", true, ip, fingerprint);
+          if (cache) { try { cache.remove(challengeKey); } catch(e) {} }
+          response = { success: true, step6_verified: true, message: "Captcha verified" };
+        } else {
+          logVerificationAttempt(email, "verifyCaptcha", false, ip, fingerprint);
+          throw new Error("Incorrect captcha answer.");
+        }
+      }
+    }
+
+    // --- AUTH: completeLogin (Final) ---
+    else if (action === "auth.completeLogin") {
+      var email = normalizeText(data.email).toLowerCase();
+      var password = normalizeText(data.password);
+      var users = sheetToArray(getSheet(SHEETS.Users));
+      var foundUser = null;
+      for (var cli = 0; cli < users.length; cli++) {
+        if (normalizeText(users[cli].Email).toLowerCase() === email) {
+          var pwMatch = normalizeText(users[cli].Password) === password || (users[cli].PasswordSalt && hashPassword(password, users[cli].PasswordSalt) === users[cli].Password);
+          if (!pwMatch) break;
+          foundUser = users[cli];
+          break;
+        }
+      }
+      if (!foundUser) throw new Error("Invalid credentials.");
+      var statusVal = getStatusValue(foundUser.Status);
+      if (statusVal >= 4 || statusVal === 2) throw new Error("Account suspended. Contact support.");
+      var token = createSessionToken(foundUser.UserID);
+      var tierData = calculateLoyaltyTier(foundUser.Miles || 0);
+      auditLog("login", email, "User login (multi-step)");
+      response = { success: true, token: token, user: { id: foundUser.UserID || foundUser.Email, UserID: foundUser.UserID, name: foundUser.FullName, FullName: foundUser.FullName, email: foundUser.Email, Email: foundUser.Email, role: foundUser.Role || foundUser.SystemRole || tierData.tier, SystemRole: foundUser.SystemRole || foundUser.Role || tierData.tier, miles: foundUser.Miles || 0, status: statusVal, loyaltyTier: tierData.display } };
+    }
+
+    // --- AUTH: verifyTimeCipher (Step 2 - Non-transferable) ---
+    else if (action === "auth.verifyTimeCipher") {
+      var email = normalizeText(data.email).toLowerCase();
+      var fingerprint = data.fingerprint || "";
+      var clientHash = data.hash || "";
+      var ip = data.ip || "";
+      var minuteWindow = Math.floor(Date.now() / 60000);
+      var userSalt = getUserSalt(email);
+      var raw = fingerprint + minuteWindow + (userSalt || "EASECRET2026");
+      var digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, raw);
+      var expectedHash = digest.map(function(b) { return ('0' + (b & 0xFF).toString(16)).slice(-2); }).join("");
+      var valid = clientHash === expectedHash;
+      logVerificationAttempt(email, "verifyTimeCipher", valid, ip, fingerprint);
+      if (valid) {
+        response = { success: true, step3_required: true, message: "Time cipher verified" };
+      } else {
+        response = { success: false, error: "Time cipher verification failed. Try again." };
+      }
+    }
+
+    // --- AUTH: verifyPattern (Step 3 - Non-transferable) ---
+    else if (action === "auth.verifyPattern") {
+      var email = normalizeText(data.email).toLowerCase();
+      var ip = data.ip || "";
+      var fingerprint = data.fingerprint || "";
+      var patternColors = data.colors || "";
+      var secSheet = getSheet(SHEETS.UserSecurity);
+      var secRows = secSheet ? secSheet.getDataRange().getValues() : [];
+      var storedPattern = "";
+      for (var spi = 1; spi < secRows.length; spi++) {
+        if (String(secRows[spi][0] || "").toLowerCase() === email) {
+          storedPattern = String(secRows[spi][9] || "");
+          break;
+        }
+      }
+      if (!storedPattern) throw new Error("No pattern configured for this account.");
+      var valid = String(patternColors).toLowerCase() === String(storedPattern).toLowerCase();
+      logVerificationAttempt(email, "verifyPattern", valid, ip, fingerprint);
+      if (valid) {
+        response = { success: true, step4_required: true, message: "Pattern verified" };
+      } else {
+        response = { success: false, error: "Pattern verification failed." };
+      }
+    }
+
+    // --- AUTH: verifyGesture (Step 4 - Non-transferable) ---
+    else if (action === "auth.verifyGesture") {
+      var email = normalizeText(data.email).toLowerCase();
+      var ip = data.ip || "";
+      var fingerprint = data.fingerprint || "";
+      var gestureData = data.sequence || "";
+      var secSheet = getSheet(SHEETS.UserSecurity);
+      var secRows = secSheet ? secSheet.getDataRange().getValues() : [];
+      var storedGesture = "";
+      for (var sgi = 1; sgi < secRows.length; sgi++) {
+        if (String(secRows[sgi][0] || "").toLowerCase() === email) {
+          storedGesture = String(secRows[sgi][10] || "");
+          break;
+        }
+      }
+      if (!storedGesture) throw new Error("No gesture sequence configured for this account.");
+      var valid = String(gestureData).toLowerCase() === String(storedGesture).toLowerCase();
+      logVerificationAttempt(email, "verifyGesture", valid, ip, fingerprint);
+      if (valid) {
+        response = { success: true, step5_required: true, message: "Gesture verified" };
+      } else {
+        response = { success: false, error: "Gesture verification failed." };
+      }
+    }
+
+    // --- AUTH: verifyDeviceBinding (Step 5 - Non-transferable) ---
+    else if (action === "auth.verifyDeviceBinding") {
+      var email = normalizeText(data.email).toLowerCase();
+      var fingerprint = data.fingerprint || "";
+      var ip = data.ip || "";
+      var serverSecret = "EXPRESS_AIRWAYS_DEVICE_SECRET_2026";
+      var raw = fingerprint + serverSecret;
+      var digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, raw);
+      var deviceToken = digest.map(function(b) { return ('0' + (b & 0xFF).toString(16)).slice(-2); }).join("");
+      logVerificationAttempt(email, "verifyDeviceBinding", true, ip, fingerprint);
+      response = { success: true, deviceToken: deviceToken, step6_required: true, message: "Device bound" };
+    }
+
+    // --- AUTH: verifySecretHandshake (Step 6 - Non-transferable) ---
+    else if (action === "auth.verifySecretHandshake") {
+      var email = normalizeText(data.email).toLowerCase();
+      var ip = data.ip || "";
+      var fingerprint = data.fingerprint || "";
+      var handshakeData = data.sections || "";
+      var secSheet = getSheet(SHEETS.UserSecurity);
+      var secRows = secSheet ? secSheet.getDataRange().getValues() : [];
+      var storedHandshake = "";
+      for (var shi = 1; shi < secRows.length; shi++) {
+        if (String(secRows[shi][0] || "").toLowerCase() === email) {
+          storedHandshake = String(secRows[shi][12] || "");
+          break;
+        }
+      }
+      if (!storedHandshake) throw new Error("No secret handshake configured for this account.");
+      var valid = String(handshakeData).toLowerCase() === String(storedHandshake).toLowerCase();
+      logVerificationAttempt(email, "verifySecretHandshake", valid, ip, fingerprint);
+      if (valid) {
+        response = { success: true, step7_required: true, message: "Secret handshake verified" };
+      } else {
+        response = { success: false, error: "Secret handshake verification failed." };
+      }
+    }
+
+    // --- AUTH: verifyDynamicToken (Step 7 - Non-transferable) ---
+    else if (action === "auth.verifyDynamicToken") {
+      var email = normalizeText(data.email).toLowerCase();
+      var fingerprint = data.fingerprint || "";
+      var clientToken = data.token || "";
+      var ip = data.ip || "";
+      var fifteenMinWindow = Math.floor(Date.now() / 900000);
+      var userSalt = getUserSalt(email);
+      var raw = fingerprint + fifteenMinWindow + (userSalt || "EASECRET2026");
+      var digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, raw);
+      var expectedToken = digest.map(function(b) { return ('0' + (b & 0xFF).toString(16)).slice(-2); }).join("");
+      var valid = clientToken === expectedToken;
+      logVerificationAttempt(email, "verifyDynamicToken", valid, ip, fingerprint);
+      if (valid) {
+        response = { success: true, step8_required: true, message: "Dynamic token verified" };
+      } else {
+        response = { success: false, error: "Dynamic token verification failed." };
+      }
+    }
+
+    // --- AUTH: completeVerification (Step 8 - Final) ---
+    else if (action === "auth.completeVerification") {
+      var email = normalizeText(data.email).toLowerCase();
+      var password = normalizeText(data.password);
+      var fingerprint = data.fingerprint || "";
+      var ip = data.ip || "";
+      var users = sheetToArray(getSheet(SHEETS.Users));
+      var foundUser = null;
+      for (var cvi = 0; cvi < users.length; cvi++) {
+        if (normalizeText(users[cvi].Email).toLowerCase() === email) {
+          var pwMatch = normalizeText(users[cvi].Password) === password || (users[cvi].PasswordSalt && hashPassword(password, users[cvi].PasswordSalt) === users[cvi].Password);
+          if (!pwMatch) break;
+          foundUser = users[cvi];
+          break;
+        }
+      }
+      if (!foundUser) throw new Error("Invalid credentials.");
+      var statusVal = getStatusValue(foundUser.Status);
+      if (statusVal >= 4 || statusVal === 2) throw new Error("Account suspended. Contact support.");
+      var token = createSessionToken(foundUser.UserID);
+      var serverSecret = "EXPRESS_AIRWAYS_DEVICE_SECRET_2026";
+      var deviceRaw = fingerprint + serverSecret;
+      var deviceDigest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, deviceRaw);
+      var encryptedToken = deviceDigest.map(function(b) { return ('0' + (b & 0xFF).toString(16)).slice(-2); }).join("");
+      logVerificationAttempt(email, "complete", true, ip, fingerprint);
+      var tierData = calculateLoyaltyTier(foundUser.Miles || 0);
+      auditLog("login", email, "User fully verified (8-step)");
+      response = { success: true, token: token, encryptedToken: encryptedToken, user: { id: foundUser.UserID || foundUser.Email, UserID: foundUser.UserID, name: foundUser.FullName, FullName: foundUser.FullName, email: foundUser.Email, Email: foundUser.Email, role: foundUser.Role || foundUser.SystemRole || tierData.tier, SystemRole: foundUser.SystemRole || foundUser.Role || tierData.tier, miles: foundUser.Miles || 0, status: statusVal, loyaltyTier: tierData.display } };
+    }
+
     // --- SIGNUP ---
     else if (action === "signup") {
       const sheet = getSheet(SHEETS.Users);
@@ -1042,6 +2415,18 @@ function doPost(e) {
       if (sheet.getLastRow() === 0) sheet.appendRow(["UserID", "FullName", "Email", "Password", "Role", "Miles", "Status", "JoinDate", "Timestamp", "UpdatedAt"]);
       const row = buildRowByHeaders(sheet, { UserID: `USR-${Date.now()}`, FullName: fullName, Email: email, Password: password, Role: data.role || data.Role || "User", Miles: 0, Status: 1, JoinDate: new Date(), Timestamp: new Date(), UpdatedAt: new Date() });
       sheet.appendRow(row);
+      // Store security question/answer and verification data if provided
+      var secQuestion = normalizeText(data.securityQuestion || data.SecurityQuestion);
+      var secAnswer = normalizeText(data.securityAnswer || data.SecurityAnswer);
+      var patternColors = normalizeText(data.patternColors || data.PatternColors);
+      var gestureSequence = normalizeText(data.gestureSequence || data.GestureSequence);
+      var secretHandshake = normalizeText(data.secretHandshake || data.SecretHandshake);
+      if (secQuestion && secAnswer || patternColors || gestureSequence || secretHandshake) {
+        var secSheet = ensureUserSecuritySheet();
+        var userSalt = createSalt();
+        secSheet.appendRow([email, secQuestion || "", secAnswer || "", "", "", "", "", "", new Date().toISOString(), patternColors || "", gestureSequence || "", userSalt, secretHandshake || ""]);
+        auditLog("security.question.set", email, "Security question stored during signup");
+      }
       response = { success: true, user: { id: email, name: fullName, email: email, role: data.role || "User", miles: 0, status: 1, loyaltyTier: "Basic" } };
       auditLog("signup", email, "New account registration");
     }
@@ -1059,8 +2444,8 @@ function doPost(e) {
       if (accountStatus === 2 || accountStatus === 4) throw new Error("Booking privileges suspended.");
       const bSheet = getSheet(SHEETS.Bookings);
       const bookingRef = String(Date.now());
-      const orig = AIRPORT_CACHE[data.origin];
-      const dest = AIRPORT_CACHE[data.destination];
+      const orig = lookupAirportFromAPI(data.origin) || AIRPORT_CACHE[data.origin];
+      const dest = lookupAirportFromAPI(data.destination) || AIRPORT_CACHE[data.destination];
       const distance = haversineDistance(orig ? orig.lat : 0, orig ? orig.lng : 0, dest ? dest.lat : 0, dest ? dest.lng : 0);
       let fare = calculateBaseFare(data.origin, data.destination, data.serviceType || "EA", data.departDate, data.promoCode);
       fare = applySurgePricing(data.departDate, fare);
@@ -1356,7 +2741,7 @@ function doPost(e) {
     else if (action === "admin.getAllTables") {
       const allData = {};
       for (const [key, name] of Object.entries(SHEETS)) {
-        if (key === "Sessions" || key === "SeatAssignments" || key === "AncillaryBookings" || key === "TrackingLog" || key === "AuditLog") continue;
+        if (key === "Sessions" || key === "SeatAssignments" || key === "AncillaryBookings" || key === "TrackingLog" || key === "AuditLog" || key === "DeviceTracking") continue;
         allData[key] = sheetToArray(getSheet(name)) || [];
       }
       response = { success: true, tables: allData };
@@ -1367,7 +2752,7 @@ function doPost(e) {
       if (!sheetName || !SHEETS[sheetName]) throw new Error("Invalid sheet name: " + sheetName);
       const sheet = ensureSheet(SHEETS[sheetName]);
       if (sheet.getLastRow() === 0) {
-        const schema = { Users: ["UserID","FullName","Email","Password","Role","Miles","Status","JoinDate","Timestamp","UpdatedAt"], Bookings: ["BookingRef","Email","Status","Origin","Destination","DepartDate","FlightTimes","ServiceType","Passengers","TotalPrice","PaymentMethod","PaxName","PaxDOB","PaxGender","PaxPassport","PaxPhone","PaxCabin","Timestamp"], Sections: ["Title","Description","Image","Link","ButtonText"], Events: ["Date","Title","Description","Link","Image"], Documents: ["ID","Title","Description","Type","FileID","Thumbnail","Category","OpenLimit","Opens","Available","RequiresRequest"], PromoCodes: ["Code","DiscountPercent","DiscountDollars","MaxUses","UsedCount","ExpiryDate","Active"], Notices: ["Title","Message","Severity","Timestamp"], Config: ["Key","Value"], SystemStatus: ["Key","Value"], Ancillaries: ["Type","Description","Price"], Contact: ["Name","Email","Message","Timestamp"], Issues: ["IssueID","Email","Subject","Description","Severity","Status","Created","Updated"], DocRequests: ["Timestamp","UserEmail","UserName","DocID","DocTitle","Reason","Department","Status"], Notifications: ["NotificationID","UserID","Email","Type","Title","Message","Link","Read","CreatedAt"], Cases: ["CaseID","Title","Type","Status","FiledBy","FiledAgainst","Description","CreatedAt","UpdatedAt"], Participants: ["ParticipantID","CaseID","UserID","Email","Role","JoinedAt"], Evidence: ["EvidenceID","CaseID","UploadedBy","Type","Title","Link","Category","Timestamp","Notes"], Verdicts: ["VerdictID","CaseID","Outcome","SentenceSummary","Reasoning","EvidenceCited","RejectedEvidence","AudioLink","VideoLink","SubmittedBy","SubmittedAt","ProceduralReview"], Reviews: ["Timestamp","BookingRef","Email","Rating","Comment","Date"], Referrals: ["Timestamp","ReferrerEmail","RefereeEmail","Status","Date"] };
+        const schema = { Users: ["UserID","FullName","Email","Password","Role","Miles","Status","JoinDate","Timestamp","UpdatedAt"], Bookings: ["BookingRef","Email","Status","Origin","Destination","DepartDate","FlightTimes","ServiceType","Passengers","TotalPrice","PaymentMethod","PaxName","PaxDOB","PaxGender","PaxPassport","PaxPhone","PaxCabin","Timestamp"], Sections: ["Title","Description","Image","Link","ButtonText"], Events: ["Date","Title","Description","Link","Image"], Documents: ["ID","Title","Description","Type","FileID","Thumbnail","Category","OpenLimit","Opens","Available","RequiresRequest"], PromoCodes: ["Code","DiscountPercent","DiscountDollars","MaxUses","UsedCount","ExpiryDate","Active"], Notices: ["Title","Message","Severity","Timestamp"], Config: ["Key","Value"], SystemStatus: ["Key","Value"], Ancillaries: ["Type","Description","Price"], Contact: ["Name","Email","Message","Timestamp"], Issues: ["IssueID","Email","Subject","Description","Severity","Status","Created","Updated"], DocRequests: ["Timestamp","UserEmail","UserName","DocID","DocTitle","Reason","Department","Status"], Notifications: ["NotificationID","UserID","Email","Type","Title","Message","Link","Read","CreatedAt"], Cases: ["CaseID","Title","Type","Status","FiledBy","FiledAgainst","Description","CreatedAt","UpdatedAt"], Participants: ["ParticipantID","CaseID","UserID","Email","Role","JoinedAt"], Evidence: ["EvidenceID","CaseID","UploadedBy","Type","Title","Link","Category","Timestamp","Notes"], Verdicts: ["VerdictID","CaseID","Outcome","SentenceSummary","Reasoning","EvidenceCited","RejectedEvidence","AudioLink","VideoLink","SubmittedBy","SubmittedAt","ProceduralReview"], Reviews: ["Timestamp","BookingRef","Email","Rating","Comment","Date"], Referrals: ["Timestamp","ReferrerEmail","RefereeEmail","Status","Date"], UserSecurity: ["Email","SecurityQuestion","SecurityAnswer","AllowedDays","AllowedStartTime","AllowedEndTime","BlockedDates","KnownFingerprints","CreatedAt","PatternColors","GestureSequence","UserSalt","SecretHandshake"], VerificationAttempts: ["Email","Timestamp","Step","Success","IP","Fingerprint"] };
         if (schema[sheetName]) sheet.appendRow(schema[sheetName]);
         else sheet.appendRow(["Key","Value"]);
       }
@@ -1443,6 +2828,16 @@ function doPost(e) {
       response = { success: true, key: rec.data.Key, email: rec.data.Email, name: rec.data.Name, createdAt: rec.data.CreatedAt, lastUsed: rec.data.LastUsed, status: rec.data.Status, requestCount: rec.data.RequestCount, lastReactivation: rec.data.LastReactivation };
     }
 
+    // --- DEVELOPER: get key quota ---
+    else if (action === "dev.getQuota") {
+      const key = normalizeText(data.key);
+      if (!key) throw new Error("API key required");
+      const rec = getApiKeyRecord(key);
+      if (!rec) throw new Error("Invalid API key");
+      const used = Number(rec.data.RequestCount) || 0;
+      response = { success: true, key: rec.data.Key, requestCount: used, status: rec.data.Status, limit: 100, limitPeriod: "1 hour", remaining: Math.max(0, 100 - (used % 100)) };
+    }
+
     // --- DEVELOPER: list API keys by email ---
     else if (action === "dev.listKeys") {
       const email = normalizeText(data.email).toLowerCase();
@@ -1498,6 +2893,35 @@ function doPost(e) {
       updateSheetCell(sheet, rec.row, 8, new Date().toISOString());
       auditLog("dev.reactivateKey", email, "API key reactivated");
       response = { success: true, message: "Key reactivated" };
+    }
+
+    // --- DEVELOPER: permanently delete API key ---
+    else if (action === "dev.deleteKey") {
+      const key = normalizeText(data.key);
+      const email = normalizeText(data.email).toLowerCase();
+      if (!key || !email) throw new Error("Key and email required");
+      const rec = getApiKeyRecord(key);
+      if (!rec) throw new Error("Invalid API key");
+      if (normalizeText(rec.data.Email).toLowerCase() !== email) throw new Error("Email does not match key owner");
+      const sheet = getSheet(SHEETS.ApiKeys);
+      sheet.deleteRow(rec.row);
+      auditLog("dev.deleteKey", email, "API key permanently deleted");
+      response = { success: true, message: "Key permanently deleted" };
+    }
+
+    // --- DEVELOPER: get dashboard stats ---
+    else if (action === "dev.getDashboard") {
+      const email = normalizeText(data.email).toLowerCase();
+      if (!email) throw new Error("Email required");
+      var keys = getApiKeysByEmail(email);
+      var total = keys.length;
+      var active = 0, inactive = 0, removed = 0, totalRequests = 0;
+      for (var di = 0; di < keys.length; di++) {
+        var s = keys[di].data.Status;
+        if (s === "active") active++; else if (s === "inactive") inactive++; else removed++;
+        totalRequests += Number(keys[di].data.RequestCount) || 0;
+      }
+      response = { success: true, totalKeys: total, activeKeys: active, inactiveKeys: inactive, removedKeys: removed, totalRequests: totalRequests, keys: keys.map(function(r) { return { key: r.data.Key, name: r.data.Name, email: r.data.Email, createdAt: r.data.CreatedAt, lastUsed: r.data.LastUsed, status: r.data.Status, requestCount: Number(r.data.RequestCount)||0 }; }) };
     }
 
     return respond(response);
