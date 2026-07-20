@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>World Countries - Express Airways</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-primary: #080c1a;
+  --bg-secondary: #0d1230;
+  --bg-card: rgba(13, 18, 48, 0.7);
+  --bg-glass: rgba(255, 255, 255, 0.04);
+  --bg-glass-hover: rgba(255, 255, 255, 0.08);
+  --text-primary: #f0f4ff;
+  --text-secondary: #8892b0;
+  --text-muted: #555d7a;
+  --accent: #4f8cff;
+  --accent-glow: rgba(79, 140, 255, 0.3);
+  --accent-gradient: linear-gradient(135deg, #4f8cff, #00d4aa);
+  --success: #00d4aa;
+  --warning: #fbbf24;
+  --danger: #ef4444;
+  --danger-glow: rgba(239, 68, 68, 0.3);
+  --border: rgba(255, 255, 255, 0.06);
+  --border-active: rgba(79, 140, 255, 0.3);
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.3);
+  --shadow-md: 0 8px 32px rgba(0,0,0,0.4);
+  --shadow-lg: 0 16px 48px rgba(0,0,0,0.5);
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --nav-height: 72px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+*:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{font-family:var(--font-sans);background:var(--bg-primary);color:var(--text-primary);line-height:1.6;overflow-x:hidden;min-height:100vh;-webkit-tap-highlight-color:transparent}
+a{color:var(--accent);text-decoration:none}
+a:hover{color:#7ab7ff}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.15)}
+.hidden{display:none!important}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border:none;border-radius:var(--radius-sm);font-size:14px;font-weight:600;cursor:pointer;transition:var(--transition);white-space:nowrap;font-family:var(--font-sans)}
+.btn-sm{padding:7px 14px;font-size:13px}
+.btn-lg{padding:14px 28px;font-size:16px;border-radius:var(--radius-md)}
+.btn-full{width:100%;justify-content:center}
+.btn-primary{background:var(--accent-gradient);color:#fff;box-shadow:0 0 20px var(--accent-glow)}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 0 30px var(--accent-glow)}
+.btn-outline{background:transparent;color:var(--text-primary);border:1px solid var(--border)}
+.btn-outline:hover{background:var(--bg-glass);border-color:var(--accent)}
+.btn-glass{background:var(--bg-glass);color:var(--text-primary);backdrop-filter:blur(10px);border:1px solid var(--border)}
+.btn-glass:hover{background:var(--bg-glass-hover);transform:translateY(-1px)}
+.btn:disabled{opacity:0.4;cursor:not-allowed;transform:none}
+.btn.loading{position:relative;color:transparent!important;pointer-events:none}
+.btn.loading::after{content:'';position:absolute;width:16px;height:16px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:btnSpin .6s linear infinite;top:50%;left:50%;margin:-8px 0 0 -8px}
+@keyframes btnSpin{to{transform:rotate(360deg)}}
+.card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem;backdrop-filter:blur(10px);transition:var(--transition)}
+.card:hover{border-color:var(--border-active);box-shadow:var(--shadow-md)}
+.toast-container{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{display:flex;align-items:center;gap:10px;padding:14px 20px;border-radius:var(--radius-md);background:var(--bg-secondary);border:1px solid var(--border);box-shadow:var(--shadow-md);font-size:13px;font-weight:500;pointer-events:auto;animation:toastIn 0.35s ease forwards;max-width:400px;min-width:280px}
+@keyframes toastIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes toastOut{from{opacity:1}to{opacity:0;transform:translateX(100%)}}
+.toast.success{border-left:3px solid var(--success)}
+.toast.error{border-left:3px solid var(--danger)}
+.toast.warning{border-left:3px solid var(--warning)}
+.toast.info{border-left:3px solid var(--accent)}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn 0.2s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal{background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-xl);width:100%;max-height:90vh;overflow-y:auto;position:relative;animation:slideUp 0.3s ease}
+@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal-sm{max-width:480px;padding:32px}
+.modal-lg{max-width:700px;padding:32px}
+.modal-close{position:absolute;top:16px;right:16px;background:none;border:none;color:var(--text-muted);font-size:28px;cursor:pointer;width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:var(--radius-sm);transition:var(--transition);z-index:1}
+.modal-close:hover{background:var(--bg-glass);color:var(--text-primary)}
+.modal-header{text-align:center;margin-bottom:24px}
+.modal-header h3{font-size:22px;font-weight:700;margin-bottom:8px}
+.modal-header p{font-size:14px;color:var(--text-secondary)}
+.form-group{margin-bottom:16px}
+.form-label{display:block;font-size:13px;font-weight:600;color:var(--text-secondary);margin-bottom:6px}
+.form-input{width:100%;padding:11px 14px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg-primary);color:var(--text-primary);font-size:14px;transition:var(--transition)}
+.form-input::placeholder{color:var(--text-muted)}
+.form-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 20px var(--accent-glow)}
+.spinner{width:32px;height:32px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto}
+@keyframes spin{to{transform:rotate(360deg)}}
+#globalLoader{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(8,12,26,0.92);backdrop-filter:blur(12px);display:flex;align-items:center;justify-content:center;z-index:99999;transition:opacity 0.5s ease,visibility 0.5s ease}
+#globalLoader.fade-out{opacity:0;visibility:hidden;pointer-events:none}
+.loader-content{text-align:center}
+.loader-text{margin-top:20px;color:var(--text-muted);font-size:14px;letter-spacing:1px;text-transform:uppercase}
+.navbar{position:fixed;top:0;left:0;right:0;height:var(--nav-height);display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:rgba(8,12,26,0.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);z-index:100}
+.nav-brand{display:flex;align-items:center;gap:10px;cursor:pointer;text-decoration:none;color:inherit}
+.nav-title{font-size:18px;font-weight:700;letter-spacing:-0.3px}
+.nav-links{display:flex;align-items:center;gap:4px}
+.nav-item{position:relative}
+.nav-link{font-size:14px;font-weight:500;color:var(--text-secondary);padding:8px 14px;border-radius:var(--radius-sm);transition:var(--transition);cursor:pointer;display:flex;align-items:center;gap:4px}
+.nav-link:hover,.nav-link.active{color:var(--text-primary);background:var(--bg-glass)}
+.nav-link svg{width:12px;height:12px;transition:var(--transition)}
+.nav-item:hover .nav-link svg{transform:rotate(180deg)}
+.nav-actions{display:flex;align-items:center;gap:8px}
+.nav-dropdown{position:absolute;top:calc(100% + 8px);left:0;min-width:200px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-md);box-shadow:var(--shadow-lg);z-index:50;padding:8px;opacity:0;visibility:hidden;transform:translateY(-8px);transition:all 0.2s ease}
+.nav-item:hover .nav-dropdown{opacity:1;visibility:visible;transform:translateY(0)}
+.nav-dropdown a{display:flex;align-items:center;gap:8px;padding:10px 14px;font-size:13px;color:var(--text-secondary);border-radius:var(--radius-sm);transition:var(--transition);text-decoration:none}
+.nav-dropdown a:hover{background:var(--bg-glass);color:var(--text-primary)}
+.nav-hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:8px;background:none;border:none}
+.nav-hamburger span{width:24px;height:2px;background:var(--text-primary);border-radius:2px;transition:var(--transition)}
+.hero{position:relative;min-height:50vh;display:flex;align-items:center;justify-content:center;padding:var(--nav-height) 24px 40px;overflow:hidden}
+.hero-gradient{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(79,140,255,0.15),transparent),radial-gradient(ellipse 60% 50% at 80% 100%,rgba(0,212,170,0.1),transparent),radial-gradient(ellipse 50% 50% at 20% 100%,rgba(79,140,255,0.08),transparent)}
+.hero-content{position:relative;z-index:1;text-align:center;max-width:900px;width:100%;display:flex;flex-direction:column;align-items:center;gap:24px;padding:60px 0}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 16px;border-radius:100px;background:var(--bg-glass);border:1px solid var(--border);font-size:13px;font-weight:600;color:var(--text-secondary);margin-bottom:8px}
+.pulse-dot{width:6px;height:6px;border-radius:50%;background:var(--success);display:inline-block;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+.hero-headline{font-size:clamp(32px,6vw,56px);font-weight:800;letter-spacing:-1.5px;line-height:1.15;margin-bottom:8px}
+.hero-accent{background:var(--accent-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-desc{font-size:17px;color:var(--text-secondary);line-height:1.7}
+.footer{border-top:1px solid var(--border);padding:60px 24px 24px}
+.footer-content{max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;gap:48px;flex-wrap:wrap}
+.footer-brand{max-width:280px}
+.footer-logo{display:flex;align-items:center;gap:10px;font-size:18px;font-weight:700;margin-bottom:12px}
+.footer-desc{font-size:13px;color:var(--text-muted);line-height:1.7}
+.footer-links{display:flex;gap:48px;flex-wrap:wrap}
+.footer-col h4{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:16px}
+.footer-col a{display:block;font-size:14px;color:var(--text-secondary);margin-bottom:10px;transition:var(--transition);cursor:pointer;text-decoration:none}
+.footer-col a:hover{color:var(--text-primary)}
+.footer-bottom{max-width:1200px;margin:40px auto 0;padding-top:20px;border-top:1px solid var(--border);text-align:center;font-size:12px;color:var(--text-muted)}
+main{max-width:1200px;margin:0 auto 60px;padding:0 24px;position:relative;z-index:2}
+.section-header{text-align:center;margin-bottom:40px}
+.section-title{font-size:28px;font-weight:700;letter-spacing:-1px;margin-bottom:8px}
+.section-desc{font-size:15px;color:var(--text-secondary)}
+.search-bar{display:flex;gap:12px;max-width:600px;margin:0 auto 24px;flex-wrap:wrap;justify-content:center}
+.sort-bar{display:flex;gap:8px;justify-content:center;margin-bottom:24px;flex-wrap:wrap}
+.sort-btn{padding:8px 16px;border-radius:100px;border:1px solid var(--border);background:var(--bg-glass);color:var(--text-secondary);font-size:13px;font-weight:600;cursor:pointer;transition:var(--transition);font-family:var(--font-sans)}
+.sort-btn:hover{background:var(--bg-glass-hover);color:var(--text-primary)}
+.sort-btn.active{background:var(--accent-gradient);color:#fff;border-color:transparent}
+.stats-bar{display:flex;gap:24px;justify-content:center;margin-bottom:24px;flex-wrap:wrap}
+.stat-item{text-align:center;padding:12px 20px;background:var(--bg-glass);border-radius:var(--radius-md);border:1px solid var(--border)}
+.stat-number{font-size:24px;font-weight:800;background:var(--accent-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.stat-label{display:block;font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-top:2px}
+.countries-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.country-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;backdrop-filter:blur(10px);transition:var(--transition);cursor:pointer}
+.country-card:hover{border-color:var(--border-active);transform:translateY(-2px);box-shadow:var(--shadow-md)}
+.country-flag{font-size:40px;margin-bottom:8px;line-height:1}
+.country-name{font-size:16px;font-weight:700;margin-bottom:4px}
+.country-capital{font-size:13px;color:var(--text-secondary);margin-bottom:8px}
+.country-info{display:flex;flex-wrap:wrap;gap:6px;font-size:12px;color:var(--text-muted)}
+.country-info span{background:var(--bg-glass);padding:3px 8px;border-radius:4px}
+.detail-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);z-index:200;display:none;align-items:center;justify-content:center;padding:20px;animation:fadeIn 0.2s ease}
+.detail-card{background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-xl);padding:32px;max-width:600px;width:100%;max-height:85vh;overflow-y:auto;position:relative;animation:slideUp 0.3s ease}
+.detail-close{position:absolute;top:16px;right:16px;background:none;border:none;color:var(--text-muted);font-size:28px;cursor:pointer;width:36px;height:36px;border-radius:var(--radius-sm);transition:var(--transition)}
+.detail-close:hover{background:var(--bg-glass);color:var(--text-primary)}
+.detail-header{text-align:center;margin-bottom:20px}
+.detail-flag{font-size:64px;margin-bottom:8px}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.detail-item{padding:10px;background:var(--bg-glass);border-radius:var(--radius-sm)}
+.detail-item-label{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
+.detail-item-value{font-size:14px;font-weight:600;word-break:break-word}
+@media(max-width:768px){
+  :root{--nav-height:60px}
+  .nav-links{display:none}
+  .nav-hamburger{display:flex}
+  .nav-links.open{display:flex;flex-direction:column;position:fixed;top:var(--nav-height);left:0;right:0;background:rgba(8,12,26,0.98);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:16px;max-height:calc(100vh - var(--nav-height));overflow-y:auto}
+  .nav-links.open .nav-item{width:100%}
+  .nav-links.open .nav-dropdown{position:static;opacity:1;visibility:visible;transform:none;box-shadow:none;border:none;padding:0;margin-top:4px;background:transparent}
+  .hero-headline{font-size:32px}
+  .footer-content{flex-direction:column;gap:32px}
+  .footer-links{flex-wrap:wrap;gap:24px}
+  .countries-grid{grid-template-columns:1fr}
+  .detail-grid{grid-template-columns:1fr}
+  .search-bar input{width:100%}
+}
+</style>
+</head>
+<body class="page-fade">
+
+<div id="globalLoader"><div class="loader-content"><div class="spinner"></div><p class="loader-text">Loading World Explorer...</p></div></div>
+
+<nav class="navbar">
+  <a href="../index.html" class="nav-brand" style="text-decoration:none;color:inherit">
+    <img src="../OIG3.jpg" alt="Express Airways" style="height:32px;width:32px;border-radius:50%;object-fit:cover">
+    <span class="nav-title">Express Airways</span>
+  </a>
+  <button class="nav-hamburger" id="hamburgerBtn" aria-label="Toggle menu">
+    <span></span><span></span><span></span>
+  </button>
+  <div class="nav-links" id="navLinks">
+    <div class="nav-item">
+      <span class="nav-link">Flight Ops <svg viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></span>
+      <div class="nav-dropdown">
+        <a href="../flights/index.html">&#9992; Flights</a>
+        <a href="../weather/index.html">&#9729; Weather</a>
+      </div>
+    </div>
+    <div class="nav-item">
+      <span class="nav-link">Airports <svg viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></span>
+      <div class="nav-dropdown">
+        <a href="../airports/index.html">&#127758; Directory</a>
+      </div>
+    </div>
+    <div class="nav-item">
+      <span class="nav-link">Travel <svg viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></span>
+      <div class="nav-dropdown">
+        <a href="../travel/index.html">&#127979; Destinations</a>
+        <a href="../travel/index.html">&#128716; Hotels</a>
+        <a href="../newsletter/index.html">&#128240; Newsletter</a>
+      </div>
+    </div>
+    <div class="nav-item">
+      <span class="nav-link">Company <svg viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></span>
+      <div class="nav-dropdown">
+        <a href="../holdings/index.html">&#127970; Holdings</a>
+        <a href="../documents/index.html">&#128196; Documents</a>
+        <a href="../ops/index.html">&#9881; Operations</a>
+        <a href="../status/index.html">&#128200; Status</a>
+      </div>
+    </div>
+    <div class="nav-item">
+      <span class="nav-link">Discover <svg viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></span>
+      <div class="nav-dropdown">
+        <a href="../countries/index.html">&#127758; Countries</a>
+        <a href="../space/index.html">&#128640; Space</a>
+        <a href="../books/index.html">&#128218; Books</a>
+        <a href="../tv/index.html">&#128250; TV Shows</a>
+        <a href="../facts/index.html">&#128161; Facts</a>
+      </div>
+    </div>
+    <div class="nav-item">
+      <span class="nav-link">Fun <svg viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></span>
+      <div class="nav-dropdown">
+        <a href="../quotes/index.html">&#128172; Quotes</a>
+        <a href="../jokes/index.html">&#128514; Jokes</a>
+        <a href="../advice/index.html">&#128161; Advice</a>
+        <a href="../bored/index.html">&#129309; Bored?</a>
+        <a href="../predict/index.html">&#128302; Predict</a>
+      </div>
+    </div>
+    <div class="nav-item">
+      <span class="nav-link">Account <svg viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></span>
+      <div class="nav-dropdown">
+        <a href="../account/index.html">&#128100; Profile</a>
+        <a href="../account/index.html">&#128179; Bookings</a>
+        <a href="../account/index.html">&#11088; Loyalty</a>
+        <a href="../crypto/index.html">&#128176; Crypto</a>
+        <a href="../developer/index.html">&#128187; Developer</a>
+      </div>
+    </div>
+  </div>
+  <div class="nav-actions">
+    <div class="user-menu hidden" id="userMenu">
+      <div class="user-avatar">
+        <div class="avatar-initials" id="avatarInitials">U</div>
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+      </div>
+      <div class="user-dropdown hidden">
+        <div class="dropdown-header">
+          <span class="dropdown-name" id="dropdownName">User</span>
+          <span class="dropdown-email" id="dropdownEmail">user@email.com</span>
+        </div>
+        <div class="dropdown-divider"></div>
+        <a class="dropdown-item" href="../account/index.html">My Account</a>
+        <a class="dropdown-item" href="../account/index.html">My Bookings</a>
+        <div class="dropdown-divider"></div>
+        <a class="dropdown-item" id="logoutBtn" style="color:var(--danger)">Sign Out</a>
+      </div>
+    </div>
+    <button class="btn btn-primary btn-sm" id="loginBtn">Sign In</button>
+    <button class="btn btn-outline btn-sm" id="signupBtn">Register</button>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-gradient"></div>
+  <div class="hero-bg-animated"></div>
+  <div class="hero-content">
+    <div class="hero-badge"><span class="pulse-dot"></span> World Explorer</div>
+    <h1 class="hero-headline"><span class="hero-accent">Explore</span> the World</h1>
+    <p class="hero-desc">Discover countries, their capitals, cultures, and fascinating facts from around the globe.</p>
+  </div>
+</section>
+
+<main>
+  <div class="search-bar">
+    <input class="form-input" id="searchInput" placeholder="Search countries..." style="max-width:400px;flex:1;text-align:center">
+  </div>
+
+  <div class="sort-bar">
+    <button class="sort-btn active" data-sort="name">&#127758; Name</button>
+    <button class="sort-btn" data-sort="population">&#128101; Population</button>
+    <button class="sort-btn" data-sort="area">&#128207; Area</button>
+  </div>
+
+  <div class="stats-bar" id="statsBar">
+    <div class="stat-item"><div class="stat-number" id="totalCountries">0</div><span class="stat-label">Countries</span></div>
+    <div class="stat-item"><div class="stat-number" id="totalPopulation">0</div><span class="stat-label">Population</span></div>
+    <div class="stat-item"><div class="stat-number" id="totalRegions">0</div><span class="stat-label">Regions</span></div>
+  </div>
+
+  <div id="countriesContainer">
+    <div class="countries-grid" id="countriesGrid"></div>
+  </div>
+  <div id="countriesError" class="hidden" style="text-align:center;padding:40px;color:var(--text-secondary)"></div>
+</main>
+
+<div class="detail-overlay" id="detailOverlay">
+  <div class="detail-card">
+    <button class="detail-close" id="detailClose">&times;</button>
+    <div id="detailContent"></div>
+  </div>
+</div>
+
+<footer class="footer fade-in-up">
+  <div class="footer-content">
+    <div class="footer-brand">
+      <div class="footer-logo">
+        <img src="../OIG3.jpg" alt="Express Airways" style="height:28px;width:28px;border-radius:50%;object-fit:cover">
+        <span>Express Airways</span>
+      </div>
+      <p class="footer-desc">Next-generation flight services with unified booking, operations, and travel management. Sovereign. Global. Reliable.</p>
+    </div>
+    <div class="footer-links">
+      <div class="footer-col">
+        <h4>Flight Ops</h4>
+        <a href="../flights/index.html">&#9992; Flights</a>
+        <a href="../weather/index.html">&#9729; Weather</a>
+      </div>
+      <div class="footer-col">
+        <h4>Airports</h4>
+        <a href="../airports/index.html">&#127758; Directory</a>
+      </div>
+      <div class="footer-col">
+        <h4>Travel</h4>
+        <a href="../travel/index.html">&#127979; Destinations</a>
+        <a href="../newsletter/index.html">&#128240; Newsletter</a>
+      </div>
+      <div class="footer-col">
+        <h4>Company</h4>
+        <a href="../holdings/index.html">&#127970; Holdings</a>
+        <a href="../documents/index.html">&#128196; Documents</a>
+        <a href="../ops/index.html">&#9881; Operations</a>
+        <a href="../status/index.html">&#128200; Status</a>
+        <a href="../developer/index.html">&#128187; Developer</a>
+      </div>
+      <div class="footer-col">
+        <h4>Discover</h4>
+        <a href="../countries/index.html">&#127758; Countries</a>
+        <a href="../space/index.html">&#128640; Space</a>
+        <a href="../books/index.html">&#128218; Books</a>
+        <a href="../tv/index.html">&#128250; TV Shows</a>
+        <a href="../facts/index.html">&#128161; Facts</a>
+      </div>
+      <div class="footer-col">
+        <h4>Fun</h4>
+        <a href="../quotes/index.html">&#128172; Quotes</a>
+        <a href="../jokes/index.html">&#128514; Jokes</a>
+        <a href="../advice/index.html">&#128161; Advice</a>
+        <a href="../bored/index.html">&#129309; Bored?</a>
+        <a href="../predict/index.html">&#128302; Predict</a>
+      </div>
+      <div class="footer-col">
+        <h4>Account</h4>
+        <a href="../account/index.html">&#128100; Profile</a>
+        <a href="../crypto/index.html">&#128176; Crypto</a>
+        <a href="../developer/index.html">&#128187; Developer</a>
+        <a href="../contact/index.html">&#9993; Contact</a>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom"><p>&copy; 2026 Express Airways. All rights reserved.</p></div>
+</footer>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="../common.js"></script>
+<script>window.__ea_has_own_auth = true;</script>
+<script>
+(function(){
+  'use strict';
+
+  function $(id){return document.getElementById(id)}
+  function qs(s){return document.querySelector(s)}
+  function qsa(s){return document.querySelectorAll(s)}
+  function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML}
+
+  function toast(type,msg){
+    var c=$('toastContainer');if(!c)return;
+    var t=document.createElement('div');
+    t.className='toast '+type;
+    var icons={success:'\u2713',error:'\u2715',warning:'\u26A0',info:'\u2139'};
+    t.innerHTML='<span>'+(icons[type]||'')+'</span><span>'+msg+'</span>';
+    c.appendChild(t);
+    setTimeout(function(){t.style.animation='toastOut 0.3s ease forwards';setTimeout(function(){t.remove()},300)},type==='error'?10000:6000);
+  }
+
+  var countries = [];
+  var filtered = [];
+  var currentSort = 'name';
+  var currentSearch = '';
+
+  function formatNumber(n){
+    if(n===undefined||n===null)return 'N/A';
+    if(n>=1000000000)return (n/1000000000).toFixed(1)+'B';
+    if(n>=1000000)return (n/1000000).toFixed(1)+'M';
+    if(n>=1000)return (n/1000).toFixed(1)+'K';
+    return n.toLocaleString();
+  }
+
+  function getLanguages(langs){
+    if(!langs)return 'N/A';
+    return Object.values(langs).join(', ');
+  }
+
+  function getCurrencies(currs){
+    if(!currs)return 'N/A';
+    return Object.values(currs).map(function(c){return c.name+(c.symbol?' ('+c.symbol+')':'')}).join(', ');
+  }
+
+  function sortCountries(arr, sortBy){
+    var sorted=arr.slice();
+    if(sortBy==='name')sorted.sort(function(a,b){return (a.name&&a.name.common||'').localeCompare(b.name&&b.name.common||'')});
+    else if(sortBy==='population')sorted.sort(function(a,b){return (b.population||0)-(a.population||0)});
+    else if(sortBy==='area')sorted.sort(function(a,b){return (b.area||0)-(a.area||0)});
+    return sorted;
+  }
+
+  function renderCountries(arr){
+    var grid=$('countriesGrid');
+    if(!arr||arr.length===0){
+      grid.innerHTML='<div style="text-align:center;padding:60px;color:var(--text-muted);grid-column:1/-1">No countries found matching your search.</div>';
+      return;
+    }
+    grid.innerHTML=arr.map(function(c){
+      var name=c.name&&c.name.common||'Unknown';
+      var flag=c.flag||'';
+      var capital=c.capital&&c.capital[0]||'N/A';
+      var region=c.region||'N/A';
+      var pop=formatNumber(c.population);
+      var area=formatNumber(c.area);
+      return '<div class="country-card" onclick="window.showCountryDetail(\''+esc(name)+'\')">'+
+        '<div class="country-flag">'+flag+'</div>'+
+        '<div class="country-name">'+esc(name)+'</div>'+
+        '<div class="country-capital">'+esc(capital)+'</div>'+
+        '<div class="country-info"><span>'+esc(region)+'</span><span>\uD83D\uDC65 '+pop+'</span><span>\uD83C\uDFD4 '+area+'</span></div></div>';
+    }).join('');
+  }
+
+  function applyFilters(){
+    var search=currentSearch.toLowerCase().trim();
+    var arr=search?countries.filter(function(c){
+      var n=c.name&&c.name.common||'';
+      var cap=c.capital&&c.capital[0]||'';
+      var reg=c.region||'';
+      return n.toLowerCase().includes(search)||cap.toLowerCase().includes(search)||reg.toLowerCase().includes(search);
+    }):countries.slice();
+    filtered=sortCountries(arr,currentSort);
+    renderCountries(filtered);
+  }
+
+  function updateStats(){
+    $('totalCountries').textContent=countries.length;
+    var totalPop=countries.reduce(function(s,c){return s+(c.population||0)},0);
+    $('totalPopulation').textContent=formatNumber(totalPop);
+    var regions=new Set(countries.map(function(c){return c.region}).filter(Boolean));
+    $('totalRegions').textContent=regions.size;
+  }
+
+  window.showCountryDetail=function(name){
+    var c=countries.find(function(x){return(x.name&&x.name.common||'')===name});
+    if(!c)return;
+    var flag=c.flag||'';
+    var n=c.name&&c.name.common||'Unknown';
+    var capital=c.capital&&c.capital[0]||'N/A';
+    var region=c.region||'N/A';
+    var pop=formatNumber(c.population);
+    var area=formatNumber(c.area);
+    var langs=getLanguages(c.languages);
+    var currs=getCurrencies(c.currencies);
+    var tz=c.timezones?c.timezones.join(', '):'N/A';
+    $('detailContent').innerHTML=
+      '<div class="detail-header"><div class="detail-flag">'+flag+'</div><h3 style="font-size:24px;font-weight:700">'+esc(n)+'</h3></div>'+
+      '<div class="detail-grid">'+
+      '<div class="detail-item"><div class="detail-item-label">Capital</div><div class="detail-item-value">'+esc(capital)+'</div></div>'+
+      '<div class="detail-item"><div class="detail-item-label">Region</div><div class="detail-item-value">'+esc(region)+'</div></div>'+
+      '<div class="detail-item"><div class="detail-item-label">Population</div><div class="detail-item-value">'+pop+'</div></div>'+
+      '<div class="detail-item"><div class="detail-item-label">Area</div><div class="detail-item-value">'+area+' km\u00B2</div></div>'+
+      '<div class="detail-item"><div class="detail-item-label">Languages</div><div class="detail-item-value">'+esc(langs)+'</div></div>'+
+      '<div class="detail-item"><div class="detail-item-label">Currencies</div><div class="detail-item-value">'+esc(currs)+'</div></div>'+
+      '<div class="detail-item" style="grid-column:1/-1"><div class="detail-item-label">Timezones</div><div class="detail-item-value">'+esc(tz)+'</div></div></div>';
+    $('detailOverlay').style.display='flex';
+  };
+
+  function fetchCountries(){
+    var grid=$('countriesGrid');
+    grid.innerHTML='<div style="text-align:center;padding:60px;color:var(--text-muted);grid-column:1/-1"><div class="spinner" style="margin:0 auto 16px"></div><p>Loading countries...</p></div>';
+    fetch('https://restcountries.com/v3.1/all',{cache:'no-store'})
+      .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json()})
+      .then(function(data){
+        if(data&&data.length){
+          countries=data;
+          toast('success','Loaded '+countries.length+' countries');
+          applyFilters();
+          updateStats();
+        } else {
+          throw new Error('No country data returned');
+        }
+      })
+      .catch(function(e){
+        if (window.reportError) window.reportError('countries', e, 'restcountries API');
+        grid.innerHTML='<div style="text-align:center;padding:60px;color:var(--text-muted);grid-column:1/-1"><p style="font-size:18px;margin-bottom:8px">Failed to load countries</p><p style="font-size:14px;color:var(--text-secondary)">'+e.message+'</p></div>';
+        toast('error','Failed to load countries: '+e.message);
+      });
+  }
+
+  function hideLoader(){
+    var el=$('globalLoader');
+    if(el){el.classList.add('fade-out');setTimeout(function(){el.style.display='none'},500)}
+  }
+
+  document.addEventListener('DOMContentLoaded',function(){
+    fetchCountries();
+    hideLoader();
+
+    $('searchInput').addEventListener('input',function(){
+      currentSearch=this.value;
+      applyFilters();
+    });
+
+    qsa('.sort-btn').forEach(function(btn){
+      btn.addEventListener('click',function(){
+        qsa('.sort-btn').forEach(function(b){b.classList.remove('active')});
+        btn.classList.add('active');
+        currentSort=btn.dataset.sort;
+        applyFilters();
+      });
+    });
+
+    $('detailClose').addEventListener('click',function(){$('detailOverlay').style.display='none'});
+    $('detailOverlay').addEventListener('click',function(e){if(e.target===this)this.style.display='none'});
+
+    $('hamburgerBtn').addEventListener('click',function(){$('navLinks').classList.toggle('open')});
+    qsa('.nav-links a').forEach(function(a){a.addEventListener('click',function(){$('navLinks').classList.remove('open')})});
+  });
+})();
+</script>
+</body>
+</html>
+

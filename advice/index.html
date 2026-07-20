@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Express Airways Advice Slip</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-primary: #080c1a;
+  --bg-secondary: #0d1230;
+  --bg-card: rgba(13, 18, 48, 0.7);
+  --bg-glass: rgba(255, 255, 255, 0.04);
+  --bg-glass-hover: rgba(255, 255, 255, 0.08);
+  --text-primary: #f0f4ff;
+  --text-secondary: #8892b0;
+  --text-muted: #555d7a;
+  --accent: #4f8cff;
+  --accent-glow: rgba(79, 140, 255, 0.3);
+  --accent-gradient: linear-gradient(135deg, #4f8cff, #00d4aa);
+  --success: #00d4aa;
+  --warning: #fbbf24;
+  --danger: #ef4444;
+  --danger-glow: rgba(239, 68, 68, 0.3);
+  --border: rgba(255, 255, 255, 0.06);
+  --border-active: rgba(79, 140, 255, 0.3);
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.3);
+  --shadow-md: 0 8px 32px rgba(0,0,0,0.4);
+  --shadow-lg: 0 16px 48px rgba(0,0,0,0.5);
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --nav-height: 72px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+body {
+  font-family: var(--font-sans);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.6;
+  overflow-x: hidden;
+  min-height: 100vh;
+  -webkit-tap-highlight-color: transparent;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { color: #7ab7ff; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
+.hidden { display: none !important; }
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+  font-family: var(--font-sans);
+}
+.btn-sm { padding: 7px 14px; font-size: 13px; }
+.btn-lg { padding: 14px 28px; font-size: 16px; border-radius: var(--radius-md); }
+.btn-full { width: 100%; justify-content: center; }
+.btn-primary { background: var(--accent-gradient); color: #fff; box-shadow: 0 0 20px var(--accent-glow); }
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 0 30px var(--accent-glow); }
+.btn-outline { background: transparent; color: var(--text-primary); border: 1px solid var(--border); }
+.btn-outline:hover { background: var(--bg-glass); border-color: var(--accent); }
+.btn-glass { background: var(--bg-glass); color: var(--text-primary); backdrop-filter: blur(10px); border: 1px solid var(--border); }
+.btn-glass:hover { background: var(--bg-glass-hover); transform: translateY(-1px); }
+.btn-ghost { background: transparent; color: var(--text-secondary); padding: 8px; border-radius: var(--radius-sm); }
+.btn-ghost:hover { background: var(--bg-glass); color: var(--text-primary); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  backdrop-filter: blur(10px);
+  transition: var(--transition);
+}
+.card:hover { border-color: var(--border-active); box-shadow: var(--shadow-md); }
+.toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-md);
+  font-size: 13px;
+  font-weight: 500;
+  pointer-events: auto;
+  animation: toastIn 0.35s ease forwards;
+  max-width: 400px;
+  min-width: 280px;
+}
+@keyframes toastIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+@keyframes toastOut { from { opacity: 1; } to { opacity: 0; transform: translateX(100%); } }
+.toast.success { border-left: 3px solid var(--success); }
+.toast.error { border-left: 3px solid var(--danger); }
+.toast.warning { border-left: 3px solid var(--warning); }
+.toast.info { border-left: 3px solid var(--accent); }
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(8px);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fadeIn 0.2s ease;
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.modal {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  animation: slideUp 0.3s ease;
+}
+@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.modal-sm { max-width: 480px; padding: 32px; }
+.modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 28px;
+  cursor: pointer;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  transition: var(--transition);
+  z-index: 1;
+}
+.modal-close:hover { background: var(--bg-glass); color: var(--text-primary); }
+.modal-header { text-align: center; margin-bottom: 24px; }
+.modal-header h3 { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+.modal-header p { font-size: 14px; color: var(--text-secondary); }
+.form-group { margin-bottom: 16px; }
+.form-label { display: block; font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; }
+.form-input {
+  width: 100%;
+  padding: 11px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 14px;
+  transition: var(--transition);
+}
+.form-input::placeholder { color: var(--text-muted); }
+.form-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 20px var(--accent-glow); }
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+#globalLoader {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(8, 12, 26, 0.92);
+  backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+  transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+#globalLoader.fade-out { opacity: 0; visibility: hidden; pointer-events: none; }
+.loader-content { text-align: center; }
+.loader-text { margin-top: 20px; color: var(--text-muted); font-size: 14px; letter-spacing: 1px; text-transform: uppercase; }
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--nav-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  background: rgba(8, 12, 26, 0.85);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  z-index: 100;
+}
+.nav-brand { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+.nav-title { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+.nav-badge { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; padding: 2px 8px; border-radius: 4px; background: var(--accent-gradient); color: #fff; line-height: 1.4; }
+.nav-links { display: flex; align-items: center; gap: 4px; }
+.nav-link { font-size: 14px; font-weight: 500; color: var(--text-secondary); padding: 8px 16px; border-radius: var(--radius-sm); transition: var(--transition); cursor: pointer; }
+.nav-link:hover, .nav-link.active { color: var(--text-primary); background: var(--bg-glass); }
+.nav-actions { display: flex; align-items: center; gap: 8px; }
+.dropdown { position: relative; }
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  min-width: 200px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 8px;
+  box-shadow: var(--shadow-lg);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(4px);
+  transition: var(--transition);
+  z-index: 200;
+}
+.dropdown:hover .dropdown-menu { opacity: 1; visibility: visible; transform: translateY(0); }
+.dropdown-item {
+  display: block;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  transition: var(--transition);
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.dropdown-item:hover { background: var(--bg-glass); color: var(--text-primary); }
+.dropdown-category { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: var(--text-muted); padding: 8px 12px 4px; }
+.user-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  min-width: 160px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 8px;
+  box-shadow: var(--shadow-lg);
+  z-index: 200;
+}
+.user-dropdown .dropdown-item { padding: 6px 12px; }
+.hero {
+  position: relative;
+  min-height: 50vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--nav-height) 24px 40px;
+  overflow: hidden;
+}
+.hero-bg { position: absolute; inset: 0; z-index: 0; }
+.hero-gradient {
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(79,140,255,0.15), transparent),
+              radial-gradient(ellipse 60% 50% at 80% 100%, rgba(0,212,170,0.1), transparent),
+              radial-gradient(ellipse 50% 50% at 20% 100%, rgba(79,140,255,0.08), transparent);
+}
+.hero-content { position: relative; z-index: 1; text-align: center; max-width: 800px; }
+.hero-title { font-size: clamp(36px, 7vw, 72px); font-weight: 800; letter-spacing: -2px; line-height: 1.1; margin-bottom: 20px; }
+.hero-title-accent { background: var(--accent-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.hero-subtitle { font-size: 18px; color: var(--text-secondary); max-width: 600px; margin: 0 auto 32px; line-height: 1.7; }
+.hero-badge { display:inline-flex;align-items:center;gap:8px;padding:6px 16px;border-radius:100px;background:var(--bg-glass);border:1px solid var(--border);font-size:13px;font-weight:600;color:var(--text-secondary);margin-bottom:8px; }
+.section-header { text-align: center; margin-bottom: 56px; }
+.section-tag { display: inline-block; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; color: var(--accent); margin-bottom: 12px; }
+.section-title { font-size: 36px; font-weight: 700; letter-spacing: -1px; margin-bottom: 12px; }
+.section-desc { font-size: 16px; color: var(--text-secondary); max-width: 500px; margin: 0 auto; }
+.footer { border-top: 1px solid var(--border); padding: 60px 24px 24px; }
+.footer-content { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; gap: 48px; flex-wrap: wrap; }
+.footer-brand { max-width: 280px; }
+.footer-logo { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 700; margin-bottom: 12px; }
+.footer-desc { font-size: 13px; color: var(--text-muted); line-height: 1.7; }
+.footer-links { display: flex; gap: 48px; }
+.footer-col h4 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 16px; }
+.footer-col a { display: block; font-size: 14px; color: var(--text-secondary); margin-bottom: 10px; transition: var(--transition); }
+.footer-col a:hover { color: var(--text-primary); }
+.footer-bottom { max-width: 1200px; margin: 40px auto 0; padding-top: 20px; border-top: 1px solid var(--border); text-align: center; font-size: 12px; color: var(--text-muted); }
+.auth-tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+.auth-tab { flex: 1; padding: 12px; text-align: center; font-size: 14px; font-weight: 600; color: var(--text-secondary); cursor: pointer; transition: var(--transition); border-bottom: 2px solid transparent; background: none; border-top: none; border-left: none; border-right: none; font-family: var(--font-sans); }
+.auth-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.auth-tab:hover { color: var(--text-primary); }
+.form-error { font-size: 12px; color: var(--danger); margin-top: 4px; }
+.btn.loading { position: relative; color: transparent !important; pointer-events: none; }
+.btn.loading::after { content: ''; position: absolute; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: btnSpin .6s linear infinite; top: 50%; left: 50%; margin: -8px 0 0 -8px; }
+@keyframes btnSpin { to { transform: rotate(360deg); } }
+.advice-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: 3rem 2rem;
+  backdrop-filter: blur(10px);
+  text-align: center;
+  transition: var(--transition);
+  position: relative;
+}
+.advice-card:hover { border-color: var(--border-active); box-shadow: var(--shadow-lg); }
+.advice-id { font-size: 12px; color: var(--text-muted); font-family: var(--font-mono); margin-bottom: 16px; }
+.advice-text { font-size: clamp(20px, 3vw, 32px); font-weight: 600; line-height: 1.6; margin-bottom: 8px; font-style: italic; }
+.advice-text::before { content: '\201C'; font-size: 48px; color: var(--accent); opacity: 0.3; position: absolute; top: 10px; left: 24px; font-style: normal; line-height: 1; }
+.advice-icon { font-size: 48px; margin-bottom: 16px; }
+@keyframes adviceFadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+.advice-fade-in { animation: adviceFadeIn 0.4s ease forwards; }
+@keyframes spinRefresh { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.spin-refresh { animation: spinRefresh 0.6s ease; }
+.saved-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--bg-glass);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  margin-bottom: 8px;
+  transition: var(--transition);
+}
+.saved-item:hover { background: var(--bg-glass-hover); }
+.saved-text { font-size: 14px; color: var(--text-secondary); flex: 1; }
+.saved-id { font-size: 11px; color: var(--text-muted); font-family: var(--font-mono); min-width: 60px; }
+@media (max-width: 768px) {
+  :root { --nav-height: 60px; }
+  .nav-links { display: none; }
+  .hero-title { font-size: 32px; }
+  .footer-content { flex-direction: column; gap: 32px; }
+  .footer-links { flex-wrap: wrap; gap: 24px; }
+}
+</style>
+</head>
+<body class="page-fade">
+
+<div id="globalLoader"><div class="loader-content"><div class="spinner" style="width:40px;height:40px;border-width:3px;margin:0 auto"></div><p class="loader-text">Loading Advice Slip...</p></div></div>
+
+<nav class="navbar">
+  <a href="../index.html" class="nav-brand" style="text-decoration:none;color:inherit">
+    <img src="../OIG3.jpg" alt="Express Airways" style="height:32px;width:32px;border-radius:50%;object-fit:cover">
+    <span class="nav-title">Express Airways</span>
+  </a>
+  <button class="nav-hamburger" id="hamburgerBtn" aria-label="Toggle menu">
+    <span></span><span></span><span></span>
+  </button>
+  <div class="nav-links" id="navLinks">
+    <div class="nav-item">
+      <span class="nav-link">Flight Ops <svg viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></span>
+      <div class="nav-dropdown">
+        <a href="../flights/index.html">&#9992; Flights</a>
+        <a href="../weather/index.html">&#9729; Weather</a>
+      </div>
+    </div>
+    <div class="nav-item">
+      <span class="nav-link">Airports <svg viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></span>
+      <div class="nav-dropdown">
+        <a href="../airports/index.html">&#127758; Directory</a>
+      </div>
+    </div>
+    <div class="nav-item">
+      <span class="nav-link">Travel <svg viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></span>
+      <div class="nav-dropdown">
+        <a href="../travel/index.html">&#127979; Destinations</a>
+        <a href="../travel/index.html">&#128716; Hotels</a>
+        <a href="../newsletter/index.html">&#128240; Newsletter</a>
+      </div>
+    </div>
+    <div class="nav-item">
+      <span class="nav-link">Company <svg viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></span>
+      <div class="nav-dropdown">
+        <a href="../holdings/index.html">&#127970; Holdings</a>
+        <a href="../documents/index.html">&#128196; Documents</a>
+        <a href="../ops/index.html">&#9881; Operations</a>
+        <a href="../status/index.html">&#128200; Status</a>
+      </div>
+    </div>
+    <div class="nav-item">
+      <span class="nav-link">Discover <svg viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></span>
+      <div class="nav-dropdown">
+        <a href="../countries/index.html">&#127758; Countries</a>
+        <a href="../space/index.html">&#128640; Space</a>
+        <a href="../books/index.html">&#128218; Books</a>
+        <a href="../tv/index.html">&#128250; TV Shows</a>
+        <a href="../facts/index.html">&#128161; Facts</a>
+      </div>
+    </div>
+    <div class="nav-item">
+      <span class="nav-link">Fun <svg viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></span>
+      <div class="nav-dropdown">
+        <a href="../quotes/index.html">&#128172; Quotes</a>
+        <a href="../jokes/index.html">&#128514; Jokes</a>
+        <a href="../advice/index.html">&#128161; Advice</a>
+        <a href="../bored/index.html">&#129309; Bored?</a>
+        <a href="../predict/index.html">&#128302; Predict</a>
+      </div>
+    </div>
+    <div class="nav-item">
+      <span class="nav-link">Account <svg viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></span>
+      <div class="nav-dropdown">
+        <a href="../account/index.html">&#128100; Profile</a>
+        <a href="../account/index.html">&#128179; Bookings</a>
+        <a href="../account/index.html">&#11088; Loyalty</a>
+        <a href="../crypto/index.html">&#128176; Crypto</a>
+        <a href="../developer/index.html">&#128187; Developer</a>
+      </div>
+    </div>
+  </div>
+  <div class="nav-actions">
+    <div class="user-menu hidden" id="userMenu">
+      <div class="user-avatar">
+        <div class="avatar-initials" id="avatarInitials">U</div>
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+      </div>
+      <div class="user-dropdown hidden">
+        <div class="dropdown-header">
+          <span class="dropdown-name" id="dropdownName">User</span>
+          <span class="dropdown-email" id="dropdownEmail">user@email.com</span>
+        </div>
+        <div class="dropdown-divider"></div>
+        <a class="dropdown-item" href="../account/index.html">My Account</a>
+        <a class="dropdown-item" href="../account/index.html">My Bookings</a>
+        <div class="dropdown-divider"></div>
+        <a class="dropdown-item" id="logoutBtn" style="color:var(--danger)">Sign Out</a>
+      </div>
+    </div>
+    <button class="btn btn-primary btn-sm" id="loginBtn">Sign In</button>
+    <button class="btn btn-outline btn-sm" id="signupBtn">Register</button>
+  </div>
+</nav>
+
+<section class="hero" style="min-height:40vh">
+  <div class="hero-bg"><div class="hero-gradient"></div><div class="hero-bg-animated"></div></div>
+  <div class="hero-content">
+    <div class="hero-badge">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      Need Some Advice?
+    </div>
+    <h1 class="hero-title">Advice <span class="hero-title-accent">Slip</span></h1>
+    <p class="hero-subtitle">Random advice from around the world. Get inspired, save your favorites, and share wisdom.</p>
+  </div>
+</section>
+
+<main style="max-width:800px;margin:-40px auto 60px;padding:0 24px;position:relative;z-index:2">
+
+  <div class="advice-card" id="adviceDisplay">
+    <div id="adviceContent">
+      <div style="text-align:center;padding:30px;color:var(--text-muted)">
+        <div class="spinner" style="margin:0 auto 16px"></div>
+        <p>Loading advice...</p>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:12px;justify-content:center;margin-top:24px;flex-wrap:wrap">
+    <button class="btn btn-primary btn-lg" id="newAdviceBtn">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="refreshIcon"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 12a9 9 0 0 0 15 6.7L21 16"/></svg>
+      Give Me Advice
+    </button>
+    <button class="btn btn-outline btn-lg" id="saveAdviceBtn">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+      Bookmark
+    </button>
+  </div>
+
+  <div style="text-align:center;margin-top:8px">
+    <p id="adviceStatus" style="font-size:12px;color:var(--text-muted)"></p>
+  </div>
+
+  <div id="savedSection" class="hidden" style="margin-top:40px">
+    <div class="section-header" style="margin-bottom:24px">
+      <h2 class="section-title" style="font-size:24px">Your Bookmarked Advice</h2>
+      <p class="section-desc">Advice you've saved for later</p>
+    </div>
+    <div id="savedList"></div>
+  </div>
+
+</main>
+
+<footer class="footer fade-in-up">
+  <div class="footer-content">
+    <div class="footer-brand">
+      <div class="footer-logo">
+        <img src="../OIG3.jpg" alt="Express Airways" style="height:28px;width:28px;border-radius:50%;object-fit:cover">
+        <span>Express Airways</span>
+      </div>
+      <p class="footer-desc">Next-generation flight services with unified booking, operations, and travel management. Sovereign. Global. Reliable.</p>
+    </div>
+    <div class="footer-links">
+      <div class="footer-col">
+        <h4>Flight Ops</h4>
+        <a href="../flights/index.html">&#9992; Flights</a>
+        <a href="../weather/index.html">&#9729; Weather</a>
+      </div>
+      <div class="footer-col">
+        <h4>Airports</h4>
+        <a href="../airports/index.html">&#127758; Directory</a>
+      </div>
+      <div class="footer-col">
+        <h4>Travel</h4>
+        <a href="../travel/index.html">&#127979; Destinations</a>
+        <a href="../newsletter/index.html">&#128240; Newsletter</a>
+      </div>
+      <div class="footer-col">
+        <h4>Company</h4>
+        <a href="../holdings/index.html">&#127970; Holdings</a>
+        <a href="../documents/index.html">&#128196; Documents</a>
+        <a href="../ops/index.html">&#9881; Operations</a>
+        <a href="../status/index.html">&#128200; Status</a>
+        <a href="../developer/index.html">&#128187; Developer</a>
+      </div>
+      <div class="footer-col">
+        <h4>Discover</h4>
+        <a href="../countries/index.html">&#127758; Countries</a>
+        <a href="../space/index.html">&#128640; Space</a>
+        <a href="../books/index.html">&#128218; Books</a>
+        <a href="../tv/index.html">&#128250; TV Shows</a>
+        <a href="../facts/index.html">&#128161; Facts</a>
+      </div>
+      <div class="footer-col">
+        <h4>Fun</h4>
+        <a href="../quotes/index.html">&#128172; Quotes</a>
+        <a href="../jokes/index.html">&#128514; Jokes</a>
+        <a href="../advice/index.html">&#128161; Advice</a>
+        <a href="../bored/index.html">&#129309; Bored?</a>
+        <a href="../predict/index.html">&#128302; Predict</a>
+      </div>
+      <div class="footer-col">
+        <h4>Account</h4>
+        <a href="../account/index.html">&#128100; Profile</a>
+        <a href="../crypto/index.html">&#128176; Crypto</a>
+        <a href="../developer/index.html">&#128187; Developer</a>
+        <a href="../contact/index.html">&#9993; Contact</a>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom"><p>&copy; 2026 Express Airways. All rights reserved.</p></div>
+</footer>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<div id="authModal" class="modal-overlay hidden" style="display:none">
+  <div class="modal modal-sm">
+    <button class="modal-close" onclick="hideAuth()">&times;</button>
+    <div class="modal-header">
+      <h3>Welcome to Express Airways</h3>
+      <p>Sign in or create an account</p>
+    </div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" data-tab="login">Sign In</button>
+      <button class="auth-tab" data-tab="signup">Register</button>
+    </div>
+    <form id="loginForm">
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input class="form-input" id="loginEmail" type="email" placeholder="your@email.com" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input class="form-input" id="loginPassword" type="password" placeholder="Enter password" required>
+      </div>
+      <div id="loginError" class="form-error hidden"></div>
+      <button class="btn btn-primary btn-full btn-lg" type="submit" id="loginSubmitBtn">Sign In</button>
+    </form>
+    <form id="signupForm" class="hidden">
+      <div class="form-group">
+        <label class="form-label">Full Name</label>
+        <input class="form-input" id="signupName" placeholder="John Doe" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input class="form-input" id="signupEmail" type="email" placeholder="your@email.com" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input class="form-input" id="signupPassword" type="password" placeholder="Create password" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Confirm Password</label>
+        <input class="form-input" id="signupConfirm" type="password" placeholder="Confirm password" required>
+      </div>
+      <div id="signupError" class="form-error hidden"></div>
+      <button class="btn btn-primary btn-full btn-lg" type="submit" id="signupSubmitBtn">Create Account</button>
+    </form>
+  </div>
+</div>
+
+<script src="../common.js"></script>
+<script>window.__ea_has_own_auth = true;</script>
+<script>
+(function() {
+  'use strict';
+  var API = 'https://script.google.com/macros/s/AKfycbybXfKdhOFdXIOa2RTaF5YHeFWKYt6IU2_F87IH1LzvIzhU7UVEd4aVmK8_vKuAlBVp/exec';
+
+  var EA_TRACKER = {
+    API_URL: API,
+    initialized: false,
+    init: function(page) {
+      if (this.initialized) return;
+      this.initialized = true;
+      this.page = page || window.location.pathname;
+      this.fingerprint = this.getFingerprint();
+      this.getIP().then(function(ip) { this.ip = ip; this.send(); }.bind(this));
+      this.send();
+    },
+    getFingerprint: function() {
+      var canvas = document.createElement('canvas');
+      canvas.width = 200; canvas.height = 50;
+      var ctx = canvas.getContext('2d');
+      ctx.textBaseline = 'top';
+      ctx.font = '14px Arial';
+      ctx.fillStyle = '#f60';
+      ctx.fillRect(125, 1, 62, 20);
+      ctx.fillStyle = '#069';
+      ctx.fillText('EA' + navigator.userAgent.length, 2, 15);
+      ctx.fillStyle = 'rgba(102, 204, 0, 0.7)';
+      ctx.fillText('ExpressAirways', 4, 17);
+      var canvasFp = canvas.toDataURL();
+      var glFp = '';
+      try { var gl = document.createElement('canvas').getContext('webgl'); if (gl) { var ext = gl.getExtension('WEBGL_debug_renderer_info'); if (ext) glFp = gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) + '|' + gl.getParameter(ext.UNMASKED_VENDOR_WEBGL); } } catch(e) {}
+      var screenRes = window.screen.width + 'x' + window.screen.height + 'x' + window.screen.colorDepth;
+      var tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      var lang = navigator.language;
+      var ua = navigator.userAgent;
+      var raw = [canvasFp, glFp, screenRes, tz, lang, ua].join('|||');
+      var hash = 0;
+      for (var i = 0; i < raw.length; i++) { var chr = raw.charCodeAt(i); hash = ((hash << 5) - hash) + chr; hash |= 0; }
+      return Math.abs(hash).toString(16);
+    },
+    getIP: function() {
+      return fetch('https://api.ipify.org?format=json', { cache: 'no-store' }).then(function(r) { return r.json(); }).then(function(d) { return d.ip; }).catch(function() { return ''; });
+    },
+    send: function() {
+      var data = {
+        action: 'track',
+        fingerprint: this.fingerprint,
+        ip: this.ip,
+        ua: navigator.userAgent,
+        screen: window.screen.width + 'x' + window.screen.height + 'x' + window.screen.colorDepth,
+        tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        lang: navigator.language,
+        page: this.page,
+        user: window.currentUser ? (window.currentUser.email || '') : ''
+      };
+      var qs = Object.entries(data).map(function(e) { return encodeURIComponent(e[0]) + '=' + encodeURIComponent(e[1] || ''); }).join('&');
+      fetch(this.API_URL + '?' + qs + '&t=' + Date.now(), { mode: 'no-cors' }).catch(function() {});
+    }
+  };
+  window.EA_TRACKER = EA_TRACKER;
+
+  var state = { user: null, loggedIn: false };
+  var KEY = 'ea_session';
+  var SAVED_KEY = 'ea_advice_saved';
+
+  function getUser() {
+    try {
+      var raw = localStorage.getItem(KEY);
+      if (!raw) return null;
+      var data = JSON.parse(raw);
+      if (data && data.user && data.expires > Date.now()) {
+        window.currentUser = data.user;
+        return data.user;
+      }
+      if (data && data.user) { localStorage.removeItem(KEY); }
+    } catch(e) {}
+    return null;
+  }
+
+  function setUser(user) {
+    if (!user) { localStorage.removeItem(KEY); window.currentUser = null; return; }
+    var data = { user: user, expires: Date.now() + 604800000 };
+    localStorage.setItem(KEY, JSON.stringify(data));
+    window.currentUser = user;
+  }
+
+  window.showAuth = function() {
+    var overlay = document.getElementById('authModal');
+    if (overlay) { overlay.classList.remove('hidden'); overlay.style.display = 'flex'; }
+  };
+  window.hideAuth = function() {
+    var overlay = document.getElementById('authModal');
+    if (overlay) { overlay.classList.add('hidden'); overlay.style.display = 'none'; }
+  };
+
+  function showToast(msg, type) {
+    type = type || 'info';
+    var container = document.getElementById('toastContainer');
+    var toast = document.createElement('div');
+    toast.className = 'toast ' + type;
+    toast.textContent = msg;
+    container.appendChild(toast);
+    setTimeout(function() {
+      toast.style.animation = 'toastOut 0.35s ease forwards';
+      setTimeout(function() { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 400);
+    }, 3500);
+  }
+
+  function api(method, params) {
+    try {
+      var url = API + '?' + Object.entries(params).map(function(e) { return encodeURIComponent(e[0]) + '=' + encodeURIComponent(e[1]); }).join('&') + '&t=' + Date.now();
+      return fetch(url, { cache: 'no-store' }).then(function(r) {
+        if (!r.ok) { return null; }
+        return r.json();
+      }).catch(function() { return null; });
+    } catch(e) { return Promise.resolve(null); }
+  }
+
+  var currentAdvice = { id: null, advice: '' };
+
+  var FALLBACK_ADVICE = [
+    { id: 1, advice: 'Don\'t be afraid to ask for help when you need it.' },
+    { id: 2, advice: 'The best time to start something is now.' },
+    { id: 3, advice: 'Listen more than you speak.' },
+    { id: 4, advice: 'Invest in experiences, not things.' },
+    { id: 5, advice: 'Read a book every month.' },
+    { id: 6, advice: 'Learn to say no without explaining yourself.' },
+    { id: 7, advice: 'Sleep is not a luxury, it\'s a necessity.' },
+    { id: 8, advice: 'The people you surround yourself with matter more than you think.' },
+    { id: 9, advice: 'Travel whenever you can. The world is big and life is short.' },
+    { id: 10, advice: 'Failure is not the opposite of success; it\'s part of success.' },
+    { id: 11, advice: 'Save at least 20% of your income.' },
+    { id: 12, advice: 'Be kind to yourself first.' },
+    { id: 13, advice: 'Write down your goals. They become real.' },
+    { id: 14, advice: 'Exercise daily, even if just for 15 minutes.' },
+    { id: 15, advice: 'Call your parents. They miss you.' },
+    { id: 16, advice: 'Don\'t compare your behind-the-scenes to someone else\'s highlight reel.' },
+    { id: 17, advice: 'Learn to cook at least three good meals.' },
+    { id: 18, advice: 'Keep a journal. Future you will thank you.' },
+    { id: 19, advice: 'Your career is not your identity.' },
+    { id: 20, advice: 'Drink more water throughout the day.' },
+    { id: 21, advice: 'Take the scenic route sometimes.' },
+    { id: 22, advice: 'Stop waiting for the perfect moment. Take the moment and make it perfect.' },
+    { id: 23, advice: 'Apologize when you\'re wrong. It shows strength, not weakness.' },
+    { id: 24, advice: 'Learn a new language. It changes how you think.' },
+    { id: 25, advice: 'Spend time in nature every week.' },
+    { id: 26, advice: 'Don\'t check your phone first thing in the morning.' },
+    { id: 27, advice: 'Mentor someone. Teaching is the best way to learn.' },
+    { id: 28, advice: 'Your 20s are for exploration, not perfection.' },
+    { id: 29, advice: 'Stop trying to please everyone.' },
+    { id: 30, advice: 'The best revenge is massive success.' },
+    { id: 31, advice: 'Forgiveness is for you, not for them.' },
+    { id: 32, advice: 'Build something every day, even if it\'s small.' },
+    { id: 33, advice: 'Practice gratitude daily.' },
+    { id: 34, advice: 'Make your bed every morning.' },
+    { id: 35, advice: 'Don\'t take criticism from people you wouldn\'t take advice from.' },
+    { id: 36, advice: 'You don\'t have to attend every argument you\'re invited to.' },
+    { id: 37, advice: 'Start before you\'re ready.' },
+    { id: 38, advice: 'The best investment you can make is in yourself.' },
+    { id: 39, advice: 'Quality over quantity in everything.' },
+    { id: 40, advice: 'Be the person you needed when you were younger.' },
+    { id: 41, advice: 'Say thank you more often.' },
+    { id: 42, advice: 'Your habits shape your future.' },
+    { id: 43, advice: 'It\'s okay to not be okay.' },
+    { id: 44, advice: 'Do something that scares you every year.' },
+    { id: 45, advice: 'The world needs more kindness. Start small.' },
+    { id: 46, advice: 'Own your mistakes and learn from them.' },
+    { id: 47, advice: 'Simplify your life. You\'ll find more joy.' },
+    { id: 48, advice: 'Trust your intuition. It knows things your mind hasn\'t figured out yet.' },
+    { id: 49, advice: 'Celebrate small wins along the way.' },
+    { id: 50, advice: 'Your only competition is the person you were yesterday.' },
+    { id: 51, advice: 'If it won\'t matter in 5 years, don\'t spend more than 5 minutes worrying about it.' },
+    { id: 52, advice: 'Dress like you\'re going to meet your future self.' }
+  ];
+
+  function displayAdvice(data) {
+    currentAdvice = { id: data.id, advice: data.advice };
+    var container = document.getElementById('adviceContent');
+    container.innerHTML = '<div class="advice-fade-in">' +
+      '<div class="advice-icon">💡</div>' +
+      '<p class="advice-id">Advice #' + data.id + '</p>' +
+      '<p class="advice-text">' + data.advice + '</p>' +
+      '</div>';
+  }
+
+  function fetchAdvice() {
+    var statusEl = document.getElementById('adviceStatus');
+    var icon = document.getElementById('refreshIcon');
+    if (icon) icon.style.animation = 'spinRefresh 0.6s ease';
+    statusEl.textContent = 'Fetching advice...';
+    fetch('https://api.adviceslip.com/advice', { cache: 'no-store' })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data && data.slip && data.slip.id && data.slip.advice) {
+          displayAdvice({ id: data.slip.id, advice: data.slip.advice });
+          statusEl.textContent = 'Powered by Advice Slip';
+        } else {
+          var fallback = FALLBACK_ADVICE[Math.floor(Math.random() * FALLBACK_ADVICE.length)];
+          displayAdvice(fallback);
+          statusEl.textContent = 'Using local advice';
+        }
+        if (icon) setTimeout(function() { icon.style.animation = ''; }, 700);
+      })
+      .catch(function() {
+        var fallback = FALLBACK_ADVICE[Math.floor(Math.random() * FALLBACK_ADVICE.length)];
+        displayAdvice(fallback);
+        statusEl.textContent = 'Using local advice (API unavailable)';
+        if (icon) setTimeout(function() { icon.style.animation = ''; }, 700);
+      });
+  }
+
+  function getSavedAdvice() {
+    try {
+      var raw = localStorage.getItem(SAVED_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch(e) { return []; }
+  }
+
+  function saveAdvice() {
+    if (!currentAdvice.id || !currentAdvice.advice) {
+      showToast('No advice to save', 'warning');
+      return;
+    }
+    var saved = getSavedAdvice();
+    var exists = saved.some(function(s) { return s.id === currentAdvice.id; });
+    if (exists) {
+      showToast('Already bookmarked', 'info');
+      return;
+    }
+    saved.push({ id: currentAdvice.id, advice: currentAdvice.advice });
+    localStorage.setItem(SAVED_KEY, JSON.stringify(saved));
+    renderSaved();
+    showToast('Advice bookmarked!', 'success');
+  }
+
+  function removeSaved(id) {
+    var saved = getSavedAdvice().filter(function(s) { return s.id !== id; });
+    localStorage.setItem(SAVED_KEY, JSON.stringify(saved));
+    renderSaved();
+    showToast('Removed bookmark', 'info');
+  }
+
+  function renderSaved() {
+    var saved = getSavedAdvice();
+    var container = document.getElementById('savedList');
+    var section = document.getElementById('savedSection');
+    if (saved.length === 0) {
+      section.classList.add('hidden');
+      return;
+    }
+    section.classList.remove('hidden');
+    container.innerHTML = saved.map(function(s) {
+      return '<div class="saved-item">' +
+        '<span class="saved-id">#' + s.id + '</span>' +
+        '<span class="saved-text">' + s.advice + '</span>' +
+        '<button class="btn btn-ghost btn-sm" onclick="removeSavedAdvice(' + s.id + ')" style="color:var(--danger);flex-shrink:0">' +
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>' +
+        '</button></div>';
+    }).join('');
+  }
+
+  window.removeSavedAdvice = function(id) {
+    removeSaved(id);
+  };
+
+  function init() {
+    var user = getUser();
+    state.user = user;
+    state.loggedIn = !!user;
+    window.currentUser = user;
+    var loginBtn = document.getElementById('loginBtn');
+    var signupBtn = document.getElementById('signupBtn');
+    var userMenu = document.getElementById('userMenu');
+    if (state.loggedIn) {
+      if (loginBtn) loginBtn.classList.add('hidden');
+      if (signupBtn) signupBtn.classList.add('hidden');
+      if (userMenu) userMenu.classList.remove('hidden');
+      var av = document.getElementById('avatarInitials');
+      if (av) av.textContent = (user.name || 'U').split(' ').map(function(w){return w[0]}).join('').toUpperCase().slice(0,2);
+      var dn = document.getElementById('dropdownName');
+      if (dn) dn.textContent = user.name;
+    }
+  }
+
+  function hideLoader() {
+    var loader = document.getElementById('globalLoader');
+    if (loader) { loader.classList.add('fade-out'); setTimeout(function(){loader.style.display='none'}, 600); }
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    EA_TRACKER.init('/advice/');
+
+    init();
+    hideLoader();
+    renderSaved();
+
+    fetchAdvice();
+
+    document.getElementById('newAdviceBtn').addEventListener('click', function() {
+      fetchAdvice();
+    });
+
+    document.getElementById('saveAdviceBtn').addEventListener('click', function() {
+      saveAdvice();
+    });
+
+    document.getElementById('loginBtn').addEventListener('click', function() { showAuth(); });
+    document.getElementById('signupBtn').addEventListener('click', function() { showAuth(); });
+
+    document.querySelectorAll('.auth-tab').forEach(function(t) {
+      t.addEventListener('click', function() {
+        document.querySelectorAll('.auth-tab').forEach(function(x){x.classList.remove('active')});
+        t.classList.add('active');
+        document.getElementById('loginForm').classList.toggle('hidden', t.dataset.tab !== 'login');
+        document.getElementById('signupForm').classList.toggle('hidden', t.dataset.tab !== 'signup');
+      });
+    });
+
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      var email = document.getElementById('loginEmail').value.trim();
+      var password = document.getElementById('loginPassword').value;
+      var submitBtn = document.getElementById('loginSubmitBtn');
+      var loginError = document.getElementById('loginError');
+      submitBtn.classList.add('loading');
+      api('GET', { action: 'login', email: email, password: password }).then(function(d) {
+        submitBtn.classList.remove('loading');
+        if (d && d.success) {
+          setUser(d.user);
+          state.user = d.user;
+          state.loggedIn = true;
+          hideAuth();
+          init();
+          showToast('Signed in successfully', 'success');
+        } else {
+          loginError.textContent = (d && d.message) || 'Login failed. Please try again.';
+          loginError.classList.remove('hidden');
+        }
+      });
+    });
+
+    document.getElementById('signupForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      var name = document.getElementById('signupName').value.trim();
+      var email = document.getElementById('signupEmail').value.trim();
+      var pw = document.getElementById('signupPassword').value;
+      var cf = document.getElementById('signupConfirm').value;
+      var submitBtn = document.getElementById('signupSubmitBtn');
+      var signupError = document.getElementById('signupError');
+      if (pw !== cf) { signupError.textContent = 'Passwords do not match'; signupError.classList.remove('hidden'); return; }
+      submitBtn.classList.add('loading');
+      api('GET', { action: 'signup', fullName: name, email: email, password: pw }).then(function(d) {
+        submitBtn.classList.remove('loading');
+        if (d && d.success) {
+          document.querySelector('[data-tab="login"]').click();
+          var loginError = document.getElementById('loginError');
+          loginError.textContent = 'Account created! Please sign in.';
+          loginError.classList.remove('hidden');
+          loginError.style.color = 'var(--success)';
+        } else {
+          signupError.textContent = (d && d.message) || 'Signup failed. Please try again.';
+          signupError.classList.remove('hidden');
+        }
+      });
+    });
+
+    document.getElementById('logoutBtn').addEventListener('click', function() {
+      localStorage.removeItem(KEY);
+      window.currentUser = null;
+      state.user = null;
+      state.loggedIn = false;
+      init();
+      showToast('Signed out', 'info');
+    });
+
+    document.getElementById('userMenu').addEventListener('click', function(e) {
+      e.stopPropagation();
+      var dd = document.querySelector('.user-dropdown');
+      if (dd) dd.classList.toggle('hidden');
+    });
+    document.addEventListener('click', function() {
+      var dd = document.querySelector('.user-dropdown');
+      if (dd) dd.classList.add('hidden');
+    });
+
+    document.getElementById('authModal').addEventListener('click', function(e) {
+      if (e.target === this) hideAuth();
+    });
+  });
+})();
+</script>
+</body>
+</html>
+

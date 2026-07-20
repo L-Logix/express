@@ -245,7 +245,6 @@ def build_toc():
         "   8.6 Vulnerability Reporting", "   8.7 Penetration Testing",
         "9. Performance Benchmarks", "   9.1 Response Times", "   9.2 Concurrent Users",
         "   9.3 Processing Limits", "   9.4 Availability", "   9.5 Disaster Recovery",
-        "10. Checklists", "   10.1-10.7 Testing Checklists",
         "11. Benefits and Rewards Program", "   11.1 Program Overview", "   11.2 Rewards Structure",
         "   11.3 Tier Progression", "   11.4 Special Incentives", "   11.5 Redemption Process",
         "12. Competitor Protection Framework",
@@ -1803,109 +1802,6 @@ def build_section_9():
     add_page_break()
 
 # ═══════════════════════════════════════════════════════════════════════
-# SECTION 10: CHECKLISTS
-# ═══════════════════════════════════════════════════════════════════════
-def build_section_10():
-    add_heading("10. Checklists", level=1)
-    checklists = [
-        ("10.1 Pre-Testing Checklist", [
-            "Beta tester onboarding completed", "Confidentiality agreement signed",
-            "Training webinar attended", "Beta testing account created and verified",
-            "MFA configured on account", "Minimum browser requirements confirmed",
-            "Internet speed verified (10+ Mbps)", "Beta Portal accessible",
-            "Communication channels joined", "Testing focus area confirmed",
-            "Test credentials received", "Test data loaded in environment",
-            "Browser cache cleared", "Ad-blocking extensions disabled",
-            "Issue reporting format reviewed", "Test assignments understood",
-            "Local storage cleared", "Notification preferences configured",
-            "Emergency procedures reviewed", "Data handling guidelines reviewed",
-            "Confidentiality obligations acknowledged", "Testing schedule confirmed",
-            "Mobile app installed if applicable", "VPN connection tested",
-            "Testing tools and utilities downloaded", "Reference documents bookmarked",
-            "Backup auth method configured", "Phase schedule confirmed",
-            "Q&A session attended", "Onboarding checklist completed",
-        ]),
-        ("10.2 Daily Testing Checklist", [
-            "Review overnight platform updates", "Check new test case assignments",
-            "Clear browser cache and cookies", "Verify environment operational",
-            "Log into beta platform", "Check for verification issues",
-            "Review QA communications", "Plan session objectives",
-            "Set up test data", "Configure recording tools",
-            "Begin test execution by priority", "Document all observations",
-            "Report issues promptly", "Take regular breaks",
-            "Log activities in test log", "Submit pending reports",
-            "Review next day assignments", "Verify issues documented",
-            "Backup custom test data", "Log out properly",
-            "Review personal issue queue", "Check for fixes to verify",
-        ]),
-        ("10.3 Feature Completion Checklist", [
-            "All functional test cases executed", "All security test cases executed",
-            "All performance test cases executed", "Usability assessment completed",
-            "Compatibility testing completed", "All issues reported",
-            "No unresolved Critical or Major issues", "Edge case testing completed",
-            "Negative testing completed", "Regression testing completed",
-            "Completion report submitted", "Test data cleanup completed",
-            "Feature sign-off obtained", "Known issues documented",
-            "Performance benchmarks verified", "Security review completed",
-            "Accessibility review completed", "Cross-browser testing completed",
-        ]),
-        ("10.4 Regression Testing Checklist", [
-            "Identify affected test cases", "Execute core functionality tests",
-            "Execute integration tests for connected modules",
-            "Verify previously fixed issues remain resolved",
-            "Check for new issues introduced by change",
-            "Test edge cases around modified functionality",
-            "Verify data integrity across features",
-            "Test performance of affected functionality",
-            "Verify UI consistency and styling", "Document results",
-            "Run automated regression suite", "Compare with baseline",
-            "Verify backward compatibility", "Check API contract compliance",
-            "Test error handling paths", "Verify security controls",
-        ]),
-        ("10.5 Security Review Checklist", [
-            "Authentication tested for all roles", "Authorization verified per permissions",
-            "Input validation tested on all fields", "XSS testing on all input points",
-            "CSRF protection on state-changing operations", "SQL injection testing",
-            "Session management verified", "Encryption verified (transit and rest)",
-            "Rate limiting operational", "Audit logging confirmed",
-            "Error messages reviewed for leakage", "File upload security tested",
-            "API security tested for all endpoints", "Auth bypass attempts tested",
-            "Privilege escalation paths tested", "IDOR testing completed",
-            "Security headers verified", "CORS configuration verified",
-            "Cookie security attributes verified", "TLS configuration verified",
-            "Password policies enforced", "Account lockout verified",
-            "MFA implementation tested", "Session timeout enforced",
-            "Brute force protection verified", "Logout termination tested",
-        ]),
-        ("10.6 Performance Review Checklist", [
-            "API response times measured", "Page load times measured",
-            "Concurrent load testing completed", "DB query performance analyzed",
-            "Cache effectiveness evaluated", "Resource utilization monitored",
-            "Bottlenecks identified", "Benchmark comparison documented",
-            "Memory usage analyzed for leaks", "CPU utilization under load",
-            "Network latency impact assessed", "Mobile performance tested",
-            "Slow network performance verified", "Large dataset performance verified",
-            "Search performance measured", "Export performance verified",
-        ]),
-        ("10.7 Final Sign-Off Checklist", [
-            "All test cases executed across all modules", "All Critical issues resolved",
-            "All Major issues resolved or waived", "Performance benchmarks met",
-            "Security review passed", "Compatibility testing completed",
-            "Usability assessment satisfactory", "Documentation complete",
-            "Approval signatures obtained", "Release decision documented",
-            "All regression testing completed", "Stakeholder communication done",
-            "Known issues documented", "Training materials updated",
-            "Support team briefed", "Go-live checklist completed",
-        ]),
-    ]
-    for title, items in checklists:
-        add_heading(title, level=2)
-        for item in items:
-            make_table(["#", "Checklist Item", "Status", "Notes", "Signed Off By"],
-                       [[str(i+1), item, "", "", ""] for i, item in enumerate(items)])
-        add_page_break()
-
-# ═══════════════════════════════════════════════════════════════════════
 # SECTION 11: BENEFITS AND REWARDS PROGRAM
 # ═══════════════════════════════════════════════════════════════════════
 def build_section_11():
@@ -2253,38 +2149,36 @@ def build_appendices():
 # ═══════════════════════════════════════════════════════════════════════
 if __name__ == "__main__":
     print("Building Express Airways Beta Testing Documentation...")
-    print("Step 1/16: Building cover page...")
+    print("Step 1/15: Building cover page...")
     build_cover_page()
-    print("Step 2/16: Building table of contents...")
+    print("Step 2/15: Building table of contents...")
     build_toc()
-    print("Step 3/16: Building Section 1 - Introduction...")
+    print("Step 3/15: Building Section 1 - Introduction...")
     build_section_1()
-    print("Step 4/16: Building Section 2 - System Overview...")
+    print("Step 4/15: Building Section 2 - System Overview...")
     build_section_2()
-    print("Step 5/16: Building Section 3 - Testing Procedures...")
+    print("Step 5/15: Building Section 3 - Testing Procedures...")
     build_section_3()
-    print("Step 6/16: Building Section 4 - Detailed Test Cases...")
+    print("Step 6/15: Building Section 4 - Detailed Test Cases...")
     build_section_4()
-    print("Step 7/16: Building Section 5 - Issue Reporting...")
+    print("Step 7/15: Building Section 5 - Issue Reporting...")
     build_section_5()
-    print("Step 8/16: Building Section 6 - Rules of Engagement...")
+    print("Step 8/15: Building Section 6 - Rules of Engagement...")
     build_section_6()
-    print("Step 9/16: Building Section 7 - Feature Specifications...")
+    print("Step 9/15: Building Section 7 - Feature Specifications...")
     build_section_7()
-    print("Step 10/16: Building Section 8 - Security Protocols...")
+    print("Step 10/15: Building Section 8 - Security Protocols...")
     build_section_8()
-    print("Step 11/16: Building Section 9 - Performance Benchmarks...")
+    print("Step 11/15: Building Section 9 - Performance Benchmarks...")
     build_section_9()
-    print("Step 12/16: Building Section 10 - Checklists...")
-    build_section_10()
-    print("Step 13/16: Building Section 11 - Benefits and Rewards...")
+    print("Step 12/15: Building Section 11 - Benefits and Rewards...")
     build_section_11()
-    print("Step 14/16: Building Section 12 - Competitor Protection...")
+    print("Step 13/15: Building Section 12 - Competitor Protection...")
     build_section_12()
-    print("Step 15/16: Building Appendices...")
+    print("Step 14/15: Building Appendices...")
     build_appendices()
 
-    print("Step 16/16: Adding headers, footers, and formatting...")
+    print("Step 15/15: Adding headers, footers, and formatting...")
     add_watermark_header_footer()
 
     doc.core_properties.title = "Express Airways Beta Testing Documentation"

@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Crypto Tracker - Express Airways</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-primary: #080c1a;
+  --bg-secondary: #0d1230;
+  --bg-card: rgba(13, 18, 48, 0.7);
+  --bg-glass: rgba(255, 255, 255, 0.04);
+  --bg-glass-hover: rgba(255, 255, 255, 0.08);
+  --text-primary: #f0f4ff;
+  --text-secondary: #8892b0;
+  --text-muted: #555d7a;
+  --accent: #4f8cff;
+  --accent-glow: rgba(79, 140, 255, 0.3);
+  --accent-gradient: linear-gradient(135deg, #4f8cff, #00d4aa);
+  --success: #00d4aa;
+  --warning: #fbbf24;
+  --danger: #ef4444;
+  --danger-glow: rgba(239, 68, 68, 0.3);
+  --border: rgba(255, 255, 255, 0.06);
+  --border-active: rgba(79, 140, 255, 0.3);
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.3);
+  --shadow-md: 0 8px 32px rgba(0,0,0,0.4);
+  --shadow-lg: 0 16px 48px rgba(0,0,0,0.5);
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --nav-height: 72px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+*:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{font-family:var(--font-sans);background:var(--bg-primary);color:var(--text-primary);line-height:1.6;overflow-x:hidden;min-height:100vh;-webkit-tap-highlight-color:transparent}
+a{color:var(--accent);text-decoration:none}
+a:hover{color:#7ab7ff}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.15)}
+.hidden{display:none!important}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border:none;border-radius:var(--radius-sm);font-size:14px;font-weight:600;cursor:pointer;transition:var(--transition);white-space:nowrap;font-family:var(--font-sans)}
+.btn-sm{padding:7px 14px;font-size:13px}
+.btn-lg{padding:14px 28px;font-size:16px;border-radius:var(--radius-md)}
+.btn-full{width:100%;justify-content:center}
+.btn-primary{background:var(--accent-gradient);color:#fff;box-shadow:0 0 20px var(--accent-glow)}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 0 30px var(--accent-glow)}
+.btn-outline{background:transparent;color:var(--text-primary);border:1px solid var(--border)}
+.btn-outline:hover{background:var(--bg-glass);border-color:var(--accent)}
+.btn-glass{background:var(--bg-glass);color:var(--text-primary);backdrop-filter:blur(10px);border:1px solid var(--border)}
+.btn-glass:hover{background:var(--bg-glass-hover);transform:translateY(-1px)}
+.btn:disabled{opacity:0.4;cursor:not-allowed;transform:none}
+.btn.loading{position:relative;color:transparent!important;pointer-events:none}
+.btn.loading::after{content:'';position:absolute;width:16px;height:16px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:btnSpin .6s linear infinite;top:50%;left:50%;margin:-8px 0 0 -8px}
+@keyframes btnSpin{to{transform:rotate(360deg)}}
+.card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem;backdrop-filter:blur(10px);transition:var(--transition)}
+.card:hover{border-color:var(--border-active);box-shadow:var(--shadow-md)}
+.toast-container{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{display:flex;align-items:center;gap:10px;padding:14px 20px;border-radius:var(--radius-md);background:var(--bg-secondary);border:1px solid var(--border);box-shadow:var(--shadow-md);font-size:13px;font-weight:500;pointer-events:auto;animation:toastIn 0.35s ease forwards;max-width:400px;min-width:280px}
+@keyframes toastIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes toastOut{from{opacity:1}to{opacity:0;transform:translateX(100%)}}
+.toast.success{border-left:3px solid var(--success)}
+.toast.error{border-left:3px solid var(--danger)}
+.toast.warning{border-left:3px solid var(--warning)}
+.toast.info{border-left:3px solid var(--accent)}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn 0.2s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal{background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-xl);width:100%;max-height:90vh;overflow-y:auto;position:relative;animation:slideUp 0.3s ease}
+@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal-sm{max-width:480px;padding:32px}
+.modal-close{position:absolute;top:16px;right:16px;background:none;border:none;color:var(--text-muted);font-size:28px;cursor:pointer;width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:var(--radius-sm);transition:var(--transition);z-index:1}
+.modal-close:hover{background:var(--bg-glass);color:var(--text-primary)}
+.modal-header{text-align:center;margin-bottom:24px}
+.modal-header h3{font-size:22px;font-weight:700;margin-bottom:8px}
+.modal-header p{font-size:14px;color:var(--text-secondary)}
+.spinner{width:32px;height:32px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto}
+@keyframes spin{to{transform:rotate(360deg)}}
+#globalLoader{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(8,12,26,0.92);backdrop-filter:blur(12px);display:flex;align-items:center;justify-content:center;z-index:99999;transition:opacity 0.5s ease,visibility 0.5s ease}
+#globalLoader.fade-out{opacity:0;visibility:hidden;pointer-events:none}
+.loader-content{text-align:center}
+.loader-text{margin-top:20px;color:var(--text-muted);font-size:14px;letter-spacing:1px;text-transform:uppercase}
+.navbar{position:fixed;top:0;left:0;right:0;height:var(--nav-height);display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:rgba(8,12,26,0.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);z-index:100}
+.nav-brand{display:flex;align-items:center;gap:10px;cursor:pointer;text-decoration:none;color:inherit}
+.nav-title{font-size:18px;font-weight:700;letter-spacing:-0.3px}
+.nav-links{display:flex;align-items:center;gap:4px}
+.nav-item{position:relative}
+.nav-link{font-size:14px;font-weight:500;color:var(--text-secondary);padding:8px 14px;border-radius:var(--radius-sm);transition:var(--transition);cursor:pointer;display:flex;align-items:center;gap:4px}
+.nav-link:hover,.nav-link.active{color:var(--text-primary);background:var(--bg-glass)}
+.nav-link svg{width:12px;height:12px;transition:var(--transition)}
+.nav-item:hover .nav-link svg{transform:rotate(180deg)}
+.nav-actions{display:flex;align-items:center;gap:8px}
+.nav-dropdown{position:absolute;top:calc(100% + 8px);left:0;min-width:200px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-md);box-shadow:var(--shadow-lg);z-index:50;padding:8px;opacity:0;visibility:hidden;transform:translateY(-8px);transition:all 0.2s ease}
+.nav-item:hover .nav-dropdown{opacity:1;visibility:visible;transform:translateY(0)}
+.nav-dropdown a{display:flex;align-items:center;gap:8px;padding:10px 14px;font-size:13px;color:var(--text-secondary);border-radius:var(--radius-sm);transition:var(--transition);text-decoration:none}
+.nav-dropdown a:hover{background:var(--bg-glass);color:var(--text-primary)}
+.nav-hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:8px;background:none;border:none}
+.nav-hamburger span{width:24px;height:2px;background:var(--text-primary);border-radius:2px;transition:var(--transition)}
+.hero{position:relative;min-height:50vh;display:flex;align-items:center;justify-content:center;padding:var(--nav-height) 24px 40px;overflow:hidden}
+.hero-gradient{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(79,140,255,0.15),transparent),radial-gradient(ellipse 60% 50% at 80% 100%,rgba(0,212,170,0.1),transparent),radial-gradient(ellipse 50% 50% at 20% 100%,rgba(79,140,255,0.08),transparent)}
+.hero-content{position:relative;z-index:1;text-align:center;max-width:900px;width:100%;display:flex;flex-direction:column;align-items:center;gap:24px;padding:60px 0}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 16px;border-radius:100px;background:var(--bg-glass);border:1px solid var(--border);font-size:13px;font-weight:600;color:var(--text-secondary);margin-bottom:8px}
+.pulse-dot{width:6px;height:6px;border-radius:50%;background:var(--success);display:inline-block;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+.hero-headline{font-size:clamp(32px,6vw,56px);font-weight:800;letter-spacing:-1.5px;line-height:1.15;margin-bottom:8px}
+.hero-accent{background:var(--accent-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-desc{font-size:17px;color:var(--text-secondary);line-height:1.7}
+.footer{border-top:1px solid var(--border);padding:60px 24px 24px}
+.footer-content{max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;gap:48px;flex-wrap:wrap}
+.footer-brand{max-width:280px}
+.footer-logo{display:flex;align-items:center;gap:10px;font-size:18px;font-weight:700;margin-bottom:12px}
+.footer-desc{font-size:13px;color:var(--text-muted);line-height:1.7}
+.footer-links{display:flex;gap:48px;flex-wrap:wrap}
+.footer-col h4{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:16px}
+.footer-col a{display:block;font-size:14px;color:var(--text-secondary);margin-bottom:10px;transition:var(--transition);cursor:pointer;text-decoration:none}
+.footer-col a:hover{color:var(--text-primary)}
+.footer-bottom{max-width:1200px;margin:40px auto 0;padding-top:20px;border-top:1px solid var(--border);text-align:center;font-size:12px;color:var(--text-muted)}
+main{max-width:1200px;margin:0 auto 60px;padding:0 24px;position:relative;z-index:2}
+.controls{display:flex;gap:12px;max-width:600px;margin:0 auto 24px;flex-wrap:wrap;justify-content:center}
+.auto-refresh-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:100px;background:var(--bg-glass);border:1px solid var(--border);font-size:12px;color:var(--text-muted)}
+.auto-refresh-dot{width:6px;height:6px;border-radius:50%;background:var(--success);animation:pulse 2s infinite}
+.table-wrap{overflow-x:auto;border-radius:var(--radius-lg);border:1px solid var(--border)}
+.crypto-table{width:100%;border-collapse:collapse;font-size:13px}
+.crypto-table th{background:var(--bg-secondary);padding:12px 14px;text-align:right;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);font-weight:700;border-bottom:1px solid var(--border);white-space:nowrap}
+.crypto-table th:first-child{text-align:center}
+.crypto-table th:nth-child(2){text-align:left}
+.crypto-table td{padding:12px 14px;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap;transition:var(--transition)}
+.crypto-table td:first-child{text-align:center;color:var(--text-muted);font-weight:600}
+.crypto-table td:nth-child(2){text-align:left}
+.crypto-table tr{transition:var(--transition)}
+.crypto-table tr:hover{background:var(--bg-glass)}
+.crypto-table tr:last-child td{border-bottom:none}
+.coin-cell{display:flex;align-items:center;gap:8px;cursor:pointer}
+.coin-image{width:24px;height:24px;border-radius:50%;object-fit:cover}
+.coin-name{font-weight:600;color:var(--text-primary)}
+.coin-symbol{color:var(--text-muted);font-size:11px;text-transform:uppercase}
+.change-positive{color:var(--success)}
+.change-negative{color:var(--danger)}
+.detail-section{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-xl);padding:28px;margin-top:24px;display:none;animation:slideUp 0.3s ease}
+.detail-section.visible{display:block}
+.detail-header{display:flex;align-items:center;gap:16px;margin-bottom:20px}
+.detail-header img{width:48px;height:48px;border-radius:50%}
+.detail-header h2{font-size:24px;font-weight:700}
+.detail-header span{font-size:16px;color:var(--text-muted)}
+.detail-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.detail-item{padding:14px;background:var(--bg-glass);border-radius:var(--radius-md)}
+.detail-item-label{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
+.detail-item-value{font-size:18px;font-weight:700}
+.detail-desc{margin-top:16px;padding:16px;background:var(--bg-glass);border-radius:var(--radius-md);font-size:14px;color:var(--text-secondary);line-height:1.7}
+@media(max-width:768px){
+  :root{--nav-height:60px}
+  .nav-links{display:none}
+  .nav-hamburger{display:flex}
+  .nav-links.open{display:flex;flex-direction:column;position:fixed;top:var(--nav-height);left:0;right:0;background:rgba(8,12,26,0.98);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:16px;max-height:calc(100vh - var(--nav-height));overflow-y:auto}
+  .nav-links.open .nav-item{width:100%}
+  .nav-links.open .nav-dropdown{position:static;opacity:1;visibility:visible;transform:none;box-shadow:none;border:none;padding:0;margin-top:4px;background:transparent}
+  .hero-headline{font-size:32px}
+  .footer-content{flex-direction:column;gap:32px}
+  .footer-links{flex-wrap:wrap;gap:24px}
+  .crypto-table{font-size:12px}
+  .crypto-table th,.crypto-table td{padding:8px 6px}
+  .detail-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body class="page-fade">
+
+<div id="globalLoader"><div class="loader-content"><div class="spinner"></div><p class="loader-text">Loading Crypto Markets...</p></div></div>
+
+<nav class="navbar">
+  <a href="../index.html" class="nav-brand" style="text-decoration:none;color:inherit">
+    <img src="../OIG3.jpg" alt="Express Airways" style="height:32px;width:32px;border-radius:50%;object-fit:cover">
+    <span class="nav-title">Express Airways</span>
+  </a>
+  <button class="nav-hamburger" id="hamburgerBtn" aria-label="Toggle menu">
+    <span></span><span></span><span></span>
+  </button>
+  <div class="nav-links" id="navLinks">
+    <div class="nav-item">
+      <span class="nav-link">Flight Ops <svg viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></span>
+      <div class="nav-dropdown">
+        <a href="../flights/index.html">&#9992; Flights</a>
+        <a href="../weather/index.html">&#9729; Weather</a>
+      </div>
+    </div>
+    <div class="nav-item">
+      <span class="nav-link">Airports <svg viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></span>
+      <div class="nav-dropdown">
+        <a href="../airports/index.html">&#127758; Directory</a>
+      </div>
+    </div>
+    <div class="nav-item">
+      <span class="nav-link">Travel <svg viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></span>
+      <div class="nav-dropdown">
+        <a href="../travel/index.html">&#127979; Destinations</a>
+        <a href="../travel/index.html">&#128716; Hotels</a>
+        <a href="../newsletter/index.html">&#128240; Newsletter</a>
+      </div>
+    </div>
+    <div class="nav-item">
+      <span class="nav-link">Company <svg viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></span>
+      <div class="nav-dropdown">
+        <a href="../holdings/index.html">&#127970; Holdings</a>
+        <a href="../documents/index.html">&#128196; Documents</a>
+        <a href="../ops/index.html">&#9881; Operations</a>
+        <a href="../status/index.html">&#128200; Status</a>
+      </div>
+    </div>
+    <div class="nav-item">
+      <span class="nav-link">Discover <svg viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></span>
+      <div class="nav-dropdown">
+        <a href="../countries/index.html">&#127758; Countries</a>
+        <a href="../space/index.html">&#128640; Space</a>
+        <a href="../books/index.html">&#128218; Books</a>
+        <a href="../tv/index.html">&#128250; TV Shows</a>
+        <a href="../facts/index.html">&#128161; Facts</a>
+      </div>
+    </div>
+    <div class="nav-item">
+      <span class="nav-link">Fun <svg viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></span>
+      <div class="nav-dropdown">
+        <a href="../quotes/index.html">&#128172; Quotes</a>
+        <a href="../jokes/index.html">&#128514; Jokes</a>
+        <a href="../advice/index.html">&#128161; Advice</a>
+        <a href="../bored/index.html">&#129309; Bored?</a>
+        <a href="../predict/index.html">&#128302; Predict</a>
+      </div>
+    </div>
+    <div class="nav-item">
+      <span class="nav-link">Account <svg viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></span>
+      <div class="nav-dropdown">
+        <a href="../account/index.html">&#128100; Profile</a>
+        <a href="../account/index.html">&#128179; Bookings</a>
+        <a href="../account/index.html">&#11088; Loyalty</a>
+        <a href="../crypto/index.html">&#128176; Crypto</a>
+        <a href="../developer/index.html">&#128187; Developer</a>
+      </div>
+    </div>
+  </div>
+  <div class="nav-actions">
+    <div class="user-menu hidden" id="userMenu">
+      <div class="user-avatar">
+        <div class="avatar-initials" id="avatarInitials">U</div>
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+      </div>
+      <div class="user-dropdown hidden">
+        <div class="dropdown-header">
+          <span class="dropdown-name" id="dropdownName">User</span>
+          <span class="dropdown-email" id="dropdownEmail">user@email.com</span>
+        </div>
+        <div class="dropdown-divider"></div>
+        <a class="dropdown-item" href="../account/index.html">My Account</a>
+        <a class="dropdown-item" href="../account/index.html">My Bookings</a>
+        <div class="dropdown-divider"></div>
+        <a class="dropdown-item" id="logoutBtn" style="color:var(--danger)">Sign Out</a>
+      </div>
+    </div>
+    <button class="btn btn-primary btn-sm" id="loginBtn">Sign In</button>
+    <button class="btn btn-outline btn-sm" id="signupBtn">Register</button>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-gradient"></div>
+  <div class="hero-bg-animated"></div>
+  <div class="hero-content">
+    <div class="hero-badge"><span class="pulse-dot"></span> Live Market Data</div>
+    <h1 class="hero-headline"><span class="hero-accent">Crypto</span> Tracker</h1>
+    <p class="hero-desc">Real-time cryptocurrency prices, market caps, and 24h changes. Auto-refreshes every 60 seconds.</p>
+  </div>
+</section>
+
+<main>
+  <div class="controls">
+    <input class="form-input" id="searchInput" placeholder="Search coins..." style="flex:1;max-width:300px;text-align:center">
+    <button class="btn btn-glass" id="refreshBtn">&#128260; Refresh</button>
+    <span class="auto-refresh-badge"><span class="auto-refresh-dot"></span> Auto-refresh 60s</span>
+  </div>
+
+  <div class="table-wrap">
+    <table class="crypto-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Coin</th>
+          <th>Price</th>
+          <th>24h Change</th>
+          <th>Market Cap</th>
+          <th>Volume (24h)</th>
+        </tr>
+      </thead>
+      <tbody id="cryptoBody">
+        <tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted)">Loading cryptocurrency data...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="detail-section" id="detailSection">
+    <button class="btn btn-outline btn-sm" id="detailClose" style="float:right">Close</button>
+    <div id="detailContent"></div>
+  </div>
+</main>
+
+<footer class="footer fade-in-up">
+  <div class="footer-content">
+    <div class="footer-brand">
+      <div class="footer-logo">
+        <img src="../OIG3.jpg" alt="Express Airways" style="height:28px;width:28px;border-radius:50%;object-fit:cover">
+        <span>Express Airways</span>
+      </div>
+      <p class="footer-desc">Next-generation flight services with unified booking, operations, and travel management. Sovereign. Global. Reliable.</p>
+    </div>
+    <div class="footer-links">
+      <div class="footer-col">
+        <h4>Flight Ops</h4>
+        <a href="../flights/index.html">&#9992; Flights</a>
+        <a href="../weather/index.html">&#9729; Weather</a>
+      </div>
+      <div class="footer-col">
+        <h4>Airports</h4>
+        <a href="../airports/index.html">&#127758; Directory</a>
+      </div>
+      <div class="footer-col">
+        <h4>Travel</h4>
+        <a href="../travel/index.html">&#127979; Destinations</a>
+        <a href="../newsletter/index.html">&#128240; Newsletter</a>
+      </div>
+      <div class="footer-col">
+        <h4>Company</h4>
+        <a href="../holdings/index.html">&#127970; Holdings</a>
+        <a href="../documents/index.html">&#128196; Documents</a>
+        <a href="../ops/index.html">&#9881; Operations</a>
+        <a href="../status/index.html">&#128200; Status</a>
+        <a href="../developer/index.html">&#128187; Developer</a>
+      </div>
+      <div class="footer-col">
+        <h4>Discover</h4>
+        <a href="../countries/index.html">&#127758; Countries</a>
+        <a href="../space/index.html">&#128640; Space</a>
+        <a href="../books/index.html">&#128218; Books</a>
+        <a href="../tv/index.html">&#128250; TV Shows</a>
+        <a href="../facts/index.html">&#128161; Facts</a>
+      </div>
+      <div class="footer-col">
+        <h4>Fun</h4>
+        <a href="../quotes/index.html">&#128172; Quotes</a>
+        <a href="../jokes/index.html">&#128514; Jokes</a>
+        <a href="../advice/index.html">&#128161; Advice</a>
+        <a href="../bored/index.html">&#129309; Bored?</a>
+        <a href="../predict/index.html">&#128302; Predict</a>
+      </div>
+      <div class="footer-col">
+        <h4>Account</h4>
+        <a href="../account/index.html">&#128100; Profile</a>
+        <a href="../crypto/index.html">&#128176; Crypto</a>
+        <a href="../developer/index.html">&#128187; Developer</a>
+        <a href="../contact/index.html">&#9993; Contact</a>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom"><p>&copy; 2026 Express Airways. All rights reserved.</p></div>
+</footer>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="../common.js"></script>
+<script>window.__ea_has_own_auth = true;</script>
+<script>
+(function(){
+  'use strict';
+
+  var FALLBACK_CRYPTO = [
+    {id:'bitcoin',name:'Bitcoin',symbol:'btc',image:'https://assets.coingecko.com/coins/images/1/small/bitcoin.png',current_price:67450,price_change_percentage_24h:2.45,market_cap:1328000000000,total_volume:28500000000,market_cap_rank:1},
+    {id:'ethereum',name:'Ethereum',symbol:'eth',image:'https://assets.coingecko.com/coins/images/279/small/ethereum.png',current_price:3450,price_change_percentage_24h:-1.23,market_cap:415000000000,total_volume:18500000000,market_cap_rank:2},
+    {id:'tether',name:'Tether',symbol:'usdt',image:'https://assets.coingecko.com/coins/images/325/small/Tether.png',current_price:1.00,price_change_percentage_24h:0.01,market_cap:112000000000,total_volume:52000000000,market_cap_rank:3},
+    {id:'binancecoin',name:'BNB',symbol:'bnb',image:'https://assets.coingecko.com/coins/images/825/small/bnb-icon2_2x.png',current_price:580,price_change_percentage_24h:1.85,market_cap:89500000000,total_volume:2100000000,market_cap_rank:4},
+    {id:'solana',name:'Solana',symbol:'sol',image:'https://assets.coingecko.com/coins/images/4128/small/solana.png',current_price:172,price_change_percentage_24h:5.32,market_cap:77200000000,total_volume:4500000000,market_cap_rank:5},
+    {id:'ripple',name:'XRP',symbol:'xrp',image:'https://assets.coingecko.com/coins/images/44/small/xrp-symbol-white-128.png',current_price:0.62,price_change_percentage_24h:-0.85,market_cap:34200000000,total_volume:1800000000,market_cap_rank:6},
+    {id:'usd-coin',name:'USDC',symbol:'usdc',image:'https://assets.coingecko.com/coins/images/6319/small/usdc.png',current_price:1.00,price_change_percentage_24h:0.00,market_cap:33500000000,total_volume:4500000000,market_cap_rank:7},
+    {id:'staked-ether',name:'Lido Staked Ether',symbol:'steth',image:'https://assets.coingecko.com/coins/images/13442/small/steth_logo.png',current_price:3440,price_change_percentage_24h:-1.18,market_cap:32800000000,total_volume:98000000,market_cap_rank:8},
+    {id:'cardano',name:'Cardano',symbol:'ada',image:'https://assets.coingecko.com/coins/images/975/small/cardano.png',current_price:0.48,price_change_percentage_24h:3.21,market_cap:16900000000,total_volume:680000000,market_cap_rank:9},
+    {id:'dogecoin',name:'Dogecoin',symbol:'doge',image:'https://assets.coingecko.com/coins/images/5/small/dogecoin.png',current_price:0.125,price_change_percentage_24h:-2.34,market_cap:17800000000,total_volume:890000000,market_cap_rank:10},
+    {id:'avalanche-2',name:'Avalanche',symbol:'avax',image:'https://assets.coingecko.com/coins/images/12559/small/Avalanche_Circle_RedWhite_Trans.png',current_price:38.50,price_change_percentage_24h:4.12,market_cap:15100000000,total_volume:520000000,market_cap_rank:11},
+    {id:'tron',name:'TRON',symbol:'trx',image:'https://assets.coingecko.com/coins/images/1094/small/tron-logo.png',current_price:0.118,price_change_percentage_24h:0.45,market_cap:10300000000,total_volume:380000000,market_cap_rank:12},
+    {id:'polkadot',name:'Polkadot',symbol:'dot',image:'https://assets.coingecko.com/coins/images/12171/small/polkadot.png',current_price:7.25,price_change_percentage_24h:-0.78,market_cap:9800000000,total_volume:280000000,market_cap_rank:13},
+    {id:'chainlink',name:'Chainlink',symbol:'link',image:'https://assets.coingecko.com/coins/images/877/small/chainlink-new-logo.png',current_price:14.80,price_change_percentage_24h:6.54,market_cap:8700000000,total_volume:520000000,market_cap_rank:14},
+    {id:'near',name:'NEAR Protocol',symbol:'near',image:'https://assets.coingecko.com/coins/images/10365/small/near_icon.png',current_price:6.90,price_change_percentage_24h:8.21,market_cap:7500000000,total_volume:340000000,market_cap_rank:15},
+    {id:'polygon',name:'Polygon',symbol:'matic',image:'https://assets.coingecko.com/coins/images/4713/small/matic-token-icon.png',current_price:0.72,price_change_percentage_24h:-1.45,market_cap:6700000000,total_volume:290000000,market_cap_rank:16},
+    {id:'litecoin',name:'Litecoin',symbol:'ltc',image:'https://assets.coingecko.com/coins/images/2/small/litecoin.png',current_price:84.30,price_change_percentage_24h:1.87,market_cap:6300000000,total_volume:350000000,market_cap_rank:17},
+    {id:'wrapped-bitcoin',name:'Wrapped Bitcoin',symbol:'wbtc',image:'https://assets.coingecko.com/coins/images/7598/small/wrapped_bitcoin_wbtc.png',current_price:67400,price_change_percentage_24h:2.38,market_cap:6100000000,total_volume:210000000,market_cap_rank:18},
+    {id:'internet-computer',name:'Internet Computer',symbol:'icp',image:'https://assets.coingecko.com/coins/images/14495/small/Internet_Computer_logo.png',current_price:12.40,price_change_percentage_24h:-3.56,market_cap:5700000000,total_volume:180000000,market_cap_rank:19},
+    {id:'bitcoin-cash',name:'Bitcoin Cash',symbol:'bch',image:'https://assets.coingecko.com/coins/images/780/small/bitcoin-cash-circle.png',current_price:280,price_change_percentage_24h:-0.92,market_cap:5500000000,total_volume:150000000,market_cap_rank:20},
+    {id:'uniswap',name:'Uniswap',symbol:'uni',image:'https://assets.coingecko.com/coins/images/12504/small/uni.jpg',current_price:9.15,price_change_percentage_24h:2.78,market_cap:5200000000,total_volume:220000000,market_cap_rank:21},
+    {id:'stellar',name:'Stellar',symbol:'xlm',image:'https://assets.coingecko.com/coins/images/100/small/Stellar_symbol_black_RGB.png',current_price:0.11,price_change_percentage_24h:1.23,market_cap:3100000000,total_volume:95000000,market_cap_rank:22},
+    {id:'monero',name:'Monero',symbol:'xmr',image:'https://assets.coingecko.com/coins/images/69/small/monero_logo.png',current_price:165,price_change_percentage_24h:0.56,market_cap:3000000000,total_volume:85000000,market_cap_rank:23},
+    {id:'filecoin',name:'Filecoin',symbol:'fil',image:'https://assets.coingecko.com/coins/images/12817/small/filecoin.png',current_price:6.20,price_change_percentage_24h:-4.12,market_cap:3200000000,total_volume:140000000,market_cap_rank:24},
+    {id:'aptos',name:'Aptos',symbol:'apt',image:'https://assets.coingecko.com/coins/images/26455/small/aptos_round.png',current_price:9.80,price_change_percentage_24h:7.65,market_cap:3800000000,total_volume:290000000,market_cap_rank:25}
+  ];
+
+  var allCoins = [];
+  var filteredCoins = [];
+  var refreshTimer = null;
+
+  function $(id){return document.getElementById(id)}
+  function qs(s){return document.querySelector(s)}
+  function qsa(s){return document.querySelectorAll(s)}
+  function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML}
+
+  function toast(type,msg){
+    var c=$('toastContainer');if(!c)return;
+    var t=document.createElement('div');
+    t.className='toast '+type;
+    var icons={success:'\u2713',error:'\u2715',warning:'\u26A0',info:'\u2139'};
+    t.innerHTML='<span>'+(icons[type]||'')+'</span><span>'+msg+'</span>';
+    c.appendChild(t);
+    setTimeout(function(){t.style.animation='toastOut 0.3s ease forwards';setTimeout(function(){t.remove()},300)},type==='error'?10000:6000);
+  }
+
+  function formatPrice(p){
+    if(p===undefined||p===null)return 'N/A';
+    if(p<0.01)return '$'+p.toFixed(6);
+    if(p<1)return '$'+p.toFixed(4);
+    if(p<100)return '$'+p.toFixed(2);
+    if(p<10000)return '$'+p.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',');
+    return '$'+Math.round(p).toLocaleString();
+  }
+
+  function formatLarge(n){
+    if(n===undefined||n===null)return 'N/A';
+    if(n>=1000000000000)return '$'+(n/1000000000000).toFixed(2)+'T';
+    if(n>=1000000000)return '$'+(n/1000000000).toFixed(2)+'B';
+    if(n>=1000000)return '$'+(n/1000000).toFixed(2)+'M';
+    if(n>=1000)return '$'+(n/1000).toFixed(2)+'K';
+    return '$'+n.toLocaleString();
+  }
+
+  function renderCoins(coins){
+    var tbody=$('cryptoBody');
+    if(!coins||coins.length===0){
+      tbody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted)">No coins found</td></tr>';
+      return;
+    }
+    tbody.innerHTML=coins.map(function(c,i){
+      var change=c.price_change_percentage_24h;
+      var changeClass=change>=0?'change-positive':'change-negative';
+      var arrow=change>=0?'\u25B2 ':'\u25BC ';
+      var img=c.image||'https://assets.coingecko.com/coins/images/1/small/bitcoin.png';
+      return '<tr>'+
+        '<td>'+(c.market_cap_rank||i+1)+'</td>'+
+        '<td><div class="coin-cell" onclick="window.showCoinDetail(\''+esc(c.id)+'\')"><img class="coin-image" src="'+esc(img)+'" alt="" loading="lazy"><div><div class="coin-name">'+esc(c.name)+'</div><div class="coin-symbol">'+esc(c.symbol).toUpperCase()+'</div></div></div></td>'+
+        '<td>'+formatPrice(c.current_price)+'</td>'+
+        '<td class="'+changeClass+'">'+arrow+Math.abs(change||0).toFixed(2)+'%</td>'+
+        '<td>'+formatLarge(c.market_cap)+'</td>'+
+        '<td>'+formatLarge(c.total_volume)+'</td></tr>';
+    }).join('');
+  }
+
+  window.showCoinDetail=function(id){
+    var coin=allCoins.find(function(c){return c.id===id});
+    if(!coin)return;
+    var img=coin.image||'https://assets.coingecko.com/coins/images/1/small/bitcoin.png';
+    var change=coin.price_change_percentage_24h||0;
+    var changeClass=change>=0?'change-positive':'change-negative';
+    var html='<div class="detail-header"><img src="'+esc(img)+'" alt=""><div><h2>'+esc(coin.name)+' <span>'+esc(coin.symbol).toUpperCase()+'</span></h2></div></div>'+
+      '<div class="detail-grid">'+
+      '<div class="detail-item"><div class="detail-item-label">Price</div><div class="detail-item-value">'+formatPrice(coin.current_price)+'</div></div>'+
+      '<div class="detail-item"><div class="detail-item-label">24h Change</div><div class="detail-item-value '+changeClass+'">'+change.toFixed(2)+'%</div></div>'+
+      '<div class="detail-item"><div class="detail-item-label">Market Cap</div><div class="detail-item-value">'+formatLarge(coin.market_cap)+'</div></div>'+
+      '<div class="detail-item"><div class="detail-item-label">24h Volume</div><div class="detail-item-value">'+formatLarge(coin.total_volume)+'</div></div>'+
+      '<div class="detail-item"><div class="detail-item-label">Market Cap Rank</div><div class="detail-item-value">#'+(coin.market_cap_rank||'N/A')+'</div></div>'+
+      '<div class="detail-item"><div class="detail-item-label">All-Time High</div><div class="detail-item-value">'+(coin.ath?formatPrice(coin.ath):'N/A')+'</div></div></div>';
+
+    if(coin.description){
+      html+='<div class="detail-desc">'+coin.description+'</div>';
+    }
+    if(coin.homepage){
+      html+='<div style="margin-top:12px"><a href="'+esc(coin.homepage)+'" target="_blank" rel="noopener" class="btn btn-outline">Visit Website</a></div>';
+    }
+
+    $('detailContent').innerHTML=html;
+    $('detailSection').classList.add('visible');
+    $('detailSection').scrollIntoView({behavior:'smooth'});
+  };
+
+  function fetchCrypto(search){
+    $('cryptoBody').innerHTML='<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted)"><div class="spinner" style="margin:0 auto 8px"></div>Loading...</td></tr>';
+
+    fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=50&page=1&sparkline=false',{cache:'no-store'})
+      .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json()})
+      .then(function(data){
+        if(data&&data.length){
+          allCoins=data;
+          toast('success','Loaded '+allCoins.length+' coins');
+        } else {
+          allCoins=FALLBACK_CRYPTO;
+          toast('info','Using offline crypto data');
+        }
+        filterCoins(search);
+      })
+      .catch(function(){
+        allCoins=FALLBACK_CRYPTO;
+        toast('warning','Using offline crypto data');
+        filterCoins(search);
+      });
+  }
+
+  function filterCoins(search){
+    var s=(search||'').toLowerCase().trim();
+    if(s){
+      filteredCoins=allCoins.filter(function(c){
+        return c.name.toLowerCase().includes(s)||c.symbol.toLowerCase().includes(s);
+      });
+    } else {
+      filteredCoins=allCoins.slice();
+    }
+    renderCoins(filteredCoins);
+  }
+
+  function hideLoader(){
+    var el=$('globalLoader');
+    if(el){el.classList.add('fade-out');setTimeout(function(){el.style.display='none'},500)}
+  }
+
+  document.addEventListener('DOMContentLoaded',function(){
+    fetchCrypto();
+
+    $('refreshBtn').addEventListener('click',function(){
+      fetchCrypto($('searchInput').value);
+      toast('info','Refreshing data...');
+    });
+
+    $('searchInput').addEventListener('input',function(){
+      filterCoins(this.value);
+    });
+
+    $('detailClose').addEventListener('click',function(){$('detailSection').classList.remove('visible')});
+
+    refreshTimer=setInterval(function(){
+      fetchCrypto($('searchInput').value);
+    },60000);
+
+    $('hamburgerBtn').addEventListener('click',function(){$('navLinks').classList.toggle('open')});
+    qsa('.nav-links a').forEach(function(a){a.addEventListener('click',function(){$('navLinks').classList.remove('open')})});
+
+    hideLoader();
+  });
+})();
+</script>
+</body>
+</html>
+

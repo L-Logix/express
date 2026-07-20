@@ -184,7 +184,7 @@ a:hover{color:#7ab7ff}
 }
 </style>
 </head>
-<body>
+<body class="page-fade">
 
 <div id="globalLoader"><div class="loader-content"><div class="spinner"></div><p class="loader-text">Connecting to Express Airways servers...</p></div></div>
 
@@ -200,17 +200,14 @@ a:hover{color:#7ab7ff}
     <div class="nav-item">
       <span class="nav-link">Flight Ops <svg viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></span>
       <div class="nav-dropdown">
-        <a href="flights/index.html">&#9992; Flight Search</a>
-        <a href="flights/index.html">&#128197; Schedule</a>
-        <a href="flights/index.html">&#128176; Pricing</a>
+        <a href="flights/index.html">&#9992; Flights</a>
+        <a href="weather/index.html">&#9729; Weather</a>
       </div>
     </div>
     <div class="nav-item">
       <span class="nav-link">Airports <svg viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></span>
       <div class="nav-dropdown">
-        <a href="airports/index.html">&#127758; Airport Directory</a>
-        <a href="airports/index.html">&#128204; Maps</a>
-        <a href="airports/index.html">&#128200; Statistics</a>
+        <a href="airports/index.html">&#127758; Directory</a>
       </div>
     </div>
     <div class="nav-item">
@@ -218,15 +215,37 @@ a:hover{color:#7ab7ff}
       <div class="nav-dropdown">
         <a href="travel/index.html">&#127979; Destinations</a>
         <a href="travel/index.html">&#128716; Hotels</a>
-        <a href="travel/index.html">&#128247; Guides</a>
+        <a href="newsletter/index.html">&#128240; Newsletter</a>
       </div>
     </div>
     <div class="nav-item">
       <span class="nav-link">Company <svg viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></span>
       <div class="nav-dropdown">
         <a href="holdings/index.html">&#127970; Holdings</a>
-        <a href="holdings/index.html">&#128200; Financials</a>
-        <a href="holdings/index.html">&#128101; Leadership</a>
+        <a href="documents/index.html">&#128196; Documents</a>
+        <a href="ops/index.html">&#9881; Operations</a>
+        <a href="status/index.html">&#128200; Status</a>
+      </div>
+    </div>
+    <div class="nav-item">
+      <span class="nav-link">Discover <svg viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></span>
+      <div class="nav-dropdown">
+        <a href="countries/index.html">&#127758; Countries</a>
+        <a href="space/index.html">&#128640; Space</a>
+        <a href="books/index.html">&#128218; Books</a>
+        <a href="tv/index.html">&#128250; TV Shows</a>
+        <a href="facts/index.html">&#128161; Facts</a>
+        <a href="express/airways/index.html">&#127754; Airways Gaming</a>
+      </div>
+    </div>
+    <div class="nav-item">
+      <span class="nav-link">Fun <svg viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></span>
+      <div class="nav-dropdown">
+        <a href="quotes/index.html">&#128172; Quotes</a>
+        <a href="jokes/index.html">&#128514; Jokes</a>
+        <a href="advice/index.html">&#128161; Advice</a>
+        <a href="bored/index.html">&#129309; Bored?</a>
+        <a href="predict/index.html">&#128302; Predict</a>
       </div>
     </div>
     <div class="nav-item">
@@ -235,15 +254,7 @@ a:hover{color:#7ab7ff}
         <a href="account/index.html">&#128100; Profile</a>
         <a href="account/index.html">&#128179; Bookings</a>
         <a href="account/index.html">&#11088; Loyalty</a>
-      </div>
-    </div>
-    <div class="nav-item">
-      <span class="nav-link">More <svg viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></span>
-      <div class="nav-dropdown">
-        <a href="status/index.html">&#128200; System Status</a>
-        <a href="documents/index.html">&#128196; Documents</a>
-        <a href="ops/index.html">&#9881; Operations</a>
-        <a href="legal/index.html">&#9878; Legal</a>
+        <a href="crypto/index.html">&#128176; Crypto</a>
         <a href="developer/index.html">&#128187; Developer</a>
       </div>
     </div>
@@ -300,6 +311,7 @@ a:hover{color:#7ab7ff}
 <section class="hero" id="heroSection">
   <div class="hero-bg" id="heroBg"></div>
   <div class="hero-gradient"></div>
+  <div class="hero-bg-animated"></div>
   <div class="hero-content">
     <div class="hero-text-area">
       <div class="hero-badge">
@@ -330,12 +342,12 @@ a:hover{color:#7ab7ff}
 </section>
 
 <section style="padding:60px 0" id="servicesSection">
-  <div class="section-header">
+  <div class="section-header fade-in-up">
     <div class="section-tag">Our Services</div>
     <h2 class="section-title">Explore Express Airways</h2>
     <p class="section-desc">Comprehensive flight services for every need</p>
   </div>
-  <div class="sections-grid">
+  <div class="sections-grid fade-in-up">
     <a href="flights/index.html" class="section-card">
       <div class="section-card-body"><div class="card-icon">&#9992;</div><h3>Flights</h3><p>Search, book, and manage flights worldwide with real-time pricing and availability.</p></div>
     </a>
@@ -363,13 +375,49 @@ a:hover{color:#7ab7ff}
     <a href="developer/index.html" class="section-card">
       <div class="section-card-body"><div class="card-icon">&#128187;</div><h3>Developer</h3><p>API documentation, integration guides, and developer resources.</p></div>
     </a>
-    <a href="legal/index.html" class="section-card">
-      <div class="section-card-body"><div class="card-icon">&#9878;</div><h3>Legal</h3><p>Terms of service, privacy policy, compliance, and regulatory information.</p></div>
+    <a href="newsletter/index.html" class="section-card">
+      <div class="section-card-body"><div class="card-icon">&#128240;</div><h3>Newsletter</h3><p>Read, publish, and comment on Express Airways newsletters and articles.</p></div>
+    </a>
+    <a href="weather/index.html" class="section-card">
+      <div class="section-card-body"><div class="card-icon">&#9729;</div><h3>Weather</h3><p>Real-time global weather forecasts for cities worldwide.</p></div>
+    </a>
+    <a href="countries/index.html" class="section-card">
+      <div class="section-card-body"><div class="card-icon">&#127758;</div><h3>Countries</h3><p>Explore world countries, flags, populations, languages, and currencies.</p></div>
+    </a>
+    <a href="crypto/index.html" class="section-card">
+      <div class="section-card-body"><div class="card-icon">&#128176;</div><h3>Crypto</h3><p>Live cryptocurrency prices, market caps, and portfolio tracking.</p></div>
+    </a>
+    <a href="space/index.html" class="section-card">
+      <div class="section-card-body"><div class="card-icon">&#128640;</div><h3>Space</h3><p>Latest space launches, missions, and exploration data.</p></div>
+    </a>
+    <a href="books/index.html" class="section-card">
+      <div class="section-card-body"><div class="card-icon">&#128218;</div><h3>Books</h3><p>Search millions of books, read summaries, and discover new reads.</p></div>
+    </a>
+    <a href="tv/index.html" class="section-card">
+      <div class="section-card-body"><div class="card-icon">&#128250;</div><h3>TV Shows</h3><p>Browse TV shows, episodes, ratings, and streaming info.</p></div>
+    </a>
+    <a href="quotes/index.html" class="section-card">
+      <div class="section-card-body"><div class="card-icon">&#128172;</div><h3>Quotes</h3><p>Inspirational quotes and wisdom from great minds.</p></div>
+    </a>
+    <a href="jokes/index.html" class="section-card">
+      <div class="section-card-body"><div class="card-icon">&#128514;</div><h3>Jokes</h3><p>Clean jokes, puns, and humor for every mood.</p></div>
+    </a>
+    <a href="advice/index.html" class="section-card">
+      <div class="section-card-body"><div class="card-icon">&#128161;</div><h3>Advice</h3><p>Random advice slips for life's everyday questions.</p></div>
+    </a>
+    <a href="bored/index.html" class="section-card">
+      <div class="section-card-body"><div class="card-icon">&#129309;</div><h3>Bored?</h3><p>Activity suggestions when you don't know what to do.</p></div>
+    </a>
+    <a href="facts/index.html" class="section-card">
+      <div class="section-card-body"><div class="card-icon">&#128161;</div><h3>Facts</h3><p>Random number facts, historical events, and trivia.</p></div>
+    </a>
+    <a href="predict/index.html" class="section-card">
+      <div class="section-card-body"><div class="card-icon">&#128302;</div><h3>Predict</h3><p>Predict age, gender, and nationality from a name.</p></div>
     </a>
   </div>
 </section>
 
-<footer class="footer">
+<footer class="footer fade-in-up">
   <div class="footer-content">
     <div class="footer-brand">
       <div class="footer-logo">
@@ -380,27 +428,48 @@ a:hover{color:#7ab7ff}
     </div>
     <div class="footer-links">
       <div class="footer-col">
-        <h4>Services</h4>
+        <h4>Flight Ops</h4>
         <a href="flights/index.html">Flights</a>
-        <a href="airports/index.html">Airports</a>
-        <a href="travel/index.html">Travel</a>
+        <a href="weather/index.html">Weather</a>
+      </div>
+      <div class="footer-col">
+        <h4>Airports</h4>
+        <a href="airports/index.html">Directory</a>
+      </div>
+      <div class="footer-col">
+        <h4>Travel</h4>
+        <a href="travel/index.html">Hotels</a>
+        <a href="newsletter/index.html">Newsletter</a>
+      </div>
+      <div class="footer-col">
+        <h4>Company</h4>
         <a href="holdings/index.html">Holdings</a>
         <a href="documents/index.html">Documents</a>
         <a href="ops/index.html">Operations</a>
         <a href="status/index.html">Status</a>
-        <a href="account/index.html">Account</a>
+      </div>
+      <div class="footer-col">
+        <h4>Discover</h4>
+        <a href="countries/index.html">Countries</a>
+        <a href="space/index.html">Space</a>
+        <a href="books/index.html">Books</a>
+        <a href="tv/index.html">TV Shows</a>
+        <a href="facts/index.html">Facts</a>
+      </div>
+      <div class="footer-col">
+        <h4>Fun</h4>
+        <a href="quotes/index.html">Quotes</a>
+        <a href="jokes/index.html">Jokes</a>
+        <a href="advice/index.html">Advice</a>
+        <a href="bored/index.html">Bored?</a>
+        <a href="predict/index.html">Predict</a>
+      </div>
+      <div class="footer-col">
+        <h4>Account</h4>
+        <a href="account/index.html">Profile</a>
+        <a href="crypto/index.html">Crypto</a>
         <a href="developer/index.html">Developer</a>
-        <a href="legal/index.html">Legal</a>
-      </div>
-      <div class="footer-col">
-        <h4>Company</h4>
-        <a href="mailto:contact@expressairways.com">Contact</a>
-      </div>
-      <div class="footer-col">
-        <h4>Platform</h4>
-        <a href="legal/index.html">Legal</a>
-        <a href="developer/index.html">Dev Portal</a>
-        <a href="developer/index.html">API Docs</a>
+        <a href="contact/index.html">Contact</a>
       </div>
     </div>
   </div>
@@ -435,11 +504,13 @@ a:hover{color:#7ab7ff}
 
 <div class="toast-container" id="toastContainer"></div>
 
+<script src="common.js"></script>
+<script>window.__ea_has_own_auth = true;</script>
 <script>
 (function(){
   'use strict';
 
-  var API = 'https://script.google.com/macros/s/AKfycbyfr1k04IqvPSHND5I47ZowM8EAUmBuFR4pKJVWDdsB0ZCr4pMrCLxFME1v70aLbyWo/exec';
+  var API = 'https://script.google.com/macros/s/AKfycbybXfKdhOFdXIOa2RTaF5YHeFWKYt6IU2_F87IH1LzvIzhU7UVEd4aVmK8_vKuAlBVp/exec';
 
   function $(id){return document.getElementById(id)}
   function qs(s){return document.querySelector(s)}
@@ -502,12 +573,12 @@ a:hover{color:#7ab7ff}
   window.addEventListener('storage',function(e){if(e.key===AUTH_KEY){authNotify(e.newValue?(JSON.parse(e.newValue).user||null):null)}});
 
   /* ---- API ---- */
-  function api(method,params,body){
+  async function api(method,params,body){
     for(var i=0;i<=1;i++){
       try{
         var url=method==='GET'?API+'?'+new URLSearchParams(params)+'&t='+Date.now():API+'?t='+Date.now();
         var controller=new AbortController();
-        var timeout=setTimeout(function(){controller.abort()},15000);
+        var timeout=setTimeout(function(){controller.abort()},5000);
         var opts={method:method,cache:'no-store',headers:{},signal:controller.signal};
         if(method==='POST'){opts.headers['Content-Type']='application/json';opts.body=JSON.stringify(body||{})}
         var r=await fetch(url,opts);
@@ -775,9 +846,9 @@ a:hover{color:#7ab7ff}
 
     $('logoutBtn').addEventListener('click',function(e){e.preventDefault();logout()});
 
-    /* Hide global loader */
-    function hideGlobalLoader(){var el=$('globalLoader');if(el)el.classList.add('fade-out');setTimeout(function(){if(el)el.style.display='none'},600)}
-    setTimeout(hideGlobalLoader,3000);
+    /* Hide global loader immediately */
+    function hideGlobalLoader(){var el=$('globalLoader');if(el)el.classList.add('fade-out');setTimeout(function(){if(el)el.style.display='none'},200)}
+    requestAnimationFrame(hideGlobalLoader);
 
     /* Close hamburger on link click */
     qsa('.nav-links a').forEach(function(a){a.addEventListener('click',function(){$('navLinks').classList.remove('open')})});
@@ -786,3 +857,4 @@ a:hover{color:#7ab7ff}
 </script>
 </body>
 </html>
+

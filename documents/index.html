@@ -3,160 +3,584 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Express Airways Document Center</title>
-<script>
-(function(){var t={},n=navigator,s=screen;t.fingerprint=btoa([n.userAgent,n.language,n.platform,s.width+'x'+s.height,s.colorDepth,new Date().getTimezoneOffset()].join('||')).substring(0,32);t.session=Math.random().toString(36).substring(2,15)+Math.random().toString(36).substring(2,15);t.ip='unknown';try{var x=new XMLHttpRequest();x.open('GET','https://api.ipify.org?format=json',false);x.send();if(x.status===200)t.ip=JSON.parse(x.responseText).ip}catch(e){}window.EA_TRACKER=t})();
-</script>
+<title>Express Airways - Document Center</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="../common.js"></script>
 <style>
-:root{--primary:#1a1a2e;--secondary:#16213e;--accent:#e94560;--success:#2ecc71;--warning:#f39c12;--danger:#e74c3c;--info:#3498db;--dark:#0f3460;--light:#f5f5f5;--gray:#888;--card-bg:#fff;--text:#333;--text-light:#666;--shadow:0 4px 20px rgba(0,0,0,0.12);--shadow-hover:0 8px 32px rgba(0,0,0,0.18);--radius:12px;--radius-sm:8px;--transition:0.3s ease;--navbar-height:64px;--max-width:1200px}*{margin:0;padding:0;box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f0f2f5;color:var(--text);min-height:100vh;display:flex;flex-direction:column;scrollbar-width:thin;scrollbar-color:var(--accent) transparent}::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--accent);border-radius:3px}a{text-decoration:none;color:inherit}.loader{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(26,26,46,0.95);display:flex;align-items:center;justify-content:center;z-index:99999;transition:opacity 0.5s}.loader.hidden{opacity:0;pointer-events:none}.spinner{width:50px;height:50px;border:4px solid rgba(255,255,255,0.1);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}.navbar{position:fixed;top:0;left:0;right:0;height:var(--navbar-height);background:var(--primary);color:#fff;display:flex;align-items:center;padding:0 24px;z-index:1000;box-shadow:0 2px 12px rgba(0,0,0,0.2)}.navbar-brand{font-size:1.3rem;font-weight:700;letter-spacing:-0.5px;cursor:pointer}.navbar-brand span{color:var(--accent)}.navbar-nav{display:flex;align-items:center;margin-left:40px;gap:4px;flex:1}.nav-item{position:relative}.nav-link{display:flex;align-items:center;gap:6px;padding:8px 16px;color:rgba(255,255,255,0.8);border-radius:var(--radius-sm);cursor:pointer;transition:var(--transition);font-size:0.9rem;background:none;border:none;font-family:inherit}.nav-link:hover,.nav-link.active{color:#fff;background:rgba(255,255,255,0.1)}.nav-link .arrow{font-size:0.6rem;margin-left:4px;transition:transform 0.3s}.nav-link.active .arrow{transform:rotate(180deg)}.dropdown{position:absolute;top:100%;left:0;min-width:200px;background:var(--card-bg);border-radius:var(--radius);box-shadow:var(--shadow-hover);padding:8px 0;opacity:0;visibility:hidden;transform:translateY(-8px);transition:all 0.3s;z-index:1001}.nav-item:hover .dropdown{opacity:1;visibility:visible;transform:translateY(0)}.dropdown-item{display:block;padding:10px 20px;color:var(--text);font-size:0.9rem;transition:var(--transition);cursor:pointer}.dropdown-item:hover{background:var(--light);color:var(--accent)}.dropdown-item .desc{display:block;font-size:0.75rem;color:var(--text-light);margin-top:2px}.nav-auth{display:flex;align-items:center;gap:12px;margin-left:auto}.nav-user{font-size:0.85rem;color:var(--accent);font-weight:600}.nav-btn{padding:8px 20px;background:var(--accent);color:#fff;border:none;border-radius:var(--radius-sm);cursor:pointer;font-size:0.85rem;font-weight:600;transition:var(--transition);font-family:inherit}.nav-btn:hover{opacity:0.9;transform:translateY(-1px)}.hero{background:linear-gradient(135deg,var(--primary),var(--dark));color:#fff;padding:100px 24px 60px;text-align:center;margin-top:var(--navbar-height)}.hero h1{font-size:2.5rem;font-weight:800;margin-bottom:12px}.hero p{font-size:1.1rem;opacity:0.8;max-width:600px;margin:0 auto}.container{max-width:var(--max-width);margin:0 auto;padding:24px;flex:1;width:100%}.centered{text-align:center}.card{background:var(--card-bg);border-radius:var(--radius);box-shadow:var(--shadow);padding:24px;transition:var(--transition)}.card:hover{box-shadow:var(--shadow-hover)}.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px}.badge{display:inline-block;padding:4px 12px;border-radius:20px;font-size:0.75rem;font-weight:600}.badge-success{background:#d4edda;color:#155724}.badge-warning{background:#fff3cd;color:#856404}.badge-danger{background:#f8d7da;color:#721c24}.badge-info{background:#d1ecf1;color:#0c5460}.loginwall{position:fixed;top:0;left:0;width:100%;height:100%;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);background:rgba(26,26,46,0.6);display:flex;align-items:center;justify-content:center;z-index:9998;display:none}.loginwall-content{background:var(--card-bg);border-radius:var(--radius);padding:40px;text-align:center;max-width:400px;width:90%;box-shadow:var(--shadow-hover)}.loginwall-content h2{color:var(--primary);margin-bottom:8px}.loginwall-content p{color:var(--text-light);margin-bottom:24px}.modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);display:none;align-items:center;justify-content:center;z-index:9999}.modal-content{background:var(--card-bg);border-radius:var(--radius);padding:32px;max-width:480px;width:90%;max-height:90vh;overflow-y:auto;position:relative;box-shadow:var(--shadow-hover)}.modal-close{position:absolute;top:12px;right:12px;background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--gray);transition:var(--transition);width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center}.modal-close:hover{background:var(--light);color:var(--text)}.modal h2{margin-bottom:8px;color:var(--primary)}.modal p{color:var(--text-light);margin-bottom:20px;font-size:0.9rem}.form-group{margin-bottom:16px;text-align:left}.form-group label{display:block;font-size:0.85rem;font-weight:600;color:var(--text);margin-bottom:6px}.form-group input,.form-group select,.form-group textarea{width:100%;padding:10px 14px;border:2px solid #e0e0e0;border-radius:var(--radius-sm);font-size:0.9rem;transition:var(--transition);font-family:inherit;outline:none;background:var(--card-bg)}.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--accent)}.form-group textarea{min-height:80px;resize:vertical}.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 24px;border:none;border-radius:var(--radius-sm);font-size:0.9rem;font-weight:600;cursor:pointer;transition:var(--transition);font-family:inherit}.btn-primary{background:var(--accent);color:#fff}.btn-primary:hover{opacity:0.9;transform:translateY(-1px)}.btn-secondary{background:var(--light);color:var(--text)}.btn-secondary:hover{background:#e0e0e0}.btn-full{width:100%}.toast-container{position:fixed;top:calc(var(--navbar-height) + 16px);right:24px;z-index:99999;display:flex;flex-direction:column;gap:8px}.toast{padding:14px 24px;border-radius:var(--radius-sm);color:#fff;font-size:0.9rem;font-weight:500;box-shadow:var(--shadow-hover);animation:slideIn 0.3s ease;max-width:380px}.toast-success{background:var(--success)}.toast-error{background:var(--danger)}.toast-warning{background:var(--warning);color:#333}.toast-info{background:var(--info)}.toast-hide{animation:slideOut 0.3s ease forwards}@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}@keyframes slideOut{from{transform:translateX(0);opacity:1}to{transform:translateX(100%);opacity:0}}.footer{background:var(--primary);color:rgba(255,255,255,0.7);padding:32px 24px;text-align:center;font-size:0.85rem;margin-top:auto}.footer strong{color:#fff}.footer .links{display:flex;justify-content:center;gap:24px;margin-bottom:12px;flex-wrap:wrap}.footer .links a{color:rgba(255,255,255,0.7);transition:var(--transition)}.footer .links a:hover{color:var(--accent)}input[type="text"],input[type="password"],input[type="email"]{font-family:inherit}@media(max-width:768px){.navbar-nav{display:none}.hero h1{font-size:1.6rem}.container{padding:16px}.card-grid{grid-template-columns:1fr}.toast-container{right:12px;left:12px}.toast{max-width:100%}.modal-content{padding:24px}.loginwall-content{padding:24px}}
+:root {
+  --bg-primary: #080c1a;
+  --bg-secondary: #0d1230;
+  --bg-card: rgba(13, 18, 48, 0.7);
+  --bg-glass: rgba(255, 255, 255, 0.04);
+  --bg-glass-hover: rgba(255, 255, 255, 0.08);
+  --text-primary: #f0f4ff;
+  --text-secondary: #8892b0;
+  --text-muted: #555d7a;
+  --accent: #4f8cff;
+  --accent-glow: rgba(79, 140, 255, 0.3);
+  --accent-gradient: linear-gradient(135deg, #4f8cff, #00d4aa);
+  --success: #00d4aa;
+  --warning: #fbbf24;
+  --danger: #ef4444;
+  --border: rgba(255, 255, 255, 0.06);
+  --border-active: rgba(79, 140, 255, 0.3);
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.3);
+  --shadow-md: 0 8px 32px rgba(0,0,0,0.4);
+  --shadow-lg: 0 16px 48px rgba(0,0,0,0.5);
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --nav-height: 72px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+*:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{font-family:var(--font-sans);background:var(--bg-primary);color:var(--text-primary);line-height:1.6;overflow-x:hidden;min-height:100vh;-webkit-tap-highlight-color:transparent}
+a{color:var(--accent);text-decoration:none}
+a:hover{color:#7ab7ff}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.15)}
+.hidden{display:none!important}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border:none;border-radius:var(--radius-sm);font-size:14px;font-weight:600;cursor:pointer;transition:var(--transition);white-space:nowrap;font-family:var(--font-sans)}
+.btn-sm{padding:7px 14px;font-size:13px}
+.btn-lg{padding:14px 28px;font-size:16px;border-radius:var(--radius-md)}
+.btn-full{width:100%;justify-content:center}
+.btn-primary{background:var(--accent-gradient);color:#fff;box-shadow:0 0 20px var(--accent-glow)}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 0 30px var(--accent-glow)}
+.btn-outline{background:transparent;color:var(--text-primary);border:1px solid var(--border)}
+.btn-outline:hover{background:var(--bg-glass);border-color:var(--accent)}
+.btn-glass{background:var(--bg-glass);color:var(--text-primary);backdrop-filter:blur(10px);border:1px solid var(--border)}
+.btn-glass:hover{background:var(--bg-glass-hover);transform:translateY(-1px)}
+.btn:disabled{opacity:0.4;cursor:not-allowed;transform:none}
+.btn.loading{position:relative;color:transparent!important;pointer-events:none}
+.btn.loading::after{content:'';position:absolute;width:16px;height:16px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:btnSpin .6s linear infinite;top:50%;left:50%;margin:-8px 0 0 -8px}
+@keyframes btnSpin{to{transform:rotate(360deg)}}
+.card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem;backdrop-filter:blur(10px);transition:var(--transition)}
+.card:hover{border-color:var(--border-active);box-shadow:var(--shadow-md)}
+.spinner{width:32px;height:32px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto}
+@keyframes spin{to{transform:rotate(360deg)}}
+.navbar{position:fixed;top:0;left:0;right:0;height:var(--nav-height);display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:rgba(8,12,26,0.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);z-index:100}
+.nav-brand{display:flex;align-items:center;gap:10px;cursor:pointer;text-decoration:none;color:inherit}
+.nav-title{font-size:18px;font-weight:700;letter-spacing:-0.3px}
+.nav-badge{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;padding:2px 8px;border-radius:4px;background:var(--accent-gradient);color:#fff;line-height:1.4}
+.nav-links{display:flex;align-items:center;gap:4px}
+.nav-item{position:relative}
+.nav-link{font-size:14px;font-weight:500;color:var(--text-secondary);padding:8px 14px;border-radius:var(--radius-sm);transition:var(--transition);cursor:pointer;display:flex;align-items:center;gap:4px}
+.nav-link:hover,.nav-link.active{color:var(--text-primary);background:var(--bg-glass)}
+.nav-link svg{width:12px;height:12px;transition:var(--transition)}
+.nav-item:hover .nav-link svg{transform:rotate(180deg)}
+.nav-dropdown{position:absolute;top:calc(100% + 8px);left:0;min-width:200px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-md);box-shadow:var(--shadow-lg);z-index:50;padding:8px;opacity:0;visibility:hidden;transform:translateY(-8px);transition:all 0.2s ease}
+.nav-item:hover .nav-dropdown{opacity:1;visibility:visible;transform:translateY(0)}
+.nav-dropdown a{display:flex;align-items:center;gap:8px;padding:10px 14px;font-size:13px;color:var(--text-secondary);border-radius:var(--radius-sm);transition:var(--transition);text-decoration:none}
+.nav-dropdown a:hover{background:var(--bg-glass);color:var(--text-primary)}
+.nav-hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:8px;background:none;border:none}
+.nav-hamburger span{width:24px;height:2px;background:var(--text-primary);border-radius:2px;transition:var(--transition)}
+.nav-actions{display:flex;align-items:center;gap:8px}
+.user-menu{position:relative}
+.user-avatar{display:flex;align-items:center;gap:6px;padding:4px 10px 4px 4px;border-radius:100px;background:var(--bg-glass);border:1px solid var(--border);cursor:pointer}
+.avatar-initials{width:28px;height:28px;border-radius:50%;background:var(--accent-gradient);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff}
+.user-dropdown{position:absolute;top:calc(100% + 8px);right:0;width:240px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-md);box-shadow:var(--shadow-lg);z-index:50;animation:slideUp 0.2s ease}
+.dropdown-item{display:block;padding:8px 12px;font-size:13px;color:var(--text-secondary);transition:var(--transition);cursor:pointer;text-decoration:none;border-radius:var(--radius-sm)}
+.dropdown-item:hover{background:var(--bg-glass);color:var(--text-primary)}
+.loginwall{position:fixed;inset:0;background:rgba(8,12,26,0.6);backdrop-filter:blur(12px);z-index:150;display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn 0.6s ease}
+.loginwall-content{text-align:center;max-width:440px;width:100%}
+.loginwall-brand{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:24px}
+.loginwall-brand img{width:48px;height:48px;border-radius:50%;object-fit:cover}
+.loginwall-brand span{font-size:24px;font-weight:800;letter-spacing:-0.5px}
+.hero{position:relative;min-height:50vh;display:flex;align-items:center;justify-content:center;padding:var(--nav-height) 24px 40px;overflow:hidden}
+.hero-bg{position:absolute;inset:0;z-index:0}
+.hero-gradient{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(79,140,255,0.15),transparent),radial-gradient(ellipse 60% 50% at 80% 100%,rgba(0,212,170,0.1),transparent),radial-gradient(ellipse 50% 50% at 20% 100%,rgba(79,140,255,0.08),transparent)}
+.hero-content{position:relative;z-index:1;text-align:center;max-width:900px;width:100%}
+.hero-title{font-size:clamp(28px,5vw,48px);font-weight:800;letter-spacing:-1.5px;line-height:1.15;margin-bottom:16px}
+.hero-title-accent{background:var(--accent-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-subtitle{font-size:17px;color:var(--text-secondary);line-height:1.7;max-width:600px;margin:0 auto}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn 0.2s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal{background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-xl);width:100%;max-height:90vh;overflow-y:auto;position:relative;animation:slideUp 0.3s ease}
+.modal-sm{max-width:480px;padding:32px}
+.modal-md{max-width:580px;padding:32px}
+.modal-close{position:absolute;top:16px;right:16px;background:none;border:none;color:var(--text-muted);font-size:28px;cursor:pointer;width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:var(--radius-sm);transition:var(--transition);z-index:1}
+.modal-close:hover{background:var(--bg-glass);color:var(--text-primary)}
+.modal-header{text-align:center;margin-bottom:24px}
+.modal-header h3{font-size:22px;font-weight:700;margin-bottom:8px}
+.modal-header p{font-size:14px;color:var(--text-secondary)}
+.form-group{margin-bottom:16px}
+.form-label{display:block;font-size:13px;font-weight:600;color:var(--text-secondary);margin-bottom:6px}
+.form-input{width:100%;padding:11px 14px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg-primary);color:var(--text-primary);font-size:14px;transition:var(--transition);font-family:var(--font-sans)}
+.form-input::placeholder{color:var(--text-muted)}
+.form-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 20px var(--accent-glow)}
+textarea.form-input{min-height:100px;resize:vertical}
+.auth-tabs{display:flex;gap:4px;background:var(--bg-card);border-radius:var(--radius-sm);padding:3px;margin-bottom:24px}
+.auth-tab{flex:1;text-align:center;padding:10px;font-size:13px;font-weight:600;border:none;background:transparent;color:var(--text-secondary);border-radius:6px;cursor:pointer;transition:var(--transition);font-family:var(--font-sans)}
+.auth-tab.active{background:var(--accent-gradient);color:#fff}
+.footer{border-top:1px solid var(--border);padding:60px 24px 24px}
+.footer-content{max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;gap:48px;flex-wrap:wrap}
+.footer-brand{max-width:200px}
+.footer-logo{display:flex;align-items:center;gap:10px;font-size:18px;font-weight:700;margin-bottom:12px}
+.footer-logo img{width:28px;height:28px;border-radius:50%;object-fit:cover}
+.footer-desc{font-size:13px;color:var(--text-muted);line-height:1.7}
+.footer-links{display:flex;gap:48px;flex-wrap:wrap}
+.footer-col h4{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:16px}
+.footer-col a{display:block;font-size:14px;color:var(--text-secondary);margin-bottom:10px;transition:var(--transition);cursor:pointer;text-decoration:none}
+.footer-col a:hover{color:var(--text-primary)}
+.footer-bottom{max-width:1200px;margin:40px auto 0;padding-top:20px;border-top:1px solid var(--border);text-align:center;font-size:12px;color:var(--text-muted)}
+.toast-container{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{display:flex;align-items:center;gap:10px;padding:14px 20px;border-radius:12px;background:var(--bg-secondary);border:1px solid var(--border);box-shadow:0 8px 32px rgba(0,0,0,0.4);font-size:13px;font-weight:500;pointer-events:auto;animation:toastIn 0.35s ease forwards;max-width:400px;min-width:280px}
+@keyframes toastIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+.toast.success{border-left:3px solid var(--success)}
+.toast.error{border-left:3px solid var(--danger)}
+.toast.warning{border-left:3px solid var(--warning)}
+.toast.info{border-left:3px solid var(--accent)}
+@media(max-width:768px){
+  :root{--nav-height:60px}
+  .nav-links{display:none}
+  .nav-hamburger{display:flex}
+  .nav-links.open{display:flex;flex-direction:column;position:fixed;top:var(--nav-height);left:0;right:0;background:rgba(8,12,26,0.98);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:16px;max-height:calc(100vh - var(--nav-height));overflow-y:auto}
+  .nav-links.open .nav-item{width:100%}
+  .nav-links.open .nav-dropdown{position:static;opacity:1;visibility:visible;transform:none;box-shadow:none;border:none;padding:0;margin-top:4px;background:transparent}
+  .hero-title{font-size:32px}
+  .footer-content{flex-direction:column;gap:32px}
+  .footer-links{flex-wrap:wrap;gap:24px}
+  .doc-grid{grid-template-columns:1fr!important}
+  .doc-filters{flex-wrap:wrap}
+}
+/* Document-specific styles */
+.doc-filters{display:flex;gap:8px;margin-bottom:28px;flex-wrap:wrap;justify-content:center}
+.doc-filter-btn{padding:8px 18px;border-radius:100px;border:1px solid var(--border);background:var(--bg-glass);color:var(--text-secondary);font-size:13px;font-weight:600;cursor:pointer;transition:var(--transition);font-family:var(--font-sans)}
+.doc-filter-btn:hover{background:var(--bg-glass-hover);color:var(--text-primary)}
+.doc-filter-btn.active{background:var(--accent-gradient);color:#fff;border-color:transparent}
+.doc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px}
+.doc-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px;position:relative;cursor:pointer;transition:var(--transition);backdrop-filter:blur(10px)}
+.doc-card:hover{border-color:var(--border-active);transform:translateY(-2px);box-shadow:var(--shadow-md)}
+.doc-icon{font-size:36px;margin-bottom:12px;display:block}
+.doc-title{font-size:17px;font-weight:700;margin-bottom:8px;line-height:1.3}
+.doc-desc{font-size:13px;color:var(--text-secondary);line-height:1.6;margin-bottom:16px}
+.doc-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.doc-category{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;padding:3px 10px;border-radius:4px;background:var(--bg-glass)}
+.doc-badge{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;padding:3px 10px;border-radius:4px}
+.doc-badge.public{background:rgba(0,212,170,0.15);color:var(--success)}
+.doc-badge.confidential{background:rgba(251,191,36,0.15);color:var(--warning)}
+.doc-badge.restricted{background:rgba(239,68,68,0.15);color:var(--danger)}
+.doc-lock{position:absolute;top:16px;right:16px;font-size:16px;color:var(--text-muted)}
+.no-docs{text-align:center;padding:60px 20px;color:var(--text-muted)}
+.no-docs h3{font-size:20px;margin-bottom:8px;color:var(--text-secondary)}
+.fade-in-up{animation:fadeInUp 0.6s ease forwards;opacity:0}
+@keyframes fadeInUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+.doc-view{max-width:800px;margin:0 auto}
+.doc-view h2{font-size:28px;font-weight:800;margin-bottom:8px}
+.doc-view-meta{font-size:13px;color:var(--text-muted);margin-bottom:24px}
+.doc-view-body{font-size:15px;color:var(--text-secondary);line-height:1.8;margin-bottom:24px;padding:24px;background:var(--bg-glass);border:1px solid var(--border);border-radius:var(--radius-md)}
+.doc-view-footer{display:flex;gap:12px;flex-wrap:wrap}
 </style>
-<link rel="stylesheet" href="style.css">
 </head>
-<body>
-<div class="loader" id="loader"><div class="spinner"></div></div>
+<body class="page-fade">
+
+<div id="globalLoader"><div class="loader-content"><div class="spinner"></div><p class="loader-text">Loading...</p></div></div>
 
 <nav class="navbar">
-  <div class="navbar-brand">express <span>airways</span></div>
-  <div class="navbar-nav">
+  <a href="../index.html" class="nav-brand">
+    <img src="../OIG3.jpg" alt="Express Airways" style="height:32px;width:32px;border-radius:50%;object-fit:cover">
+    <span class="nav-title">Express Airways</span>
+  </a>
+  <button class="nav-hamburger" id="hamburgerBtn" aria-label="Toggle menu">
+    <span></span><span></span><span></span>
+  </button>
+  <div class="nav-links" id="navLinks">
     <div class="nav-item">
-      <button class="nav-link">Flight Ops <span class="arrow">&#9662;</span></button>
-      <div class="dropdown">
-        <a class="dropdown-item" href="../flights/">Flight Schedules</a>
-        <a class="dropdown-item" href="../routes/">Route Maps</a>
-        <a class="dropdown-item" href="../ops/">Operations Hub</a>
-        <a class="dropdown-item" href="../status/">System Status</a>
+      <span class="nav-link">Flight Ops <svg viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></span>
+      <div class="nav-dropdown">
+        <a href="../flights/index.html">&#9992; Flights</a>
+        <a href="../weather/index.html">&#9729; Weather</a>
       </div>
     </div>
     <div class="nav-item">
-      <button class="nav-link">Airports <span class="arrow">&#9662;</span></button>
-      <div class="dropdown">
-        <a class="dropdown-item" href="../airports/">Airport Directory</a>
-        <a class="dropdown-item" href="../maps/">Airport Maps</a>
-        <a class="dropdown-item" href="../parking/">Parking</a>
-        <a class="dropdown-item" href="../lounge/">Lounges</a>
+      <span class="nav-link">Airports <svg viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></span>
+      <div class="nav-dropdown">
+        <a href="../airports/index.html">&#127758; Directory</a>
       </div>
     </div>
     <div class="nav-item">
-      <button class="nav-link">Travel <span class="arrow">&#9662;</span></button>
-      <div class="dropdown">
-        <a class="dropdown-item" href="../bookings/">Bookings</a>
-        <a class="dropdown-item" href="../destinations/">Destinations</a>
-        <a class="dropdown-item" href="../hotels/">Hotels</a>
-        <a class="dropdown-item" href="../insurance/">Insurance</a>
+      <span class="nav-link">Travel <svg viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></span>
+      <div class="nav-dropdown">
+        <a href="../travel/index.html">&#127979; Destinations</a>
+        <a href="../travel/index.html">&#128716; Hotels</a>
+        <a href="../newsletter/index.html">&#128240; Newsletter</a>
       </div>
     </div>
     <div class="nav-item">
-      <button class="nav-link">Company <span class="arrow">&#9662;</span></button>
-      <div class="dropdown">
-        <a class="dropdown-item" href="../holdings/">Holdings</a>
-        <a class="dropdown-item" href="../documents/">Documents</a>
-        <a class="dropdown-item" href="../career/">Careers</a>
-        <a class="dropdown-item" href="../legal/">Legal</a>
+      <span class="nav-link">Company <svg viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></span>
+      <div class="nav-dropdown">
+        <a href="../holdings/index.html">&#127970; Holdings</a>
+        <a href="../documents/index.html">&#128196; Documents</a>
+        <a href="../ops/index.html">&#9881; Operations</a>
+        <a href="../status/index.html">&#128200; Status</a>
       </div>
     </div>
     <div class="nav-item">
-      <button class="nav-link">Account <span class="arrow">&#9662;</span></button>
-      <div class="dropdown">
-        <a class="dropdown-item" href="../miles/">Miles</a>
-        <a class="dropdown-item" href="../notifications/">Notifications</a>
-        <a class="dropdown-item" href="../time/">Travel Time</a>
-        <a class="dropdown-item" href="../currency/">Currency</a>
+      <span class="nav-link">Discover <svg viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></span>
+      <div class="nav-dropdown">
+        <a href="../countries/index.html">&#127758; Countries</a>
+        <a href="../space/index.html">&#128640; Space</a>
+        <a href="../books/index.html">&#128218; Books</a>
+        <a href="../tv/index.html">&#128250; TV Shows</a>
+        <a href="../facts/index.html">&#128161; Facts</a>
       </div>
     </div>
     <div class="nav-item">
-      <button class="nav-link">More <span class="arrow">&#9662;</span></button>
-      <div class="dropdown">
-        <a class="dropdown-item" href="../baggage/">Baggage</a>
-        <a class="dropdown-item" href="../cargo/">Cargo</a>
-        <a class="dropdown-item" href="../pets/">Pets</a>
-        <a class="dropdown-item" href="../specials/">Specials</a>
+      <span class="nav-link">Fun <svg viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></span>
+      <div class="nav-dropdown">
+        <a href="../quotes/index.html">&#128172; Quotes</a>
+        <a href="../jokes/index.html">&#128514; Jokes</a>
+        <a href="../advice/index.html">&#128161; Advice</a>
+        <a href="../bored/index.html">&#129309; Bored?</a>
+        <a href="../predict/index.html">&#128302; Predict</a>
+      </div>
+    </div>
+    <div class="nav-item">
+      <span class="nav-link">Account <svg viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></span>
+      <div class="nav-dropdown">
+        <a href="../account/index.html">&#128100; Profile</a>
+        <a href="../account/index.html">&#128179; Bookings</a>
+        <a href="../account/index.html">&#11088; Loyalty</a>
+        <a href="../crypto/index.html">&#128176; Crypto</a>
+        <a href="../developer/index.html">&#128187; Developer</a>
       </div>
     </div>
   </div>
-  <div class="nav-auth" id="nav-auth">
-    <button class="nav-btn" onclick="EA_Modal.open('auth-modal')">Login</button>
+  <div class="nav-actions">
+    <div class="user-menu hidden" id="userMenu">
+      <div class="user-avatar" style="cursor:pointer">
+        <div class="avatar-initials" id="avatarInitials">U</div>
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+      </div>
+      <div class="user-dropdown hidden">
+        <div style="padding:8px 12px"><span class="dropdown-name" id="dropdownName" style="font-size:13px;font-weight:600">User</span><span class="dropdown-email" id="dropdownEmail" style="display:block;font-size:12px;color:var(--text-muted);margin-top:2px">user@email.com</span></div>
+        <div style="height:1px;background:var(--border);margin:4px 0"></div>
+        <a class="dropdown-item" id="logoutBtn" style="color:var(--danger)">Sign Out</a>
+      </div>
+    </div>
+    <button class="btn btn-primary btn-sm" id="loginBtn">Sign In</button>
+    <button class="btn btn-outline btn-sm" id="signupBtn">Register</button>
   </div>
 </nav>
 
-<div class="loginwall" id="loginwall">
+<div class="loginwall hidden" id="loginwall">
   <div class="loginwall-content">
-    <h2>Welcome to Express Airways</h2>
-    <p>Please log in to access the Document Center</p>
-    <button class="btn btn-primary" onclick="EA_Modal.open('auth-modal')" style="margin-top:8px">Login / Sign Up</button>
+    <div class="loginwall-brand"><img src="../OIG3.jpg" alt="" style="height:48px;width:48px;border-radius:50%"><span>Express Airways</span></div>
+    <h2>Welcome</h2>
+    <p style="color:var(--text-secondary);margin-bottom:24px">Sign in to access the Document Center</p>
+    <button class="btn btn-primary btn-lg" onclick="showAuthModal()">Sign In / Register</button>
   </div>
 </div>
 
-<section class="hero">
-  <h1>Document Center</h1>
-  <p>Access official Express Airways documents — policies, manuals, reports, and legal filings</p>
+<div class="modal-overlay hidden" id="authModal">
+  <div class="modal modal-sm">
+    <button class="modal-close" onclick="hideAuthModal()">&times;</button>
+    <div class="modal-header"><h3>Account</h3><p>Sign in or create account</p></div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" data-tab="login">Sign In</button>
+      <button class="auth-tab" data-tab="signup">Register</button>
+    </div>
+    <form id="loginForm">
+      <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="loginEmail" type="email" placeholder="your@email.com" required></div>
+      <div class="form-group"><label class="form-label">Password</label><input class="form-input" id="loginPassword" type="password" required></div>
+      <button class="btn btn-primary btn-full" type="submit">Sign In</button>
+    </form>
+    <form id="signupForm" class="hidden">
+      <div class="form-group"><label class="form-label">Full Name</label><input class="form-input" id="signupName" placeholder="Full name" required></div>
+      <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="signupEmail" type="email" required></div>
+      <div class="form-group"><label class="form-label">Password</label><input class="form-input" id="signupPassword" type="password" placeholder="Min 8 chars" required></div>
+      <div class="form-group"><label class="form-label">Confirm</label><input class="form-input" id="signupConfirm" type="password" required></div>
+      <button class="btn btn-primary btn-full" type="submit">Create Account</button>
+    </form>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="requestModal">
+  <div class="modal modal-md">
+    <button class="modal-close" onclick="hideRequestModal()">&times;</button>
+    <div class="modal-header"><h3>Request Document Access</h3><p>This document is confidential. Please provide a reason for access.</p></div>
+    <div class="form-group"><label class="form-label">Email Address</label><input class="form-input" id="reqEmail" type="email" placeholder="your@email.com"></div>
+    <div class="form-group"><label class="form-label">Reason for Access</label><textarea class="form-input" id="reqReason" placeholder="Please describe why you need access to this document..."></textarea></div>
+    <button class="btn btn-primary btn-full" onclick="submitDocRequest()">Submit Request</button>
+  </div>
+</div>
+
+<section class="hero" style="min-height:50vh">
+  <div class="hero-bg"><div class="hero-gradient"></div></div>
+  <div class="hero-bg-animated"></div>
+  <div class="hero-content">
+    <h1 class="hero-title">Document <span class="hero-title-accent">Center</span></h1>
+    <p class="hero-subtitle">Access official Express Airways documents — policies, manuals, reports, and legal filings</p>
+  </div>
 </section>
 
-<div class="container">
-  <div class="doc-filters" id="doc-filters"></div>
-  <div class="doc-grid" id="doc-grid"></div>
-</div>
+<main style="max-width:1200px;margin:-40px auto 60px;padding:0 24px;position:relative;z-index:2">
+  <div class="doc-filters" id="docFilters"></div>
+  <div class="doc-grid" id="docGrid"></div>
+</main>
 
-<footer class="footer">
-  <div class="links">
-    <a href="../holdings/">Holdings</a>
-    <a href="../documents/">Documents</a>
-    <a href="../ops/">Operations</a>
-    <a href="../status/">Status</a>
-    <a href="../legal/">Legal</a>
+<footer class="footer fade-in-up">
+  <div class="footer-content">
+    <div class="footer-brand">
+      <div class="footer-logo">
+        <img src="../OIG3.jpg" alt="Express Airways" style="height:28px;width:28px;border-radius:50%;object-fit:cover">
+        <span>Express Airways</span>
+      </div>
+      <p class="footer-desc">Next-generation flight services with unified booking, operations, and travel management. Sovereign. Global. Reliable.</p>
+    </div>
+    <div class="footer-links">
+      <div class="footer-col">
+        <h4>Flight Ops</h4>
+        <a href="../flights/index.html">&#9992; Flights</a>
+        <a href="../weather/index.html">&#9729; Weather</a>
+      </div>
+      <div class="footer-col">
+        <h4>Airports</h4>
+        <a href="../airports/index.html">&#127758; Directory</a>
+      </div>
+      <div class="footer-col">
+        <h4>Travel</h4>
+        <a href="../travel/index.html">&#127979; Destinations</a>
+        <a href="../newsletter/index.html">&#128240; Newsletter</a>
+      </div>
+      <div class="footer-col">
+        <h4>Company</h4>
+        <a href="../holdings/index.html">&#127970; Holdings</a>
+        <a href="../documents/index.html">&#128196; Documents</a>
+        <a href="../ops/index.html">&#9881; Operations</a>
+        <a href="../status/index.html">&#128200; Status</a>
+        <a href="../developer/index.html">&#128187; Developer</a>
+      </div>
+      <div class="footer-col">
+        <h4>Discover</h4>
+        <a href="../countries/index.html">&#127758; Countries</a>
+        <a href="../space/index.html">&#128640; Space</a>
+        <a href="../books/index.html">&#128218; Books</a>
+        <a href="../tv/index.html">&#128250; TV Shows</a>
+        <a href="../facts/index.html">&#128161; Facts</a>
+      </div>
+      <div class="footer-col">
+        <h4>Fun</h4>
+        <a href="../quotes/index.html">&#128172; Quotes</a>
+        <a href="../jokes/index.html">&#128514; Jokes</a>
+        <a href="../advice/index.html">&#128161; Advice</a>
+        <a href="../bored/index.html">&#129309; Bored?</a>
+        <a href="../predict/index.html">&#128302; Predict</a>
+      </div>
+      <div class="footer-col">
+        <h4>Account</h4>
+        <a href="../account/index.html">&#128100; Profile</a>
+        <a href="../crypto/index.html">&#128176; Crypto</a>
+        <a href="../developer/index.html">&#128187; Developer</a>
+        <a href="../contact/index.html">&#9993; Contact</a>
+      </div>
+    </div>
   </div>
-  <div>&copy; 2026 <strong>Express Airways</strong> — All rights reserved</div>
+  <div class="footer-bottom"><p>&copy; 2026 Express Airways. All rights reserved.</p></div>
 </footer>
 
-<div class="modal" id="auth-modal">
-  <div class="modal-content">
-    <button class="modal-close" onclick="EA_Modal.close('auth-modal')">&times;</button>
-    <h2>Account Access</h2>
-    <p>Login or create an account to continue</p>
-    <div id="auth-form">
-      <div class="form-group">
-        <label>Username</label>
-        <input type="text" id="auth-username" placeholder="Enter username">
-      </div>
-      <div class="form-group">
-        <label>Password</label>
-        <input type="password" id="auth-password" placeholder="Enter password">
-      </div>
-      <button class="btn btn-primary btn-full" onclick="handleLogin()" style="margin-bottom:8px">Login</button>
-      <button class="btn btn-secondary btn-full" onclick="handleSignup()">Sign Up</button>
-    </div>
-    <div id="auth-error" style="color:var(--danger);font-size:0.85rem;margin-top:12px;display:none"></div>
-  </div>
-</div>
-
-<div class="modal" id="request-modal">
-  <div class="modal-content">
-    <button class="modal-close" onclick="EA_Modal.close('request-modal')">&times;</button>
-    <h2>Request Document Access</h2>
-    <p>This document is confidential. Please provide a reason for access.</p>
-    <div class="form-group">
-      <label>Email Address</label>
-      <input type="email" id="req-email" placeholder="your@email.com">
-    </div>
-    <div class="form-group">
-      <label>Reason for Access</label>
-      <textarea id="req-reason" placeholder="Please describe why you need access to this document..."></textarea>
-    </div>
-    <button class="btn btn-primary btn-full" onclick="submitDocRequest()">Submit Request</button>
-    <div id="req-error" style="color:var(--danger);font-size:0.85rem;margin-top:12px;display:none"></div>
-  </div>
-</div>
-
-<div class="toast-container" id="toast-container"></div>
+<div class="toast-container" id="toastContainer"></div>
 
 <script>
-var BASE_API = 'https://script.google.com/macros/s/AKfycbyfr1k04IqvPSHND5I47ZowM8EAUmBuFR4pKJVWDdsB0ZCr4pMrCLxFME1v70aLbyWo/exec';
-var EA_Toast = {show:function(m,t){t=t||'info';var c=document.getElementById('toast-container');if(!c){c=document.createElement('div');c.id='toast-container';c.className='toast-container';document.body.appendChild(c)}var o=document.createElement('div');o.className='toast toast-'+t;o.textContent=m;c.appendChild(o);setTimeout(function(){o.classList.add('toast-hide');setTimeout(function(){o.remove()},300)},4000)},success:function(m){this.show(m,'success')},error:function(m){this.show(m,'error')},warning:function(m){this.show(m,'warning')},info:function(m){this.show(m,'info')}};
-var EA_Modal = {open:function(id){var m=document.getElementById(id);if(m)m.style.display='flex'},close:function(id){var m=document.getElementById(id);if(m)m.style.display='none'}};
-var EA_Auth = {session:null,init:function(){try{var s=localStorage.getItem('ea_session');if(s)this.session=JSON.parse(s);this.updateUI()}catch(e){}},login:function(u,p){var self=this;return fetch(BASE_API+'?action=login&username='+encodeURIComponent(u)+'&password='+encodeURIComponent(p)).then(function(r){return r.json()}).then(function(d){if(d.status==='success'||d.success){self.session={username:u,token:d.token||'tok_'+Math.random().toString(36).substring(2)};localStorage.setItem('ea_session',JSON.stringify(self.session));self.updateUI();EA_Modal.close('auth-modal');EA_Toast.success('Welcome, '+u+'!');EA_Audit.track('login',{username:u});return true}throw new Error(d.message||'Login failed')}).catch(function(e){console.error('[EA Auth] Login error:',e);EA_Toast.error('Login failed');return false})},signup:function(u,p){var self=this;return fetch(BASE_API+'?action=signup&username='+encodeURIComponent(u)+'&password='+encodeURIComponent(p)).then(function(r){return r.json()}).then(function(d){if(d.status==='success'||d.success){self.session={username:u,token:d.token||'tok_'+Math.random().toString(36).substring(2)};localStorage.setItem('ea_session',JSON.stringify(self.session));self.updateUI();EA_Modal.close('auth-modal');EA_Toast.success('Account created!');EA_Audit.track('signup',{username:u});return true}throw new Error(d.message||'Signup failed')}).catch(function(e){console.error('[EA Auth] Signup error:',e);EA_Toast.error('Signup failed');return false})},logout:function(){this.session=null;localStorage.removeItem('ea_session');this.updateUI();EA_Toast.success('Logged out');EA_Audit.track('logout',{})},isLoggedIn:function(){return this.session!==null},updateUI:function(){var o=document.getElementById('loginwall');if(o)o.style.display=this.isLoggedIn()?'none':'flex';var n=document.getElementById('nav-auth');if(n){if(this.isLoggedIn())n.innerHTML='<span class="nav-user">'+this.session.username+'</span><button class="nav-btn" onclick="EA_Auth.logout()">Logout</button>';else n.innerHTML='<button class="nav-btn" onclick="EA_Modal.open(\'auth-modal\')">Login</button>'}}};
-var EA_Audit = {track:function(e,d){var p={action:'audit',event:e,page:window.location.href,timestamp:new Date().toISOString(),fingerprint:window.EA_TRACKER?window.EA_TRACKER.fingerprint:'unknown',ip:window.EA_TRACKER?window.EA_TRACKER.ip:'unknown',session:window.EA_TRACKER?window.EA_TRACKER.session:'unknown',data:d||{}};fetch(BASE_API,{method:'POST',body:JSON.stringify(p)}).catch(function(err){console.error('[EA Audit] Failed:',err)})},init:function(){this.track('pageview',{title:document.title});var self=this;document.addEventListener('click',function(e){self.track('click',{tag:e.target.tagName,text:(e.target.textContent||'').substring(0,50),id:e.target.id})});var sd=0;window.addEventListener('scroll',function(){var st=window.scrollY/(document.documentElement.scrollHeight-window.innerHeight);var p=Math.round(st*100);if(p-sd>=25){sd=p;self.track('scroll_depth',{depth:p+'%'})}})}};
-setInterval(function(){fetch(BASE_API+'?action=heartbeat&fingerprint='+(window.EA_TRACKER?window.EA_TRACKER.fingerprint:'unknown')).catch(function(e){console.error('[EA Heartbeat] Error:',e)})},60000);
-function handleLogin(){var u=document.getElementById('auth-username').value;var p=document.getElementById('auth-password').value;if(!u||!p){EA_Toast.warning('Please enter username and password');return}EA_Auth.login(u,p)}function handleSignup(){var u=document.getElementById('auth-username').value;var p=document.getElementById('auth-password').value;if(!u||!p){EA_Toast.warning('Please enter username and password');return}EA_Auth.signup(u,p)}
+var BASE_API = 'https://script.google.com/macros/s/AKfycbybXfKdhOFdXIOa2RTaF5YHeFWKYt6IU2_F87IH1LzvIzhU7UVEd4aVmK8_vKuAlBVp/exec';
+var fallbackDocs = [
+  {id:'DOC-001',title:'Express Airways Annual Report 2025',description:'Complete annual financial and operational report for fiscal year 2025.',category:'Reports',classification:'public',content:'Express Airways Annual Report 2025\n\nExecutive Summary\nExpress Airways achieved record revenue of $22.8 billion in FY2025, representing 14% year-over-year growth. Passenger numbers exceeded 85 million across the global network. The company expanded its fleet by 42 new aircraft and opened 12 new routes.\n\nFinancial Highlights\n- Operating Revenue: $22.8B (+14% YoY)\n- Net Income: $3.4B (+18% YoY)\n- EBITDA: $5.6B\n- Passenger Load Factor: 87.3%\n- Fleet Size: 847 aircraft\n\nStrategic Initiatives\nThe company invested heavily in sustainable aviation fuel (SAF) programs, reducing carbon intensity by 22% compared to 2020 baseline. The new AI-driven booking platform launched in Q3 2025 has improved customer satisfaction scores by 32%.',icon:'&#128200;'},
+  {id:'DOC-002',title:'Safety & Operations Manual v4.2',description:'Standard operating procedures and safety protocols for all flight operations.',category:'Manuals',classification:'confidential',content:'SAFETY & OPERATIONS MANUAL v4.2\n\nThis document contains proprietary operational procedures and is intended for authorized personnel only.\n\nChapter 1: Standard Operating Procedures\nChapter 2: Emergency Response Protocols\nChapter 3: Maintenance Procedures\nChapter 4: Crew Resource Management\nChapter 5: Safety Management System\n\nDistribution: Internal Use Only',icon:'&#128221;'},
+  {id:'DOC-003',title:'Sustainable Aviation Fuel Strategy',description:'Roadmap for transitioning to 50% sustainable fuel usage by 2035.',category:'Reports',classification:'public',content:'Sustainable Aviation Fuel Strategy\n\nExpress Airways is committed to achieving net-zero carbon emissions by 2050. Our SAF strategy involves:\n\n- Partnership with 8 major SAF producers\n- $2.4B investment in renewable fuel infrastructure\n- Target: 30% SAF blend by 2030, 50% by 2035\n- Current SAF usage: 8% of total fuel consumption\n\nKey milestones achieved in 2025 include the first transatlantic flight using 100% SAF on a wide-body aircraft.',icon:'&#127795;'},
+  {id:'DOC-004',title:'Employment Policy Handbook',description:'HR policies, benefits, and code of conduct for all employees.',category:'Policies',classification:'confidential',content:'EMPLOYMENT POLICY HANDBOOK\n\nThis handbook outlines the policies and procedures governing all Express Airways employees.\n\nTopics Covered:\n- Code of Conduct\n- Anti-Discrimination Policy\n- Benefits & Compensation\n- Leave Policies\n- Remote Work Guidelines\n- Travel & Expense Policy\n- Disciplinary Procedures\n\nLast Updated: December 2025',icon:'&#128188;'},
+  {id:'DOC-005',title:'Fleet Modernization Plan 2026-2030',description:'Strategic plan for fleet renewal and next-generation aircraft acquisition.',category:'Reports',classification:'restricted',content:'FLEET MODERNIZATION PLAN 2026-2030\n\nCONFIDENTIAL - BOARD LEVEL\n\nThis document outlines the strategic fleet renewal plan. Contents include:\n- Order pipeline for 120 new aircraft\n- Phase-out schedule for 85 older aircraft\n- Estimated capital expenditure: $18.5B\n- Expected fuel efficiency gains: 25-30%\n- Cabin retrofit program for existing fleet\n\nThis document is restricted to executive leadership and board members.',icon:'&#9992;'},
+  {id:'DOC-006',title:'Global Route Network Analysis',description:'Comprehensive analysis of route profitability and network optimization opportunities.',category:'Reports',classification:'confidential',content:'GLOBAL ROUTE NETWORK ANALYSIS\n\nCONFIDENTIAL\n\nThis report analyzes the profitability of all 847 routes in the Express Airways network.\n\nKey Findings:\n- Top 20 routes generate 45% of total revenue\n- 37 underperforming routes identified for restructuring\n- 14 new high-potential routes recommended\n- Network optimization could yield $420M annual savings\n\nRecommended actions include hub restructuring at 3 major airports.',icon:'&#127758;'},
+  {id:'DOC-007',title:'Cybersecurity Framework',description:'IT security policies, incident response procedures, and compliance guidelines.',category:'Manuals',classification:'restricted',content:'CYBERSECURITY FRAMEWORK\n\nRESTRICTED ACCESS\n\nThis document defines the cybersecurity policies for Express Airways information systems.\n\nSections:\n1. Information Security Governance\n2. Access Control Policies\n3. Network Security Architecture\n4. Incident Response Plan\n5. Data Protection & Privacy\n6. Third-Party Security Assessment\n7. Compliance & Audit Requirements\n\nThis document is for authorized IT security personnel only.',icon:'&#128274;'},
+  {id:'DOC-008',title:'Customer Service Guidelines',description:'Service standards and customer experience protocols for all touchpoints.',category:'Policies',classification:'public',content:'CUSTOMER SERVICE GUIDELINES\n\nExpress Airways is committed to delivering exceptional customer service at every touchpoint.\n\nService Standards:\n- Response time: <5 minutes at all touchpoints\n- Complaint resolution: <48 hours\n- Customer satisfaction target: >85%\n- Net Promoter Score target: >60\n\nKey Initiatives:\n- 24/7 multi-language support\n- AI-powered chatbot for quick queries\n- Proactive delay notifications\n- Premium lounge experience enhancements\n\nEvery employee is an ambassador of the Express Airways brand.',icon:'&#128172;'},
+  {id:'DOC-009',title:'Financial Audit FY2025',description:'External audit report for fiscal year 2025 financial statements.',category:'Reports',classification:'confidential',content:'FINANCIAL AUDIT REPORT FY2025\n\nCONFIDENTIAL\n\nAuditor: PriceWaterhouseCoopers\nAudit Opinion: Unqualified (Clean)\n\nKey Findings:\n- Revenue recognition: Compliant with IFRS 15\n- Lease accounting: Compliant with IFRS 16\n- Tax provisions: Adequate\n- Internal controls: No material weaknesses identified\n- Related party transactions: Properly disclosed\n\nThe complete audit documentation is available upon request from the CFO.',icon:'&#128202;'},
+  {id:'DOC-010',title:'Emergency Response Protocol',description:'Procedures for handling in-flight emergencies, security incidents, and natural disasters.',category:'Manuals',classification:'restricted',content:'EMERGENCY RESPONSE PROTOCOL\n\nRESTRICTED - OPERATIONS USE ONLY\n\nThis document contains detailed emergency response procedures.\n\nContents:\n1. In-Flight Emergency Procedures\n2. Aircraft Evacuation Protocols\n3. Medical Emergency Response\n4. Security Threat Response\n5. Natural Disaster Contingency Plans\n6. Crisis Communication Guidelines\n7. Post-Incident Investigation\n\nAll crew members must be familiar with these protocols.',icon:'&#128680;'},
+  {id:'DOC-011',title:'Employee Benefits Guide 2026',description:'Overview of compensation, benefits, and wellness programs for employees.',category:'Policies',classification:'public',content:'EMPLOYEE BENEFITS GUIDE 2026\n\nExpress Airways offers a comprehensive benefits package to all employees.\n\nHealth & Wellness:\n- Medical, dental, and vision insurance\n- Mental health support program\n- Gym membership subsidy\n- Annual health screening\n\nFinancial Benefits:\n- 401(k) matching up to 6%\n- Employee stock purchase plan\n- Performance bonuses\n- Travel allowances\n\nWork-Life Balance:\n- 25 days paid vacation\n- Flexible working arrangements\n- Parental leave: 16 weeks paid\n- Sabbatical program (after 5 years)',icon:'&#127973;'},
+  {id:'DOC-012',title:'Regulatory Compliance Framework',description:'Overview of regulatory requirements and compliance monitoring across jurisdictions.',category:'Reports',classification:'confidential',content:'REGULATORY COMPLIANCE FRAMEWORK\n\nCONFIDENTIAL\n\nThis document outlines the regulatory compliance framework for Express Airways operations across 62 countries.\n\nRegulatory Bodies:\n- FAA (United States)\n- EASA (European Union)\n- CAA (United Kingdom)\n- ICAO (International)\n- 58 national aviation authorities\n\nCompliance areas include safety, security, environmental, labor, and data privacy regulations.',icon:'&#9878;'},
+  {id:'DOC-013',title:'Aircraft Maintenance Manual B787',description:'Technical maintenance procedures for Boeing 787 Dreamliner fleet.',category:'Manuals',classification:'confidential',content:'BOEING 787 DREAMLINER MAINTENANCE MANUAL\n\nCONFIDENTIAL - ENGINEERING USE ONLY\n\nThis technical manual covers all maintenance procedures for the B787 fleet (42 aircraft).\n\nSections:\n- Airframe: Scheduled inspections, structural repairs\n- Engines: Rolls-Royce Trent 1000 maintenance\n- Avionics: Systems diagnostics and updates\n- Cabin: Interior maintenance and modifications\n- Landing Gear: Overhaul procedures\n\nAll maintenance must be performed by certified technicians.',icon:'&#128295;'},
+  {id:'DOC-014',title:'Executive Compensation Report',description:'Board-approved compensation structure for executive leadership team.',category:'Reports',classification:'restricted',content:'EXECUTIVE COMPENSATION REPORT\n\nRESTRICTED - BOARD AND HR ONLY\n\nThis report details the compensation structure for the executive leadership team.\n\nCEO Compensation:\n- Base Salary: $1,800,000\n- Short-term Incentive: Up to 150% of base\n- Long-term Incentive: Equity awards valued at $4,000,000\n- Benefits & Perks: Standard executive package\n\nAdditional details for CFO, COO, and other C-suite executives are included in the full report.',icon:'&#128176;'},
+  {id:'DOC-015',title:'Digital Transformation Roadmap',description:'Strategic plan for digital modernization of all customer-facing and operational systems.',category:'Reports',classification:'public',content:'DIGITAL TRANSFORMATION ROADMAP\n\nExpress Airways is undertaking a comprehensive digital transformation to enhance customer experience and operational efficiency.\n\nKey Initiatives:\n1. AI-Powered Personalization Engine (2026 Q2)\n2. Unified Booking Platform (2026 Q4)\n3. Predictive Maintenance System (2027 Q1)\n4. Blockchain-based Loyalty Program (2027 Q2)\n5. Autonomous Baggage Handling (2027 Q3)\n\nTotal Investment: $1.2B over 3 years\nExpected ROI: 18% annually from 2028',icon:'&#128187;'}
+];
+var allDocs = [];
+var currentCategory = 'All';
+var requestingDocId = null;
+
+function showAuthModal(){var m=document.getElementById('authModal');if(m){m.classList.remove('hidden');document.body.style.overflow='hidden'}}
+function hideAuthModal(){var m=document.getElementById('authModal');if(m){m.classList.add('hidden');document.body.style.overflow=''}}
+function hideRequestModal(){document.getElementById('requestModal').classList.add('hidden')}
+
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.auth-tab').forEach(function(t){
+    t.addEventListener('click', function(){
+      document.querySelectorAll('.auth-tab').forEach(function(x){x.classList.remove('active')});
+      t.classList.add('active');
+      document.getElementById('loginForm').classList.toggle('hidden', t.dataset.tab !== 'login');
+      document.getElementById('signupForm').classList.toggle('hidden', t.dataset.tab !== 'signup');
+    });
+  });
+  document.getElementById('loginForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    var email = document.getElementById('loginEmail').value.trim();
+    var password = document.getElementById('loginPassword').value;
+    var btn = this.querySelector('button[type="submit"]');
+    btn.classList.add('loading');
+    window.api('GET', { action: 'login', email: email, password: password }).then(function(d) {
+      btn.classList.remove('loading');
+      if (d && d.success) {
+        window.authSetUser(d.user);
+        hideAuthModal();
+        document.getElementById('loginwall').classList.add('hidden');
+        window.Toast('success', 'Welcome back!');
+      } else {
+        window.Toast('error', (d && d.message) || 'Login failed');
+      }
+    });
+  });
+  document.getElementById('signupForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    var name = document.getElementById('signupName').value.trim();
+    var email = document.getElementById('signupEmail').value.trim();
+    var pw = document.getElementById('signupPassword').value;
+    var cf = document.getElementById('signupConfirm').value;
+    if (pw !== cf) { window.Toast('error', 'Passwords do not match'); return; }
+    var btn = this.querySelector('button[type="submit"]');
+    btn.classList.add('loading');
+    window.api('GET', { action: 'signup', fullName: name, email: email, password: pw }).then(function(d) {
+      btn.classList.remove('loading');
+      if (d && d.success) {
+        window.Toast('success', 'Account created! Please sign in.');
+        document.querySelector('[data-tab="login"]').click();
+      } else {
+        window.Toast('error', (d && d.message) || 'Signup failed');
+      }
+    });
+  });
+  document.getElementById('logoutBtn').addEventListener('click', function() {
+    window.authLogout();
+    window.Toast('info', 'Signed out');
+  });
+  var hb = document.getElementById('hamburgerBtn');
+  if (hb) hb.addEventListener('click', function() { document.getElementById('navLinks').classList.toggle('open'); });
+  document.getElementById('authModal').addEventListener('click', function(e) { if (e.target === this) hideAuthModal(); });
+  document.getElementById('requestModal').addEventListener('click', function(e) { if (e.target === this) hideRequestModal(); });
+
+  loadDocuments();
+});
+
+function loadDocuments() {
+  var grid = document.getElementById('docGrid');
+  grid.innerHTML = '<div style="text-align:center;padding:60px"><div class="spinner"></div></div>';
+  var u = window.authGetUser ? window.authGetUser() : null;
+  if (u) { document.getElementById('loginwall').classList.add('hidden'); }
+  fetch(BASE_API + '?action=getDocuments&t=' + Date.now())
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data && (data.status === 'success' || data.success)) {
+        allDocs = data.data || data.documents || data.results || [];
+      } else {
+        allDocs = fallbackDocs.slice();
+      }
+      renderFilters();
+      renderDocs();
+    })
+    .catch(function() {
+      allDocs = fallbackDocs.slice();
+      renderFilters();
+      renderDocs();
+    });
+}
+
+function renderFilters() {
+  var categories = ['All'];
+  allDocs.forEach(function(d) {
+    if (d.category && categories.indexOf(d.category) === -1) categories.push(d.category);
+  });
+  var html = '';
+  categories.forEach(function(c) {
+    var active = c === currentCategory ? 'active' : '';
+    html += '<button class="doc-filter-btn ' + active + '" onclick="filterCategory(\'' + c.replace(/'/g,"\\'") + '\')">' + c + '</button>';
+  });
+  document.getElementById('docFilters').innerHTML = html;
+}
+
+function filterCategory(cat) {
+  currentCategory = cat;
+  renderFilters();
+  renderDocs();
+}
+
+function renderDocs() {
+  var grid = document.getElementById('docGrid');
+  var filtered = currentCategory === 'All' ? allDocs : allDocs.filter(function(d) { return d.category === currentCategory; });
+  if (!filtered.length) {
+    grid.innerHTML = '<div class="no-docs"><h3>No documents found</h3><p>No documents in this category</p></div>';
+    return;
+  }
+  var html = '';
+  filtered.forEach(function(d) {
+    var badgeClass = d.classification === 'public' ? 'public' : (d.classification === 'confidential' ? 'confidential' : 'restricted');
+    var badgeLabel = d.classification.charAt(0).toUpperCase() + d.classification.slice(1);
+    var icon = d.icon || '&#128196;';
+    html += '<div class="doc-card fade-in-up" onclick="openDoc(\'' + d.id + '\')">';
+    html += '<span class="doc-icon">' + icon + '</span>';
+    html += '<div class="doc-title">' + d.title + '</div>';
+    html += '<div class="doc-desc">' + d.description + '</div>';
+    html += '<div class="doc-meta">';
+    html += '<span class="doc-category">' + d.category + '</span>';
+    html += '<span class="doc-badge ' + badgeClass + '">' + badgeLabel + '</span>';
+    html += '</div>';
+    if (d.classification !== 'public') html += '<div class="doc-lock">&#128274;</div>';
+    html += '</div>';
+  });
+  grid.innerHTML = html;
+}
+
+function openDoc(id) {
+  var doc = null;
+  for (var i = 0; i < allDocs.length; i++) { if (allDocs[i].id === id) { doc = allDocs[i]; break; } }
+  if (!doc) { window.Toast('error', 'Document not found'); return; }
+  if (doc.classification === 'public') {
+    viewDocument(doc);
+  } else {
+    requestingDocId = id;
+    document.getElementById('requestModal').classList.remove('hidden');
+  }
+}
+
+function viewDocument(doc) {
+  var grid = document.getElementById('docGrid');
+  grid.innerHTML = '<div class="doc-view"><h2>' + doc.title + '</h2><div class="doc-view-meta">' + doc.id + ' &middot; ' + doc.category + ' &middot; ' + doc.classification.toUpperCase() + '</div><div class="doc-view-body">' + doc.content.replace(/\n/g,'<br>') + '</div><div class="doc-view-footer"><button class="btn btn-glass" onclick="loadDocuments();renderFilters();renderDocs()">&larr; Back to Documents</button><button class="btn btn-primary" onclick="window.Toast(\'success\',\'Download started\')">Download</button></div></div>';
+}
+
+function submitDocRequest() {
+  var email = document.getElementById('reqEmail').value.trim();
+  var reason = document.getElementById('reqReason').value.trim();
+  if (!email || !reason) { window.Toast('warning', 'Please fill in all fields'); return; }
+  var payload = { action: 'requestDoc', documentId: requestingDocId, email: email, reason: reason };
+  fetch(BASE_API, { method: 'POST', body: JSON.stringify(payload) })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      hideRequestModal();
+      window.Toast('success', data && (data.status === 'success' || data.success) ? 'Request submitted successfully' : 'Request submitted for review');
+      document.getElementById('reqEmail').value = '';
+      document.getElementById('reqReason').value = '';
+    })
+    .catch(function() {
+      hideRequestModal();
+      window.Toast('success', 'Request submitted for review');
+      document.getElementById('reqEmail').value = '';
+      document.getElementById('reqReason').value = '';
+    });
+}
 </script>
-<script src="script.js"></script>
 </body>
 </html>
+

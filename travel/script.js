@@ -1,6 +1,6 @@
 (function() {
   'use strict';
-  var API = 'https://script.google.com/macros/s/AKfycbyfr1k04IqvPSHND5I47ZowM8EAUmBuFR4pKJVWDdsB0ZCr4pMrCLxFME1v70aLbyWo/exec';
+  var API = 'https://script.google.com/macros/s/AKfycbybXfKdhOFdXIOa2RTaF5YHeFWKYt6IU2_F87IH1LzvIzhU7UVEd4aVmK8_vKuAlBVp/exec';
 
   function audit(action, details, element) {
     var user = (window.currentUser || {}).email || '';
@@ -123,6 +123,32 @@
     var sel = document.getElementById('destAirportSelect');
     sel.innerHTML = '<option value="">Select an airport...</option>' +
       airportCodes.map(function(c) { return '<option value="' + c + '">' + c + ' - ' + (airportCityMap[c] || c) + '</option>'; }).join('');
+  }
+
+  function getFallbackTravelData() {
+    return [
+      { destination:'London', hotel:'The Savoy', price:299, rating:4.7, currency:'GBP' },
+      { destination:'Paris', hotel:'Hotel Ritz', price:450, rating:4.8, currency:'EUR' },
+      { destination:'Tokyo', hotel:'Park Hyatt Tokyo', price:380, rating:4.6, currency:'JPY' },
+      { destination:'New York', hotel:'The Plaza', price:520, rating:4.7, currency:'USD' },
+      { destination:'Dubai', hotel:'Burj Al Arab', price:650, rating:4.9, currency:'AED' },
+      { destination:'Singapore', hotel:'Marina Bay Sands', price:340, rating:4.5, currency:'SGD' },
+      { destination:'Sydney', hotel:'Shangri-La Sydney', price:310, rating:4.4, currency:'AUD' },
+      { destination:'Los Angeles', hotel:'Beverly Wilshire', price:420, rating:4.5, currency:'USD' },
+      { destination:'Hong Kong', hotel:'The Peninsula', price:480, rating:4.6, currency:'HKD' },
+      { destination:'Bangkok', hotel:'Mandarin Oriental', price:220, rating:4.7, currency:'THB' }
+    ];
+  }
+
+  function loadData() {
+    api('GET', { action: 'travel.deals' }).then(function(travelData) {
+      if (travelData && travelData.success && travelData.deals) {
+        console.log('[TRAVEL] Deals loaded from API', travelData.deals.length);
+      } else {
+        var fallback = getFallbackTravelData();
+        console.log('[TRAVEL] Using fallback travel data', fallback.length);
+      }
+    });
   }
 
   function init() {

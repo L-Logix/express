@@ -378,7 +378,7 @@ select.form-input { appearance: none; background-image: url("data:image/svg+xml,
 }
 </style>
 </head>
-<body>
+<body class="page-fade">
 
 <div id="globalLoader"><div class="loader-content"><div class="spinner" style="width:40px;height:40px;border-width:3px;margin:0 auto"></div><p class="loader-text">Connecting to Express Airways servers...</p></div></div>
 
@@ -389,61 +389,64 @@ select.form-input { appearance: none; background-image: url("data:image/svg+xml,
     <span class="nav-badge">Travel</span>
   </a>
   <div class="nav-links">
-    <div class="dropdown">
-      <span class="nav-link">Flight Ops</span>
-      <div class="dropdown-menu">
-        <div class="dropdown-category">Flight Operations</div>
-        <a href="../flights/index.html" class="dropdown-item">Flights</a>
-        <a href="../routes/index.html" class="dropdown-item">Routes</a>
-        <a href="../cargo/index.html" class="dropdown-item">Cargo</a>
+    <div class="nav-item">
+      <span class="nav-link">Flight Ops <svg viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></span>
+      <div class="nav-dropdown">
+        <a href="../flights/index.html">&#9992; Flights</a>
+        <a href="../weather/index.html">&#9925; Weather</a>
       </div>
     </div>
-    <div class="dropdown">
-      <span class="nav-link">Airports</span>
-      <div class="dropdown-menu">
-        <div class="dropdown-category">Airport Services</div>
-        <a href="../airports/index.html" class="dropdown-item">Airport Guide</a>
-        <a href="../maps/index.html" class="dropdown-item">Maps</a>
-        <a href="../parking/index.html" class="dropdown-item">Parking</a>
-        <a href="../lounge/index.html" class="dropdown-item">Lounges</a>
-        <a href="../weather/index.html" class="dropdown-item">Weather</a>
+    <div class="nav-item">
+      <span class="nav-link">Airports <svg viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></span>
+      <div class="nav-dropdown">
+        <a href="../airports/index.html">&#128214; Directory</a>
       </div>
     </div>
-    <div class="dropdown">
-      <span class="nav-link">Travel</span>
-      <div class="dropdown-menu">
-        <div class="dropdown-category">Travel Services</div>
-        <a href="../hotels/index.html" class="dropdown-item">Hotels</a>
-        <a href="../currency/index.html" class="dropdown-item">Currency</a>
-        <a href="../insurance/index.html" class="dropdown-item">Insurance</a>
-        <a href="../passports/index.html" class="dropdown-item">Passports</a>
+    <div class="nav-item">
+      <span class="nav-link">Travel <svg viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></span>
+      <div class="nav-dropdown">
+        <a href="../travel/index.html">&#127758; Destinations</a>
+        <a href="../hotels/index.html">&#127976; Hotels</a>
+        <a href="../newsletter/index.html">&#128231; Newsletter</a>
       </div>
     </div>
-    <div class="dropdown">
-      <span class="nav-link">Company</span>
-      <div class="dropdown-menu">
-        <div class="dropdown-category">Corporate</div>
-        <a href="../insights/index.html" class="dropdown-item">Holdings</a>
+    <div class="nav-item">
+      <span class="nav-link">Company <svg viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></span>
+      <div class="nav-dropdown">
+        <a href="../holdings/index.html">&#127970; Holdings</a>
+        <a href="../documents/index.html">&#128196; Documents</a>
+        <a href="../ops/index.html">&#9881; Operations</a>
+        <a href="../status/index.html">&#128200; Status</a>
       </div>
     </div>
-    <div class="dropdown">
-      <span class="nav-link">Account</span>
-      <div class="dropdown-menu">
-        <div class="dropdown-category">Account</div>
-        <a href="#" class="dropdown-item" onclick="showAuth();return false">Login</a>
-        <a href="#" class="dropdown-item" onclick="showAuth();return false">Register</a>
-        <a href="../bookings/index.html" class="dropdown-item">Profile</a>
+    <div class="nav-item">
+      <span class="nav-link">Discover <svg viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></span>
+      <div class="nav-dropdown">
+        <a href="../countries/index.html">&#127758; Countries</a>
+        <a href="../space/index.html">&#127752; Space</a>
+        <a href="../books/index.html">&#128218; Books</a>
+        <a href="../tv/index.html">&#128250; TV Shows</a>
+        <a href="../facts/index.html">&#128161; Facts</a>
       </div>
     </div>
-    <div class="dropdown">
-      <span class="nav-link">More</span>
-      <div class="dropdown-menu">
-        <div class="dropdown-category">More</div>
-        <a href="../status/index.html" class="dropdown-item">Status</a>
-        <a href="../docs/index.html" class="dropdown-item">Documents</a>
-        <a href="../emergency/index.html" class="dropdown-item">Operations</a>
-        <a href="../legal/index.html" class="dropdown-item">Legal</a>
-        <a href="../developer/index.html" class="dropdown-item">Developer</a>
+    <div class="nav-item">
+      <span class="nav-link">Fun <svg viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></span>
+      <div class="nav-dropdown">
+        <a href="../quotes/index.html">&#128172; Quotes</a>
+        <a href="../jokes/index.html">&#128514; Jokes</a>
+        <a href="../advice/index.html">&#128161; Advice</a>
+        <a href="../bored/index.html">&#129300; Bored?</a>
+        <a href="../predict/index.html">&#128302; Predict</a>
+      </div>
+    </div>
+    <div class="nav-item">
+      <span class="nav-link">Account <svg viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></span>
+      <div class="nav-dropdown">
+        <a href="../account/index.html">&#128100; Profile</a>
+        <a href="../account/index.html">&#128197; Bookings</a>
+        <a href="../account/index.html">&#11088; Loyalty</a>
+        <a href="../crypto/index.html">&#128176; Crypto</a>
+        <a href="../developer/index.html">&#128187; Developer</a>
       </div>
     </div>
   </div>
@@ -472,7 +475,7 @@ select.form-input { appearance: none; background-image: url("data:image/svg+xml,
 </div>
 
 <section class="hero" style="min-height:70vh">
-  <div class="hero-bg"><div class="hero-gradient"></div></div>
+  <div class="hero-bg"><div class="hero-gradient"></div><div class="hero-bg-animated"></div></div>
   <div class="hero-content">
     <div class="hero-badge">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
@@ -564,34 +567,60 @@ select.form-input { appearance: none; background-image: url("data:image/svg+xml,
 
 </main>
 
-<footer class="footer">
+<footer class="footer fade-in-up">
   <div class="footer-content">
     <div class="footer-brand">
-      <div class="footer-logo"><img src="../OIG3.jpg" alt="Express Airways" style="height:28px;width:28px;border-radius:50%;object-fit:cover"><span>Express Airways</span></div>
-      <p class="footer-desc">Complete travel services — hotels, currency, insurance, destination guides, and passport information.</p>
+      <div class="footer-logo">
+        <img src="../OIG3.jpg" alt="Express Airways" style="height:28px;width:28px;border-radius:50%;object-fit:cover">
+        <span>Express Airways</span>
+      </div>
+      <p class="footer-desc">Next-generation flight services with unified booking, operations, and travel management. Sovereign. Global. Reliable.</p>
     </div>
     <div class="footer-links">
       <div class="footer-col">
-        <h4>Services</h4>
-        <a href="../hotels/index.html">Hotels</a>
-        <a href="../currency/index.html">Currency</a>
-        <a href="../insurance/index.html">Insurance</a>
-        <a href="../passports/index.html">Passports</a>
-        <a href="../destinations/index.html">Destinations</a>
-        <a href="../flights/index.html">Flights</a>
-        <a href="../routes/index.html">Routes</a>
+        <h4>Flight Ops</h4>
+        <a href="../flights/index.html">&#9992; Flights</a>
+        <a href="../weather/index.html">&#9729; Weather</a>
+      </div>
+      <div class="footer-col">
+        <h4>Airports</h4>
+        <a href="../airports/index.html">&#127758; Directory</a>
+      </div>
+      <div class="footer-col">
+        <h4>Travel</h4>
+        <a href="../travel/index.html">&#127979; Destinations</a>
+        <a href="../newsletter/index.html">&#128240; Newsletter</a>
       </div>
       <div class="footer-col">
         <h4>Company</h4>
-        <a href="../insights/index.html">Holdings</a>
-        <a href="../index.html#contact">Contact</a>
+        <a href="../holdings/index.html">&#127970; Holdings</a>
+        <a href="../documents/index.html">&#128196; Documents</a>
+        <a href="../ops/index.html">&#9881; Operations</a>
+        <a href="../status/index.html">&#128200; Status</a>
+        <a href="../developer/index.html">&#128187; Developer</a>
       </div>
       <div class="footer-col">
-        <h4>Platform</h4>
-        <a href="../docs/index.html">Ops Hub</a>
-        <a href="../status/index.html">Status</a>
-        <a href="../legal/index.html">Legal</a>
-        <a href="../developer/index.html">Developer</a>
+        <h4>Discover</h4>
+        <a href="../countries/index.html">&#127758; Countries</a>
+        <a href="../space/index.html">&#128640; Space</a>
+        <a href="../books/index.html">&#128218; Books</a>
+        <a href="../tv/index.html">&#128250; TV Shows</a>
+        <a href="../facts/index.html">&#128161; Facts</a>
+      </div>
+      <div class="footer-col">
+        <h4>Fun</h4>
+        <a href="../quotes/index.html">&#128172; Quotes</a>
+        <a href="../jokes/index.html">&#128514; Jokes</a>
+        <a href="../advice/index.html">&#128161; Advice</a>
+        <a href="../bored/index.html">&#129309; Bored?</a>
+        <a href="../predict/index.html">&#128302; Predict</a>
+      </div>
+      <div class="footer-col">
+        <h4>Account</h4>
+        <a href="../account/index.html">&#128100; Profile</a>
+        <a href="../crypto/index.html">&#128176; Crypto</a>
+        <a href="../developer/index.html">&#128187; Developer</a>
+        <a href="../contact/index.html">&#9993; Contact</a>
       </div>
     </div>
   </div>
@@ -646,10 +675,12 @@ select.form-input { appearance: none; background-image: url("data:image/svg+xml,
   </div>
 </div>
 
+<script src="../common.js"></script>
+<script>window.__ea_has_own_auth = true;</script>
 <script>
 (function() {
   'use strict';
-  var API = 'https://script.google.com/macros/s/AKfycbyfr1k04IqvPSHND5I47ZowM8EAUmBuFR4pKJVWDdsB0ZCr4pMrCLxFME1v70aLbyWo/exec';
+  var API = 'https://script.google.com/macros/s/AKfycbybXfKdhOFdXIOa2RTaF5YHeFWKYt6IU2_F87IH1LzvIzhU7UVEd4aVmK8_vKuAlBVp/exec';
 
   var EA_TRACKER = {
     API_URL: API,
@@ -1104,3 +1135,4 @@ select.form-input { appearance: none; background-image: url("data:image/svg+xml,
 </script>
 </body>
 </html>
+

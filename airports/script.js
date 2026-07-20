@@ -1,6 +1,6 @@
 (function() {
   'use strict';
-  var API = 'https://script.google.com/macros/s/AKfycbyfr1k04IqvPSHND5I47ZowM8EAUmBuFR4pKJVWDdsB0ZCr4pMrCLxFME1v70aLbyWo/exec';
+  var API = 'https://script.google.com/macros/s/AKfycbybXfKdhOFdXIOa2RTaF5YHeFWKYt6IU2_F87IH1LzvIzhU7UVEd4aVmK8_vKuAlBVp/exec';
 
   function audit(action, details, element) {
     var user = (window.currentUser || {}).email || '';
@@ -85,6 +85,21 @@
 
   var loadedAirports = [];
 
+  function getFallbackAirports() {
+    return [
+      { code:'JFK', name:'John F Kennedy International', city:'New York', country:'US', lat:40.6413, lng:-73.7781, timezone:'America/New_York' },
+      { code:'LHR', name:'London Heathrow', city:'London', country:'GB', lat:51.4700, lng:-0.4543, timezone:'Europe/London' },
+      { code:'CDG', name:'Charles de Gaulle', city:'Paris', country:'FR', lat:49.0097, lng:2.5479, timezone:'Europe/Paris' },
+      { code:'DXB', name:'Dubai International', city:'Dubai', country:'AE', lat:25.2532, lng:55.3657, timezone:'Asia/Dubai' },
+      { code:'SIN', name:'Singapore Changi', city:'Singapore', country:'SG', lat:1.3644, lng:103.9915, timezone:'Asia/Singapore' },
+      { code:'NRT', name:'Narita International', city:'Tokyo', country:'JP', lat:35.7647, lng:140.3864, timezone:'Asia/Tokyo' },
+      { code:'LAX', name:'Los Angeles International', city:'Los Angeles', country:'US', lat:33.9416, lng:-118.4085, timezone:'America/Los_Angeles' },
+      { code:'DOH', name:'Hamad International', city:'Doha', country:'QA', lat:25.2731, lng:51.6081, timezone:'Asia/Qatar' },
+      { code:'HKG', name:'Hong Kong International', city:'Hong Kong', country:'HK', lat:22.3080, lng:113.9185, timezone:'Asia/Hong_Kong' },
+      { code:'SYD', name:'Sydney Kingsford Smith', city:'Sydney', country:'AU', lat:-33.9399, lng:151.1753, timezone:'Australia/Sydney' }
+    ];
+  }
+
   function loadAllAirports() {
     var placeholder = document.getElementById('airportsPlaceholder');
     var grid = document.getElementById('airportsGrid');
@@ -93,6 +108,14 @@
     });
     Promise.all(requests).then(function(results) {
       placeholder.style.display = 'none';
+      var allNull = results.every(function(r) { return r === null; });
+      if (allNull) {
+        var fallback = getFallbackAirports();
+        loadedAirports = fallback;
+        updateStats(fallback);
+        renderAirports(fallback);
+        return;
+      }
       var valid = [];
       results.forEach(function(data, i) {
         if (data && data.success) {

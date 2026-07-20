@@ -381,7 +381,7 @@ select.form-input { appearance: none; background-image: url("data:image/svg+xml,
 }
 </style>
 </head>
-<body>
+<body class="page-fade">
 
 <div id="globalLoader"><div class="loader-content"><div class="spinner" style="width:40px;height:40px;border-width:3px;margin:0 auto"></div><p class="loader-text">Connecting to Express Airways servers...</p></div></div>
 
@@ -396,57 +396,67 @@ select.form-input { appearance: none; background-image: url("data:image/svg+xml,
       <span class="nav-link">Flight Ops</span>
       <div class="dropdown-menu">
         <div class="dropdown-category">Flight Operations</div>
-        <a href="../flights/index.html" class="dropdown-item">Flights</a>
-        <a href="../routes/index.html" class="dropdown-item">Routes</a>
-        <a href="../cargo/index.html" class="dropdown-item">Cargo</a>
+        <a href="../flights/index.html" class="dropdown-item">&#9992; Flights</a>
+        <a href="../weather/index.html" class="dropdown-item">&#9925; Weather</a>
       </div>
     </div>
     <div class="dropdown">
       <span class="nav-link">Airports</span>
       <div class="dropdown-menu">
         <div class="dropdown-category">Airport Services</div>
-        <a href="../airports/index.html" class="dropdown-item">Airport Guide</a>
-        <a href="../maps/index.html" class="dropdown-item">Maps</a>
-        <a href="../parking/index.html" class="dropdown-item">Parking</a>
-        <a href="../lounge/index.html" class="dropdown-item">Lounges</a>
-        <a href="../weather/index.html" class="dropdown-item">Weather</a>
+        <a href="../airports/index.html" class="dropdown-item">&#128214; Directory</a>
       </div>
     </div>
     <div class="dropdown">
       <span class="nav-link">Travel</span>
       <div class="dropdown-menu">
         <div class="dropdown-category">Travel Services</div>
-        <a href="../hotels/index.html" class="dropdown-item">Hotels</a>
-        <a href="../currency/index.html" class="dropdown-item">Currency</a>
-        <a href="../insurance/index.html" class="dropdown-item">Insurance</a>
-        <a href="../passports/index.html" class="dropdown-item">Passports</a>
+        <a href="../travel/index.html" class="dropdown-item">&#127758; Destinations</a>
+        <a href="../hotels/index.html" class="dropdown-item">&#127976; Hotels</a>
+        <a href="../newsletter/index.html" class="dropdown-item">&#128231; Newsletter</a>
       </div>
     </div>
     <div class="dropdown">
       <span class="nav-link">Company</span>
       <div class="dropdown-menu">
         <div class="dropdown-category">Corporate</div>
-        <a href="../insights/index.html" class="dropdown-item">Holdings</a>
+        <a href="../holdings/index.html" class="dropdown-item">&#127970; Holdings</a>
+        <a href="../documents/index.html" class="dropdown-item">&#128196; Documents</a>
+        <a href="../ops/index.html" class="dropdown-item">&#9881; Operations</a>
+        <a href="../status/index.html" class="dropdown-item">&#128200; Status</a>
+      </div>
+    </div>
+    <div class="dropdown">
+      <span class="nav-link">Discover</span>
+      <div class="dropdown-menu">
+        <div class="dropdown-category">Discover</div>
+        <a href="../countries/index.html" class="dropdown-item">&#127758; Countries</a>
+        <a href="../space/index.html" class="dropdown-item">&#127752; Space</a>
+        <a href="../books/index.html" class="dropdown-item">&#128218; Books</a>
+        <a href="../tv/index.html" class="dropdown-item">&#128250; TV Shows</a>
+        <a href="../facts/index.html" class="dropdown-item">&#128161; Facts</a>
+      </div>
+    </div>
+    <div class="dropdown">
+      <span class="nav-link">Fun</span>
+      <div class="dropdown-menu">
+        <div class="dropdown-category">Fun</div>
+        <a href="../quotes/index.html" class="dropdown-item">&#128172; Quotes</a>
+        <a href="../jokes/index.html" class="dropdown-item">&#128514; Jokes</a>
+        <a href="../advice/index.html" class="dropdown-item">&#128161; Advice</a>
+        <a href="../bored/index.html" class="dropdown-item">&#129300; Bored?</a>
+        <a href="../predict/index.html" class="dropdown-item">&#128302; Predict</a>
       </div>
     </div>
     <div class="dropdown">
       <span class="nav-link">Account</span>
       <div class="dropdown-menu">
         <div class="dropdown-category">Account</div>
-        <a href="#" class="dropdown-item" onclick="showAuth();return false">Login</a>
-        <a href="#" class="dropdown-item" onclick="showAuth();return false">Register</a>
-        <a href="../bookings/index.html" class="dropdown-item">Profile</a>
-      </div>
-    </div>
-    <div class="dropdown">
-      <span class="nav-link">More</span>
-      <div class="dropdown-menu">
-        <div class="dropdown-category">More</div>
-        <a href="../status/index.html" class="dropdown-item">Status</a>
-        <a href="../docs/index.html" class="dropdown-item">Documents</a>
-        <a href="../emergency/index.html" class="dropdown-item">Operations</a>
-        <a href="../legal/index.html" class="dropdown-item">Legal</a>
-        <a href="../developer/index.html" class="dropdown-item">Developer</a>
+        <a href="../account/index.html" class="dropdown-item">&#128100; Profile</a>
+        <a href="../account/index.html" class="dropdown-item">&#128197; Bookings</a>
+        <a href="../account/index.html" class="dropdown-item">&#11088; Loyalty</a>
+        <a href="../crypto/index.html" class="dropdown-item">&#128176; Crypto</a>
+        <a href="../developer/index.html" class="dropdown-item">&#128187; Developer</a>
       </div>
     </div>
   </div>
@@ -475,7 +485,7 @@ select.form-input { appearance: none; background-image: url("data:image/svg+xml,
 </div>
 
 <section class="hero" style="min-height:70vh">
-  <div class="hero-bg"><div class="hero-gradient"></div></div>
+  <div class="hero-bg"><div class="hero-gradient"></div><div class="hero-bg-animated"></div></div>
   <div class="hero-content">
     <div class="hero-badge">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
@@ -488,7 +498,7 @@ select.form-input { appearance: none; background-image: url("data:image/svg+xml,
 
 <main style="max-width:1200px;margin:-100px auto 60px;padding:0 24px;position:relative;z-index:2">
 
-  <div id="flightSearchSection" class="search-section card" style="margin-bottom:24px;padding:28px">
+  <div id="flightSearchSection" class="search-section card fade-in-up" style="margin-bottom:24px;padding:28px">
     <h3 style="font-size:18px;font-weight:700;margin-bottom:16px">Search Flights</h3>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:12px;align-items:end">
       <div class="form-group" style="margin-bottom:0">
@@ -519,15 +529,7 @@ select.form-input { appearance: none; background-image: url("data:image/svg+xml,
 
   <div id="flightSearchResults" class="hidden" style="margin-bottom:24px"></div>
 
-  <div class="card" style="margin-bottom:24px;padding:28px">
-    <h3 style="font-size:18px;font-weight:700;margin-bottom:16px;text-align:center">Live Departures</h3>
-    <div id="flightsList">
-      <div style="text-align:center;padding:40px;color:var(--text-muted)">Loading flight data...</div>
-    </div>
-    <div id="flightsError" class="hidden error-section" style="padding:20px"></div>
-  </div>
-
-  <div class="card" style="margin-bottom:24px;padding:28px">
+  <div class="card fade-in-up" style="margin-bottom:24px;padding:28px">
     <h3 style="font-size:18px;font-weight:700;margin-bottom:16px;text-align:center">Route Explorer</h3>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;align-items:end;max-width:700px;margin:0 auto">
       <div class="form-group" style="margin-bottom:0">
@@ -545,19 +547,7 @@ select.form-input { appearance: none; background-image: url("data:image/svg+xml,
     <div id="routeResult" class="hidden" style="margin-top:20px;text-align:center"></div>
   </div>
 
-  <div class="card" style="margin-bottom:24px;padding:28px;text-align:center">
-    <h3 style="font-size:18px;font-weight:700;margin-bottom:16px">Cargo Tracking</h3>
-    <div class="cargo-tracking">
-      <div class="form-group" style="margin-bottom:12px">
-        <label class="form-label">Tracking Number</label>
-        <input class="form-input" id="cargoInput" placeholder="e.g. EA-CGO-2024-001" style="text-align:center">
-      </div>
-      <button class="btn btn-primary" id="trackCargoBtn">Track Cargo</button>
-    </div>
-    <div id="cargoResult" class="hidden" style="margin-top:16px"></div>
-  </div>
-
-  <div class="card" style="padding:28px;text-align:center">
+  <div class="card fade-in-up" style="padding:28px;text-align:center">
     <h3 style="font-size:18px;font-weight:700;margin-bottom:16px">In-Flight Services</h3>
     <div id="inflightInfo" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;max-width:800px;margin:0 auto">
       <div class="route-card"><h4 style="font-size:14px;font-weight:700;margin-bottom:8px;color:var(--accent)">Entertainment</h4><p style="font-size:13px;color:var(--text-secondary)">Over 500 movies, TV shows, and music albums available on every flight.</p></div>
@@ -568,41 +558,60 @@ select.form-input { appearance: none; background-image: url("data:image/svg+xml,
 
 </main>
 
-<footer class="footer">
+<footer class="footer fade-in-up">
   <div class="footer-content">
     <div class="footer-brand">
-      <div class="footer-logo"><img src="../OIG3.jpg" alt="Express Airways" style="height:28px;width:28px;border-radius:50%;object-fit:cover"><span>Express Airways</span></div>
-      <p class="footer-desc">Complete flight operations center — track flights, explore routes, and manage cargo shipments worldwide.</p>
+      <div class="footer-logo">
+        <img src="../OIG3.jpg" alt="Express Airways" style="height:28px;width:28px;border-radius:50%;object-fit:cover">
+        <span>Express Airways</span>
+      </div>
+      <p class="footer-desc">Next-generation flight services with unified booking, operations, and travel management. Sovereign. Global. Reliable.</p>
     </div>
     <div class="footer-links">
       <div class="footer-col">
-        <h4>Services</h4>
-        <a href="../flights/index.html">Flights</a>
-        <a href="../routes/index.html">Routes</a>
-        <a href="../cargo/index.html">Cargo</a>
-        <a href="../airports/index.html">Airports</a>
-        <a href="../weather/index.html">Weather</a>
-        <a href="../hotels/index.html">Hotels</a>
-        <a href="../currency/index.html">Currency</a>
-        <a href="../insurance/index.html">Insurance</a>
-        <a href="../bookings/index.html">Bookings</a>
-        <a href="../status/index.html">Status</a>
-        <a href="../maps/index.html">Maps</a>
-        <a href="../parking/index.html">Parking</a>
-        <a href="../lounge/index.html">Lounges</a>
-        <a href="../passports/index.html">Passports</a>
+        <h4>Flight Ops</h4>
+        <a href="../flights/index.html">&#9992; Flights</a>
+        <a href="../weather/index.html">&#9729; Weather</a>
+      </div>
+      <div class="footer-col">
+        <h4>Airports</h4>
+        <a href="../airports/index.html">&#127758; Directory</a>
+      </div>
+      <div class="footer-col">
+        <h4>Travel</h4>
+        <a href="../travel/index.html">&#127979; Destinations</a>
+        <a href="../newsletter/index.html">&#128240; Newsletter</a>
       </div>
       <div class="footer-col">
         <h4>Company</h4>
-        <a href="../insights/index.html">Holdings</a>
-        <a href="../index.html#contact">Contact</a>
+        <a href="../holdings/index.html">&#127970; Holdings</a>
+        <a href="../documents/index.html">&#128196; Documents</a>
+        <a href="../ops/index.html">&#9881; Operations</a>
+        <a href="../status/index.html">&#128200; Status</a>
+        <a href="../developer/index.html">&#128187; Developer</a>
       </div>
       <div class="footer-col">
-        <h4>Platform</h4>
-        <a href="../docs/index.html">Ops Hub</a>
-        <a href="../status/index.html">Status</a>
-        <a href="../legal/index.html">Legal</a>
-        <a href="../developer/index.html">Developer</a>
+        <h4>Discover</h4>
+        <a href="../countries/index.html">&#127758; Countries</a>
+        <a href="../space/index.html">&#128640; Space</a>
+        <a href="../books/index.html">&#128218; Books</a>
+        <a href="../tv/index.html">&#128250; TV Shows</a>
+        <a href="../facts/index.html">&#128161; Facts</a>
+      </div>
+      <div class="footer-col">
+        <h4>Fun</h4>
+        <a href="../quotes/index.html">&#128172; Quotes</a>
+        <a href="../jokes/index.html">&#128514; Jokes</a>
+        <a href="../advice/index.html">&#128161; Advice</a>
+        <a href="../bored/index.html">&#129309; Bored?</a>
+        <a href="../predict/index.html">&#128302; Predict</a>
+      </div>
+      <div class="footer-col">
+        <h4>Account</h4>
+        <a href="../account/index.html">&#128100; Profile</a>
+        <a href="../crypto/index.html">&#128176; Crypto</a>
+        <a href="../developer/index.html">&#128187; Developer</a>
+        <a href="../contact/index.html">&#9993; Contact</a>
       </div>
     </div>
   </div>
@@ -657,10 +666,12 @@ select.form-input { appearance: none; background-image: url("data:image/svg+xml,
   </div>
 </div>
 
+<script src="../common.js"></script>
+<script>window.__ea_has_own_auth = true;</script>
 <script>
 (function() {
   'use strict';
-  var API = 'https://script.google.com/macros/s/AKfycbyfr1k04IqvPSHND5I47ZowM8EAUmBuFR4pKJVWDdsB0ZCr4pMrCLxFME1v70aLbyWo/exec';
+  var API = 'https://script.google.com/macros/s/AKfycbybXfKdhOFdXIOa2RTaF5YHeFWKYt6IU2_F87IH1LzvIzhU7UVEd4aVmK8_vKuAlBVp/exec';
 
   var EA_TRACKER = {
     API_URL: API,
@@ -801,18 +812,11 @@ select.form-input { appearance: none; background-image: url("data:image/svg+xml,
     } catch(e) { console.error('[API ERROR]', method, params, e); return Promise.resolve(null); }
   }
 
-  function renderFlights(flights) {
-    var container = document.getElementById('flightsList');
-    if (!container) return;
-    if (!flights || flights.length === 0) {
-      container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted)">No flights currently available</div>';
-      return;
-    }
-    container.innerHTML = '<div class="flight-table">' + flights.map(function(f) {
-      var statusClass = (f.status || 'scheduled').toLowerCase().replace(/\s+/g, '-');
-      return '<div class="flight-row"><div class="flight-cell">' + (f.flight || f.flightNumber || '') + '</div><div class="flight-cell">' + (f.origin || '') + ' \u2192 ' + (f.destination || '') + '</div><div class="flight-cell"><span class="status-badge status-' + statusClass + '">' + (f.status || 'Scheduled') + '</span></div><div class="flight-cell">' + (f.gate || '--') + '</div><div class="flight-cell">' + (f.departureTime || f.departure || '--:--') + '</div></div>';
-    }).join('') + '</div>';
-  }
+
+
+
+
+
 
   function init() {
     var user = getUser();
@@ -839,17 +843,6 @@ select.form-input { appearance: none; background-image: url("data:image/svg+xml,
     }
   }
 
-  function loadData() {
-    var flightsError = document.getElementById('flightsError');
-    api('GET', { action: 'flights.list' }).then(function(flightsData) {
-      if (flightsData && flightsData.success) {
-        renderFlights(flightsData.flights || []);
-      } else {
-        if (flightsError) { flightsError.classList.remove('hidden'); flightsError.innerHTML = '<h2>Failed to load flight data</h2><p>Please try again later.</p>'; }
-      }
-    });
-  }
-
   function hideLoader() {
     var loader = document.getElementById('globalLoader');
     if (loader) { loader.classList.add('fade-out'); setTimeout(function(){loader.style.display='none'}, 600); }
@@ -864,7 +857,6 @@ select.form-input { appearance: none; background-image: url("data:image/svg+xml,
     }, 60000);
 
     init();
-    loadData();
     hideLoader();
 
     var fsDate = document.getElementById('fsDate');
@@ -981,8 +973,13 @@ select.form-input { appearance: none; background-image: url("data:image/svg+xml,
               return '<div class="flight-row"><div class="flight-cell">' + (f.flight || f.flightNumber || '') + '</div><div class="flight-cell">' + (f.origin || origin) + ' \u2192 ' + (f.destination || dest) + '</div><div class="flight-cell"><span class="status-badge status-' + sc + '">' + (f.status || 'Scheduled') + '</span></div><div class="flight-cell">' + (f.departureTime || f.departure || '--:--') + '</div><div class="flight-cell">$' + (f.fare || f.price || '--') + '</div></div>';
             }).join('') + '</div></div>';
         } else {
-          results.innerHTML = '<div class="card" style="padding:20px;text-align:center"><p style="color:var(--text-secondary)">No flights found for ' + origin + ' to ' + dest + ' on ' + date + '. Please try different dates or routes.</p></div>';
+          results.innerHTML = '<div class="card" style="padding:20px"><h4 style="font-size:16px;font-weight:700;margin-bottom:12px;text-align:center">No flights found</h4><p style="text-align:center;color:var(--text-muted)">No flights available for the selected route.</p></div>';
         }
+      }).catch(function() {
+        btn.classList.remove('loading');
+        var results = document.getElementById('flightSearchResults');
+        results.classList.remove('hidden');
+        results.innerHTML = '<div class="card" style="padding:20px"><h4 style="font-size:16px;font-weight:700;margin-bottom:12px;text-align:center">Error</h4><p style="text-align:center;color:var(--text-muted)">Could not load flight data. Please try again later.</p></div>';
       });
     });
 
@@ -1004,35 +1001,20 @@ select.form-input { appearance: none; background-image: url("data:image/svg+xml,
             '<div><span style="font-size:11px;color:var(--text-muted);display:block;text-transform:uppercase;letter-spacing:0.5px">Flight Time</span><span style="font-size:16px;font-weight:700;font-family:var(--font-mono)">' + (r.flightTime || r.duration || '--') + '</span></div>' +
             '<div><span style="font-size:11px;color:var(--text-muted);display:block;text-transform:uppercase;letter-spacing:0.5px">Est. Fare</span><span style="font-size:16px;font-weight:700;font-family:var(--font-mono)">$' + (r.fare || r.price || '--') + '</span></div></div></div>';
         } else {
-          result.innerHTML = '<p style="color:var(--text-secondary)">Route information not found for ' + origin + ' to ' + dest + '.</p>';
+          result.innerHTML = '<div class="route-card"><h4 style="font-size:16px;font-weight:700;margin-bottom:8px">Route not found</h4><p style="color:var(--text-muted)">No route information available for ' + origin + ' \u2192 ' + dest + '.</p></div>';
         }
+      }).catch(function() {
+        btn.classList.remove('loading');
+        var result = document.getElementById('routeResult');
+        result.classList.remove('hidden');
+        result.innerHTML = '<div class="route-card"><h4 style="font-size:16px;font-weight:700;margin-bottom:8px">Error</h4><p style="color:var(--text-muted)">Could not load route data. Please try again later.</p></div>';
       });
     });
 
-    document.getElementById('trackCargoBtn').addEventListener('click', function() {
-      var tracking = document.getElementById('cargoInput').value.trim();
-      if (!tracking) { showToast('Please enter a tracking number', 'warning'); return; }
-      var btn = this;
-      btn.classList.add('loading');
-      api('GET', { action: 'cargo.status', tracking: tracking }).then(function(data) {
-        btn.classList.remove('loading');
-        var result = document.getElementById('cargoResult');
-        result.classList.remove('hidden');
-        if (data && data.success) {
-          var c = data.cargo || data;
-          result.innerHTML = '<div class="route-card"><h4 style="font-size:16px;font-weight:700;margin-bottom:8px">Cargo ' + tracking + '</h4>' +
-            '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:12px">' +
-            '<div><span style="font-size:11px;color:var(--text-muted);display:block">Status</span><span class="status-badge status-' + ((c.status||'pending').toLowerCase().replace(/\s+/g,'')) + '">' + (c.status || 'Pending') + '</span></div>' +
-            '<div><span style="font-size:11px;color:var(--text-muted);display:block">Origin</span><span style="font-size:14px;font-weight:600">' + (c.origin || '--') + '</span></div>' +
-            '<div><span style="font-size:11px;color:var(--text-muted);display:block">Destination</span><span style="font-size:14px;font-weight:600">' + (c.destination || '--') + '</span></div>' +
-            '<div><span style="font-size:11px;color:var(--text-muted);display:block">Weight</span><span style="font-size:14px;font-weight:600">' + (c.weight || '--') + ' kg</span></div></div></div>';
-        } else {
-          result.innerHTML = '<p style="color:var(--text-secondary)">Cargo not found for tracking number: ' + tracking + '</p>';
-        }
-      });
-    });
+
   });
 })();
 </script>
 </body>
 </html>
+
